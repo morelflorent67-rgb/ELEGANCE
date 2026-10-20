@@ -32,14 +32,14 @@ Tests à la fin du lot 4 : **391 Vitest** (unitaires et intégration sur Postgre
 
 ## Actions en attente (à demander à Florent, jamais sans son accord)
 
-1. **Compte équipe de la tablette** (lot 4, nouveau) : `pnpm staff:account` crée l'utilisateur Supabase de la tablette (email, mot de passe de 12 caractères au moins, tapés dans le terminal). Il modifie le projet Supabase en ligne : annoncer, guider pas à pas. Puis, sur la tablette : ouvrir `/equipe/connexion` une seule fois.
-2. **Code gérant** (lot 4, nouveau) : `pnpm manager:set-code` (base locale) ou `pnpm manager:set-code:remote` (base Supabase, modifie la base en ligne). Florent choisit lui-même ses 6 chiffres, tapés dans le terminal sans s'afficher ; ne jamais les lui faire écrire dans le chat. Tant qu'il n'est pas défini, l'espace gérant reste fermé et le dit.
+1. ~~Compte équipe de la tablette~~ : **fait le 20 octobre 2026** par Florent (connexion testée sur le site de test). Pour le recréer ou changer le mot de passe : `pnpm staff:account` crée l'utilisateur Supabase de la tablette (email, mot de passe de 12 caractères au moins, tapés dans le terminal). Il modifie le projet Supabase en ligne : annoncer, guider pas à pas. Puis, sur la tablette : ouvrir `/equipe/connexion` une seule fois.
+2. ~~Code gérant~~ : **fait le 20 octobre 2026** par Florent sur la base Supabase (espace gérant testé). Pour le changer : `pnpm manager:set-code` (base locale) ou `pnpm manager:set-code:remote` (base Supabase, modifie la base en ligne). Florent choisit lui-même ses 6 chiffres, tapés dans le terminal sans s'afficher ; ne jamais les lui faire écrire dans le chat. Tant qu'il n'est pas défini, l'espace gérant reste fermé et le dit.
 3. **Brevo** (compte ouvert) : créer une clé d'API, faire vérifier une adresse d'expéditeur, puis ajouter `BREVO_API_KEY`, `EMAIL_FROM` et `CRON_SECRET` dans Vercel (Settings, Environment Variables). Tant que ce n'est pas fait, les emails restent en file en production (confirmations, et désormais aussi annulations et déplacements décidés par le salon).
 4. **Supabase** : Authentication, URL Configuration (Site URL et adresse de redirection `…/auth/callback`), puis SMTP Brevo pour le mot de passe oublié.
 5. **Vercel Pro** : à prendre avec le client juste avant la livraison (c'est lui qui paie). Passer alors le cron de `vercel.json` à `* * * * *`. D'ici là, l'envoi immédiat des emails couvre le cas normal.
 6. Les clés Supabase et le mot de passe de la base, passés dans le chat, sont laissés tels quels par décision de Florent.
 7. Domaine définitif, textes légaux validés par un professionnel : avant la mise en ligne.
-8. **Vérifier sur la vraie tablette** (iPad, paysage) : le planning, la réservation et l'espace gérant ont été vérifiés par captures à 1194 × 834 et 390 × 844, pas sur l'appareil réel.
+8. **Vérifier sur la vraie tablette** (iPad, paysage ; la connexion a été testée sur ordinateur) : le planning, la réservation et l'espace gérant ont été vérifiés par captures à 1194 × 834 et 390 × 844, pas sur l'appareil réel.
 
 ## Ce que le lot 4 a ajouté
 
