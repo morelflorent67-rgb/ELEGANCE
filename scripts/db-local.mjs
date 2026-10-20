@@ -33,7 +33,11 @@ const isRunning = () => {
 
 const commands = {
   start() {
-    if (isRunning()) return console.log(`La base tourne déjà (port ${PORT}).`);
+    if (isRunning()) {
+      console.log(`La base tourne déjà (port ${PORT}).`);
+      execSync("pnpm exec drizzle-kit migrate", { stdio: "inherit" });
+      return;
+    }
     if (!existsSync(join(DATA_DIR, "PG_VERSION"))) {
       console.log("Première initialisation de la base locale…");
       run("initdb", ["-D", DATA_DIR, "-U", "postgres", "-A", "trust", "-E", "UTF8"]);
