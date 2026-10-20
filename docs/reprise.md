@@ -1,7 +1,7 @@
 # Reprise du projet : où on en est
 
 Ce document permet de reprendre le travail dans une **nouvelle conversation**, sans rien perdre. Il se met à jour à la fin de chaque lot.
-À jour au **20 octobre 2026**, fin du lot 6 (réalisé, **en attente de validation par Florent**). Les lots 0 à 5 sont validés.
+À jour au **20 octobre 2026**, fin du lot 6 (validé par Florent le 20 octobre 2026). Les lots 0 à 6 sont validés.
 
 ## Avancement
 
@@ -13,7 +13,7 @@ Ce document permet de reprendre le travail dans une **nouvelle conversation**, s
 | 3 | Espace client : Mes RDV, modifier ou annuler jusqu'à 48 h, « Reprendre le même RDV », Mes informations, suppression du compte | Validé |
 | 4 | Planning tablette : 4 colonnes, fiche RDV, réservation par le salon, lapins, code gérant, choix de l'auteur | Validé |
 | 5 | Gestion : carte et habilitations, équipe, horaires, fermetures, absences et RDV touchés | Validé |
-| 6 | Vitrine : accueil, prestations, le salon, pages légales, référencement local, animations, version ordinateur | Réalisé, à valider |
+| 6 | Vitrine : accueil, prestations, le salon, pages légales, référencement local, animations, version ordinateur | Validé |
 | 7 à 8 | Emails et tableau de bord, recette | À venir (voir `transmission-code.md`) |
 
 Tests à la fin du lot 6 : **605 Vitest** (unitaires et intégration sur Postgres réel) et **258 parcours Playwright** (206 exécutés ; 52 réservés à la tablette ou au mobile sont sautés selon le profil). Aucun ne doit casser. Lint, typecheck et build verts.
@@ -43,7 +43,7 @@ Tests à la fin du lot 6 : **605 Vitest** (unitaires et intégration sur Postgre
 5. **Vercel Pro et région** : à prendre avec le client juste avant la livraison (c'est lui qui paie). Passer alors le cron de `vercel.json` à `* * * * *`. D'ici là, l'envoi immédiat des emails couvre le cas normal. **Lenteur des pages de la tablette sur le site de test** : probablement la région des fonctions Vercel (par défaut les États-Unis) loin de la base Supabase (Irlande). Florent a décidé de reporter : à ce moment-là, ajouter `"regions": ["fra1"]` dans `vercel.json`, mesurer avant et après, et réduire au besoin les requêtes par page (le nombre de RDV à traiter de la barre est recalculé à chaque écran). La vitrine, elle, est mise en cache (lot 6) : elle n'appelle pas la base à chaque affichage.
 6. Les clés Supabase et le mot de passe de la base, passés dans le chat, sont laissés tels quels par décision de Florent.
 7. Domaine définitif : à poser dans `SITE_URL` (Vercel) ; ensuite `ALLOW_INDEXING=true` ouvre l'indexation (robots, plan du site et données structurées suivent tout seuls).
-8. **Textes légaux** (lot 6) : rédigés d'après ce que le site fait réellement, mais **à faire valider par un professionnel** avant l'ouverture. À fournir par le salon (champs entre crochets visibles sur les pages ; `placeholdersOf` dans `src/modules/vitrine/legal.ts` les liste) : forme juridique, capital, SIRET, directeur de la publication, adresse de l'hébergeur (Vercel), email de contact, durée de conservation d'un compte inactif, modalités de réponse aux droits RGPD, conditions de suspension et responsabilité. Quand les avis seront lancés : citer l'invitation à donner son avis dans la confidentialité.
+8. **Textes légaux** (lot 6, Florent les complétera quand il aura les informations) : rédigés d'après ce que le site fait réellement, mais **à faire valider par un professionnel** avant l'ouverture. À fournir par le salon (champs entre crochets visibles sur les pages ; `placeholdersOf` dans `src/modules/vitrine/legal.ts` les liste) : forme juridique, capital, SIRET, directeur de la publication, adresse de l'hébergeur (Vercel), email de contact, durée de conservation d'un compte inactif, modalités de réponse aux droits RGPD, conditions de suspension et responsabilité. Quand les avis seront lancés : citer l'invitation à donner son avis dans la confidentialité.
 9. **Vérifier la vitrine sur un vrai téléphone** (site de test) : accueil (ouverture animée, menu), prestations, le salon (galerie), pages légales. Vérifiée par captures à 390 × 844, 1194 × 834 et 1440 × 900, pas sur appareil réel.
 10. **Vérifier sur la vraie tablette** (iPad, paysage ; tout a été vérifié par captures à 1194 × 834 et 390 × 844, pas sur l'appareil réel) : planning, réservation, espace gérant (carte, équipe, horaires) et absences.
 
