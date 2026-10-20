@@ -1,7 +1,7 @@
 # Reprise du projet : où on en est
 
 Ce document permet de reprendre le travail dans une **nouvelle conversation**, sans rien perdre. Il se met à jour à la fin de chaque lot.
-À jour au **20 octobre 2026**, fin du lot 4 (terminé, en attente de validation de Florent).
+À jour au **20 octobre 2026**, fin du lot 4 (validé par Florent le 20 octobre 2026).
 
 ## Avancement
 
@@ -11,7 +11,7 @@ Ce document permet de reprendre le travail dans une **nouvelle conversation**, s
 | 1 | Moteur de créneaux, schéma, contrainte anti-chevauchement | Validé |
 | 2 | Réservation client, comptes, email de confirmation | Validé |
 | 3 | Espace client : Mes RDV, modifier ou annuler jusqu'à 48 h, « Reprendre le même RDV », Mes informations, suppression du compte | Validé |
-| 4 | Planning tablette : 4 colonnes, fiche RDV, réservation par le salon, lapins, code gérant, choix de l'auteur | **Terminé, à valider par Florent** |
+| 4 | Planning tablette : 4 colonnes, fiche RDV, réservation par le salon, lapins, code gérant, choix de l'auteur | Validé |
 | 5 à 8 | Gestion, vitrine, emails et tableau de bord, recette | À venir (voir `transmission-code.md`) |
 
 Tests à la fin du lot 4 : **391 Vitest** (unitaires et intégration sur Postgres réel) et **134 parcours Playwright** (115 exécutés ; 19 réservés à la tablette sont sautés sur mobile). Aucun ne doit casser. Lint, typecheck et build verts.
