@@ -28,8 +28,8 @@ export default function ManagerPage(props: PageProps<"/equipe/gerant">) {
 /** Les fonctions du gérant : un lien quand l'écran existe, sinon « Bientôt ». */
 const TOOLS: { label: string; href?: string }[] = [
   { label: "Carte et tarifs", href: "/equipe/gerant/carte" },
-  { label: "Équipe et habilitations" },
-  { label: "Horaires et fermetures" },
+  { label: "Équipe et habilitations", href: "/equipe/gerant/equipe" },
+  { label: "Horaires et fermetures", href: "/equipe/gerant/horaires" },
   { label: "Chiffre d’affaires" },
 ];
 

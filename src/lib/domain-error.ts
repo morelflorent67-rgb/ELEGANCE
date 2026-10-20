@@ -38,7 +38,15 @@ export type DomainErrorCode =
   | "invalid_service"
   | "unknown_staff"
   | "staff_role_mismatch"
-  | "no_staff_for_service";
+  | "no_staff_for_service"
+  | "invalid_staff"
+  | "staff_name_taken"
+  | "staff_needed_for_service"
+  // Horaires et fermetures (R-01, R-03)
+  | "invalid_hours"
+  | "invalid_closure"
+  | "closure_in_past"
+  | "unknown_closure";
 
 export class DomainError extends Error {
   readonly code: DomainErrorCode;

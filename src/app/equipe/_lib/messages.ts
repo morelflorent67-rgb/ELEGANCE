@@ -34,6 +34,16 @@ const MESSAGES: Partial<Record<TeamError, string>> = {
     "Les coiffeurs réalisent les prestations des coiffeurs, les apprentis celles du tarif formation.",
   no_staff_for_service:
     "Une prestation réservable en ligne a besoin d'au moins un coiffeur habilité. Cochez un nom, ou passez-la « sur appel ».",
+  invalid_staff: "Le prénom doit faire entre 1 et 40 caractères.",
+  staff_name_taken: "Un membre de l'équipe porte déjà ce prénom.",
+  staff_needed_for_service:
+    "Cette personne est la dernière à réaliser une prestation réservable en ligne. Passez cette prestation « sur appel » ou retirez-la de la carte, puis réessayez.",
+  invalid_hours:
+    "Vérifiez les horaires : chaque plage finit après son début, sur la grille de 15 minutes, sans toucher la suivante, et au moins un jour doit rester ouvert.",
+  invalid_closure:
+    "Vérifiez les dates : la fin ne peut pas précéder le début. Le motif fait 80 caractères au plus.",
+  closure_in_past: "Cette fermeture est déjà terminée.",
+  unknown_closure: "Cette fermeture n'existe plus.",
   manager_locked: "L'espace gérant est verrouillé. Saisissez le code gérant.",
   not_signed_in: "Votre session a expiré. Reconnectez-vous.",
   rate_limited: "Trop d'essais. Patientez un instant.",

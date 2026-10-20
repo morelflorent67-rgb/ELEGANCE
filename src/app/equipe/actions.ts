@@ -32,6 +32,18 @@ import {
   searchCustomers,
   setOnlineBookingBlocked,
 } from "@/modules/customers/staff-view";
+import {
+  createStaffMember,
+  moveStaffMember,
+  renameStaffMember,
+  setStaffActive,
+} from "@/modules/staff/manage";
+import {
+  addClosure,
+  removeClosure,
+  setOpeningHours,
+  type WeekHours,
+} from "@/modules/schedule/manage";
 import { sendEmailsForAppointment } from "@/modules/mail/send-now";
 import { hitRateLimit } from "@/modules/security/rate-limit";
 import { loginStaff, currentStaffUser } from "@/modules/staff";
@@ -470,6 +482,83 @@ export async function moveServiceAction(input: unknown): Promise<TeamResult> {
   if (!parsed.success) return { ok: false, error: "invalid" };
   return asManager(async (user) => {
     await moveService(db(), parsed.data.serviceId, parsed.data.direction, user.id);
+    return { ok: true };
+  });
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Équipe, horaires et fermetures (R-02, R-03, R-13, D-57) : réservés au gérant (R-73)
+
+export async function createStaffAction(input: unknown): Promise<TeamResult<{ staffId: string }>> {
+  const parsed = z
+    .object({ firstName: z.string().max(200), role: z.enum(["barber", "apprentice"]) })
+    .safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid_staff" };
+  return asManager<{ staffId: string }>(async (user) => ({
+    ok: true,
+    staffId: await createStaffMember(db(), parsed.data, user.id),
+  }));
+}
+
+export async function renameStaffAction(input: unknown): Promise<TeamResult> {
+  const parsed = z.object({ staffId: uuid, firstName: z.string().max(200) }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid_staff" };
+  return asManager(async (user) => {
+    await renameStaffMember(db(), parsed.data.staffId, parsed.data.firstName, user.id);
+    return { ok: true };
+  });
+}
+
+export async function setStaffActiveAction(input: unknown): Promise<TeamResult> {
+  const parsed = z.object({ staffId: uuid, active: z.boolean() }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asManager(async (user) => {
+    await setStaffActive(db(), parsed.data.staffId, parsed.data.active, user.id);
+    return { ok: true };
+  });
+}
+
+export async function moveStaffAction(input: unknown): Promise<TeamResult> {
+  const parsed = z.object({ staffId: uuid, direction: z.enum(["up", "down"]) }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asManager(async (user) => {
+    await moveStaffMember(db(), parsed.data.staffId, parsed.data.direction, user.id);
+    return { ok: true };
+  });
+}
+
+export async function saveHoursAction(input: unknown): Promise<TeamResult> {
+  const parsed = z
+    .object({
+      week: z.record(z.string(), z.array(z.object({ opensAt: z.string(), closesAt: z.string() }))),
+    })
+    .safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid_hours" };
+  return asManager(async (user) => {
+    const week: WeekHours = Object.fromEntries(
+      Object.entries(parsed.data.week).map(([weekday, ranges]) => [Number(weekday), ranges]),
+    );
+    await setOpeningHours(db(), week, user.id);
+    return { ok: true };
+  });
+}
+
+export async function addClosureAction(input: unknown): Promise<TeamResult> {
+  const parsed = z
+    .object({ startsOn: isoDate, endsOn: isoDate, reason: z.string().max(200) })
+    .safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid_closure" };
+  return asManager(async (user) => {
+    await addClosure(db(), parsed.data, user.id);
+    return { ok: true };
+  });
+}
+
+export async function removeClosureAction(input: unknown): Promise<TeamResult> {
+  const parsed = z.object({ closureId: z.number().int().positive() }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asManager(async (user) => {
+    await removeClosure(db(), parsed.data.closureId, user.id);
     return { ok: true };
   });
 }
