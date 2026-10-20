@@ -1,4 +1,10 @@
 allowBuilds:
+  # Binaires Postgres de la base locale et des tests : leur script d'installation reconstitue des liens.
+  # Un paquet par système ; seul celui de la machine est installé (Windows ici, Linux en intégration continue).
+  '@embedded-postgres/darwin-arm64': true
+  '@embedded-postgres/darwin-x64': true
+  '@embedded-postgres/linux-arm64': true
+  '@embedded-postgres/linux-x64': true
   '@embedded-postgres/windows-x64': true
   esbuild: false
   sharp: false
