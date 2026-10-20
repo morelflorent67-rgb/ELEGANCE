@@ -153,7 +153,12 @@ const modificationPayload = z.object({
   startsAt: z.iso.datetime(),
   staffFirstName: z.string().nullable(),
   changedAt: z.iso.datetime(),
+  // D-52 : présent quand le salon a déplacé le RDV.
+  by: z.literal("salon").optional(),
 });
+
+/** Annulation : seul le salon laisse une trace dans la charge utile (D-52). */
+const cancellationPayload = z.object({ by: z.literal("salon").optional() });
 
 async function renderModification(
   db: Database,
@@ -192,6 +197,7 @@ async function renderModification(
       manageUrl: `${options.baseUrl}/compte/rendez-vous`,
       calendarUrl: calendarUrl(appt, options),
       logoUrl: `${options.baseUrl}/email/logo.png`,
+      changedBy: payload.data.by === "salon" ? "salon" : "customer",
     }),
   );
 }
@@ -203,6 +209,7 @@ async function renderCancellation(
 ): Promise<EmailMessage> {
   const appt = await loadEmailAppointment(db, row);
   if (!isCancelled(appt)) throw new Skip("rendez-vous rétabli avant l'envoi");
+  const payload = cancellationPayload.safeParse(row.payload ?? {});
   return message(
     row,
     appt,
@@ -213,6 +220,7 @@ async function renderCancellation(
       staffFirstName: appt.staffFirstName,
       bookUrl: `${options.baseUrl}/reservation`,
       logoUrl: `${options.baseUrl}/email/logo.png`,
+      cancelledBy: payload.success && payload.data.by === "salon" ? "salon" : "customer",
     }),
   );
 }

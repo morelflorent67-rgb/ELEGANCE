@@ -3,7 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { supabaseEnv } from "@/lib/env";
-import type { AuthDriver } from "./types";
+import type { AuthDriver, AuthRole } from "./types";
 
 // Authentification Supabase, toujours côté serveur : cookies httpOnly, aucune clé dans le navigateur (principe 5).
 // Ne se teste pas en intégration continue (pas de Supabase en local) : voir scripts/smoke-supabase-auth.mjs.
@@ -31,6 +31,10 @@ function adminClient() {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 }
+
+/** Seul « staff » ouvre la tablette ; tout autre rôle, ou son absence, vaut « customer ». */
+const roleOf = (user: { app_metadata?: object }): AuthRole =>
+  (user.app_metadata as { role?: unknown } | undefined)?.role === "staff" ? "staff" : "customer";
 
 const isWeakPassword = (error: { code?: string; message: string }) =>
   error.code === "weak_password" || /password/i.test(error.message);
@@ -63,7 +67,7 @@ export function createSupabaseDriver(): AuthDriver {
         await adminClient().auth.admin.deleteUser(data.user.id);
         return { ok: false, reason: "failed" };
       }
-      return { ok: true, user: { id: data.user.id, email } };
+      return { ok: true, user: { id: data.user.id, email, role: "customer" } };
     },
 
     async signIn({ email, password }) {
@@ -76,7 +80,10 @@ export function createSupabaseDriver(): AuthDriver {
           reason: error?.code === "invalid_credentials" ? "invalid_credentials" : "failed",
         };
       }
-      return { ok: true, user: { id: data.user.id, email: data.user.email ?? email } };
+      return {
+        ok: true,
+        user: { id: data.user.id, email: data.user.email ?? email, role: roleOf(data.user) },
+      };
     },
 
     async signOut() {
@@ -86,7 +93,9 @@ export function createSupabaseDriver(): AuthDriver {
     async currentUser() {
       // getUser() vérifie le jeton auprès de Supabase ; getSession() se fierait au cookie seul.
       const { data } = await (await serverClient()).auth.getUser();
-      return data.user?.email ? { id: data.user.id, email: data.user.email } : null;
+      return data.user?.email
+        ? { id: data.user.id, email: data.user.email, role: roleOf(data.user) }
+        : null;
     },
 
     async requestPasswordReset(email, redirectTo) {

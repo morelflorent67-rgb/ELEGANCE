@@ -1,9 +1,13 @@
 // Interface d'authentification : Supabase Auth en production, une version en mémoire pour les tests de bout en bout
 // (Docker étant impossible, Supabase ne tourne pas en local). Les autres modules ne connaissent que cette interface.
 
+/** Rôle posé dans `app_metadata` (le client ne peut pas le modifier) : « staff » ouvre la tablette du salon (R-72). */
+export type AuthRole = "customer" | "staff";
+
 export interface AuthUser {
   id: string;
   email: string;
+  role: AuthRole;
 }
 
 export type SignUpResult =

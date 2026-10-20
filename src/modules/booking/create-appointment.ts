@@ -3,7 +3,9 @@ import { DateTime } from "luxon";
 import type { Database } from "@/db/types";
 import { appointment, appointmentItem, customer, staff } from "@/db/schema";
 import { DomainError } from "@/lib/domain-error";
+import { recordAudit } from "@/modules/audit/record";
 import { enqueueEmail } from "@/modules/mail/outbox";
+import { assertActiveAuthor } from "@/modules/staff/team";
 import {
   checkSlot,
   eligibleStaff,
@@ -58,6 +60,9 @@ export async function createAppointment(
 ): Promise<CreatedAppointment> {
   try {
     return await db.transaction(async (tx) => {
+      // R-74 : une réservation au salon est signée par un membre de l'équipe, choisi sur la tablette.
+      const authorId =
+        input.source === "salon" ? await assertActiveAuthor(tx, input.createdByStaffId) : null;
       const services = await resolveServices(tx, input.serviceIds, input.source);
 
       const [client] = await tx
@@ -66,6 +71,10 @@ export async function createAppointment(
         .where(eq(customer.id, input.customerId))
         .for("update");
       if (!client) throw new DomainError("unknown_customer");
+      // R-26 : le salon ne réserve que pour un client qui a un compte ; une fiche supprimée n'en a plus (R-75).
+      if (input.source === "salon" && client.anonymizedAt) {
+        throw new DomainError("customer_has_no_account");
+      }
       // R-52 : le blocage concerne la réservation en ligne ; le salon peut réserver pour ce client.
       if (input.source === "online" && client.onlineBookingBlocked) {
         throw new DomainError("customer_blocked");
@@ -140,7 +149,7 @@ export async function createAppointment(
           status: "confirmed",
           source: input.source,
           customerNote: input.note ?? null,
-          createdByStaffId: input.createdByStaffId ?? null,
+          createdByStaffId: authorId,
           createdAt: now, // même horloge que les délais : R-32 compare cette date à celle du RDV
         })
         .returning({ id: appointment.id });
@@ -155,6 +164,21 @@ export async function createAppointment(
           position,
         })),
       );
+
+      if (authorId) {
+        await recordAudit(
+          tx,
+          {
+            actorType: "staff",
+            actorId: authorId,
+            action: "appointment.created",
+            entity: "appointment",
+            entityId: created.id,
+            after: { startsAt: input.startsAt.toISOString(), staffId, source: input.source },
+          },
+          now,
+        );
+      }
 
       // R-60 : l'email de confirmation entre dans la file d'envoi avec le RDV, dans la même transaction.
       // L'envoi lui-même se fait après la réponse : une panne d'email ne bloque jamais la réservation.

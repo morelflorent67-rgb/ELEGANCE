@@ -28,15 +28,25 @@ export interface ModificationData {
   manageUrl: string;
   calendarUrl: string;
   logoUrl: string;
+  /** Qui a déplacé : le client lui-même (défaut), ou le salon, qui a appelé le client avant (R-63, D-52). */
+  changedBy?: "customer" | "salon";
 }
 
-/** Email de modification, d'après la maquette « Email — modification ». Prévient le client d'un déplacement qu'il a fait. */
+/**
+ * Email de modification, d'après la maquette « Email — modification ». Prévient le client d'un déplacement qu'il a fait,
+ * ou confirme celui que le salon a décidé avec lui par téléphone (R-33, R-63, D-52).
+ */
 export function renderModificationEmail(data: ModificationData): RenderedEmail {
   const day = capitalize(formatDayWithYear(data.startsAt));
   const time = formatTime(data.startsAt);
   const subject = `Votre rendez-vous est déplacé au ${formatDay(data.startsAt)}`;
   const preheader = `Nouveau créneau : ${time} avec ${data.staffFirstName}`;
-  const greeting = data.firstName ? `C'est noté, ${data.firstName}.` : "C'est noté.";
+  const bySalon = data.changedBy === "salon";
+  const noted = bySalon ? "Bonjour" : "C'est noté";
+  const greeting = data.firstName ? `${noted}, ${data.firstName}.` : `${noted}.`;
+  const lead = bySalon
+    ? "Suite à notre échange, nous avons déplacé votre rendez-vous. Le précédent créneau est libéré."
+    : "Votre rendez-vous a été déplacé. Le précédent créneau est libéré.";
 
   const previous = `${capitalize(formatDay(data.previousStartsAt))} · ${formatTime(data.previousStartsAt)}${
     data.previousStaffFirstName ? ` · avec ${data.previousStaffFirstName}` : ""
@@ -60,7 +70,7 @@ export function renderModificationEmail(data: ModificationData): RenderedEmail {
   const bodyHtml = `
 <div style="font-size:11px;letter-spacing:0.32em;text-transform:uppercase;color:${COLORS.gold};">Rendez-vous modifié</div>
 <h1 style="margin:14px 0 0;font-size:30px;line-height:1.15;font-weight:300;letter-spacing:-0.01em;color:${COLORS.ivory};">${escapeHtml(greeting)}</h1>
-<p style="margin:14px 0 0;font-size:16px;line-height:1.6;font-weight:300;color:${COLORS.ivorySoft};">Votre rendez-vous a été déplacé. Le précédent créneau est libéré.</p>
+<p style="margin:14px 0 0;font-size:16px;line-height:1.6;font-weight:300;color:${COLORS.ivorySoft};">${escapeHtml(lead)}</p>
 
 <div style="margin-top:28px;padding:0 4px;">
 <div style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:${COLORS.stone};padding-bottom:8px;">Avant</div>
@@ -94,7 +104,7 @@ export function renderModificationEmail(data: ModificationData): RenderedEmail {
   const text = [
     greeting,
     "",
-    "Votre rendez-vous a été déplacé. Le précédent créneau est libéré.",
+    lead,
     "",
     `Avant : ${previous}`,
     `Maintenant : ${day} à ${time}`,

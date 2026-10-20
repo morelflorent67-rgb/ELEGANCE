@@ -17,20 +17,30 @@ export interface CancellationData {
   staffFirstName: string;
   /** Page pour reprendre rendez-vous. */
   bookUrl: string;
+  /** Qui a annulé : le client lui-même (défaut), ou le salon, qui a appelé le client avant (R-63, D-52). */
+  cancelledBy?: "customer" | "salon";
   logoUrl: string;
 }
 
-/** Email d'annulation, d'après la maquette « Email — annulation ». Confirme au client l'annulation qu'il a faite. */
+/**
+ * Email d'annulation, d'après la maquette « Email — annulation ». Confirme au client l'annulation qu'il a faite, ou,
+ * quand le salon annule (R-33, R-63), confirme l'échange téléphonique et présente des excuses (D-52).
+ */
 export function renderCancellationEmail(data: CancellationData): RenderedEmail {
   const subject = `Votre rendez-vous du ${formatDay(data.startsAt)} est annulé`;
   const preheader = "Envie d'un autre créneau ? Réservez en quelques secondes.";
   const when = `${capitalize(formatDayWithYear(data.startsAt))} · ${formatTime(data.startsAt)}`;
   const total = data.items.reduce((sum, i) => sum + i.priceCents, 0);
   const summary = `${data.items.map((i) => i.name).join(" + ")} · ${formatPrice(total)} · avec ${data.staffFirstName}`;
-  const intro = data.firstName
-    ? `Merci de nous avoir prévenus, ${data.firstName} : le créneau est libéré pour un autre client.`
-    : "Merci de nous avoir prévenus : le créneau est libéré pour un autre client.";
-  const notYou = `Vous n'êtes pas à l'origine de cette annulation ? Appelez-nous au ${SALON.phoneDisplay}.`;
+  const bySalon = data.cancelledBy === "salon";
+  const intro = bySalon
+    ? `${data.firstName ? `${data.firstName}, s` : "S"}uite à notre échange, nous avons annulé votre rendez-vous. Toutes nos excuses pour la gêne occasionnée.`
+    : data.firstName
+      ? `Merci de nous avoir prévenus, ${data.firstName} : le créneau est libéré pour un autre client.`
+      : "Merci de nous avoir prévenus : le créneau est libéré pour un autre client.";
+  const notYou = bySalon
+    ? `Une question sur cette annulation ? Appelez-nous au ${SALON.phoneDisplay}.`
+    : `Vous n'êtes pas à l'origine de cette annulation ? Appelez-nous au ${SALON.phoneDisplay}.`;
   const duration = formatDuration(data.items.reduce((sum, i) => sum + i.durationMin, 0));
 
   const bodyHtml = `

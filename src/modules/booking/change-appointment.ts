@@ -11,6 +11,7 @@ import {
   loadSettings,
   loadSnapshot,
   pickStaff,
+  type Audience,
   type ServiceRow,
 } from "@/modules/availability";
 import { enqueueEmail } from "@/modules/mail/outbox";
@@ -20,7 +21,7 @@ import { enqueueEmail } from "@/modules/mail/outbox";
 
 const HOUR = 3_600_000;
 
-type AppointmentRow = typeof appointment.$inferSelect;
+export type AppointmentRow = typeof appointment.$inferSelect;
 
 /** Un RDV que son client peut encore modifier ou annuler en ligne. */
 export interface ChangeableAppointment {
@@ -65,7 +66,7 @@ function assertChangeable(row: AppointmentRow, cutoffHours: number, now: Date): 
   }
 }
 
-async function loadItems(db: Database, row: AppointmentRow) {
+export async function loadItems(db: Database, row: AppointmentRow) {
   const items = await db
     .select({
       serviceId: appointmentItem.serviceId,
@@ -186,17 +187,138 @@ export interface RescheduledAppointment {
 }
 
 /** Code d'erreur Postgres, qu'il soit direct ou enveloppé par Drizzle. */
-function pgCode(error: unknown): string | undefined {
+export function pgCode(error: unknown): string | undefined {
   const e = error as { code?: string; cause?: { code?: string } };
   return e?.code ?? e?.cause?.code;
+}
+
+/** Qui déplace le RDV : le client (R-30) ou un membre de l'équipe sur la tablette (R-33, R-74). */
+export type ChangeActor = { type: "customer" | "staff"; id: string };
+
+/**
+ * Déplace un RDV déjà verrouillé et déjà jugé modifiable par l'appelant : le client avec son délai de 48 h
+ * (`rescheduleAppointment`), le salon sans délai (`salonRescheduleAppointment`). Les contrôles de créneau sont les
+ * mêmes dans les deux cas (R-01 à R-06 pour le client, grille et horaires du salon sinon, R-13, R-21 à R-23) ;
+ * la contrainte d'exclusion de la base reste la barrière finale.
+ */
+export async function applyReschedule(
+  tx: Database,
+  row: AppointmentRow,
+  input: { staffId: string | "any"; startsAt: Date; audience: Audience; actor: ChangeActor },
+  now: Date,
+): Promise<RescheduledAppointment> {
+  const settings = await loadSettings(tx);
+  const { services, durationMinutes } = await loadItems(tx, row);
+  let candidates = await eligibleStaff(tx, services);
+  if (input.staffId !== "any") candidates = candidates.filter((c) => c.id === input.staffId);
+  if (candidates.length === 0) throw new DomainError("staff_not_eligible");
+  const candidateIds = candidates.map((c) => c.id);
+
+  await tx
+    .select({ id: staff.id })
+    .from(staff)
+    .where(inArray(staff.id, candidateIds))
+    .orderBy(staff.id)
+    .for("update");
+
+  // Fenêtre large : elle couvre tout le jour de Paris du nouveau créneau, quel que soit le changement d'heure.
+  const margin = 36 * HOUR;
+  const { snapshot } = await loadSnapshot(tx, {
+    from: new Date(input.startsAt.getTime() - margin),
+    to: new Date(input.startsAt.getTime() + margin),
+    staffIds: candidateIds,
+    excludeAppointmentId: row.id,
+  });
+
+  const checks = candidateIds.map((staffId) => ({
+    staffId,
+    result: checkSlot(snapshot, {
+      staffId,
+      startsAt: input.startsAt,
+      durationMinutes,
+      audience: input.audience,
+      now,
+    }),
+  }));
+  const free = checks.filter((c) => c.result.ok).map((c) => c.staffId);
+  if (free.length === 0) {
+    const reason = checks
+      .map((c) => (c.result.ok ? null : c.result.reason))
+      .find((r) => r !== "busy");
+    throw new DomainError(reason ?? "slot_unavailable");
+  }
+
+  const sameStart = input.startsAt.getTime() === row.startsAt.getTime();
+  const date = DateTime.fromJSDate(input.startsAt, { zone: settings.timezone }).toISODate()!;
+  const staffId =
+    input.staffId !== "any"
+      ? free[0]
+      : sameStart && free.includes(row.staffId)
+        ? row.staffId // « Sans préférence » sur le même horaire : on garde son coiffeur
+        : pickStaff(free, snapshot.appointments, date, settings.timezone);
+  const endsAt = new Date(input.startsAt.getTime() + durationMinutes * 60_000);
+
+  if (sameStart && staffId === row.staffId) {
+    return { changed: false, staffId, startsAt: input.startsAt, endsAt };
+  }
+
+  await tx
+    .update(appointment)
+    .set({ staffId, startsAt: input.startsAt, endsAt })
+    .where(eq(appointment.id, row.id));
+  await recordAudit(
+    tx,
+    {
+      actorType: input.actor.type,
+      actorId: input.actor.id,
+      action: "appointment.rescheduled",
+      entity: "appointment",
+      entityId: row.id,
+      before: { startsAt: row.startsAt.toISOString(), staffId: row.staffId },
+      after: { startsAt: input.startsAt.toISOString(), staffId },
+    },
+    now,
+  );
+
+  const [owner] = await tx
+    .select({ email: customer.email })
+    .from(customer)
+    .where(eq(customer.id, row.customerId));
+  if (owner?.email) {
+    const names = await tx
+      .select({ id: staff.id, firstName: staff.firstName })
+      .from(staff)
+      .where(inArray(staff.id, [row.staffId, staffId]));
+    const nameOf = (id: string) => names.find((n) => n.id === id)?.firstName ?? null;
+    // Une clé unique par déplacement : un RDV peut être déplacé plusieurs fois.
+    // Le message garde l'ancien ET le nouveau créneau : si l'envoi tarde (panne) et que le RDV bouge encore,
+    // chaque email reste fidèle au déplacement qu'il annonce.
+    await enqueueEmail(tx, {
+      type: "modification",
+      toEmail: owner.email,
+      appointmentId: row.id,
+      dedupeKey: `modification:${row.id}:${randomUUID()}`,
+      payload: {
+        previousStartsAt: row.startsAt.toISOString(),
+        previousStaffFirstName: nameOf(row.staffId),
+        startsAt: input.startsAt.toISOString(),
+        staffFirstName: nameOf(staffId),
+        // L'horloge qui a décidé des délais : R-32 compare cet instant à celui du nouveau créneau.
+        changedAt: now.toISOString(),
+        // D-52 : un changement décidé par le salon se dit autrement (« suite à notre échange »).
+        ...(input.actor.type === "staff" ? { by: "salon" } : {}),
+      },
+    });
+  }
+
+  return { changed: true, staffId, startsAt: input.startsAt, endsAt };
 }
 
 /**
  * Déplace le RDV d'un client vers un autre créneau, éventuellement avec un autre coiffeur (R-30). Le RDV garde son
  * identifiant, ses prestations et son prix figés (R-16) : seuls l'heure et le coiffeur changent. L'ancien créneau est
- * libéré et le nouveau pris dans la même transaction, avec les mêmes contrôles qu'une réservation (R-01 à R-06, R-21
- * à R-23) ; la contrainte d'exclusion de la base reste la barrière finale. Le nouveau créneau peut être à moins de
- * 48 h : le RDV n'est alors plus modifiable en ligne (R-30, R-32).
+ * libéré et le nouveau pris dans la même transaction. Le nouveau créneau peut être à moins de 48 h : le RDV n'est
+ * alors plus modifiable en ligne (R-30, R-32).
  */
 export async function rescheduleAppointment(
   db: Database,
@@ -208,109 +330,17 @@ export async function rescheduleAppointment(
       const row = await loadOwn(tx, input.customerId, input.appointmentId, true);
       const settings = await loadSettings(tx);
       assertChangeable(row, settings.changeCutoffHours, now);
-
-      const { services, durationMinutes } = await loadItems(tx, row);
-      let candidates = await eligibleStaff(tx, services);
-      if (input.staffId !== "any") candidates = candidates.filter((c) => c.id === input.staffId);
-      if (candidates.length === 0) throw new DomainError("staff_not_eligible");
-      const candidateIds = candidates.map((c) => c.id);
-
-      await tx
-        .select({ id: staff.id })
-        .from(staff)
-        .where(inArray(staff.id, candidateIds))
-        .orderBy(staff.id)
-        .for("update");
-
-      // Fenêtre large : elle couvre tout le jour de Paris du nouveau créneau, quel que soit le changement d'heure.
-      const margin = 36 * HOUR;
-      const { snapshot } = await loadSnapshot(tx, {
-        from: new Date(input.startsAt.getTime() - margin),
-        to: new Date(input.startsAt.getTime() + margin),
-        staffIds: candidateIds,
-        excludeAppointmentId: row.id,
-      });
-
-      const checks = candidateIds.map((staffId) => ({
-        staffId,
-        result: checkSlot(snapshot, {
-          staffId,
-          startsAt: input.startsAt,
-          durationMinutes,
-          audience: "online",
-          now,
-        }),
-      }));
-      const free = checks.filter((c) => c.result.ok).map((c) => c.staffId);
-      if (free.length === 0) {
-        const reason = checks
-          .map((c) => (c.result.ok ? null : c.result.reason))
-          .find((r) => r !== "busy");
-        throw new DomainError(reason ?? "slot_unavailable");
-      }
-
-      const sameStart = input.startsAt.getTime() === row.startsAt.getTime();
-      const date = DateTime.fromJSDate(input.startsAt, { zone: settings.timezone }).toISODate()!;
-      const staffId =
-        input.staffId !== "any"
-          ? free[0]
-          : sameStart && free.includes(row.staffId)
-            ? row.staffId // « Sans préférence » sur le même horaire : on garde son coiffeur
-            : pickStaff(free, snapshot.appointments, date, settings.timezone);
-      const endsAt = new Date(input.startsAt.getTime() + durationMinutes * 60_000);
-
-      if (sameStart && staffId === row.staffId) {
-        return { changed: false, staffId, startsAt: input.startsAt, endsAt };
-      }
-
-      await tx
-        .update(appointment)
-        .set({ staffId, startsAt: input.startsAt, endsAt })
-        .where(eq(appointment.id, row.id));
-      await recordAudit(
+      return applyReschedule(
         tx,
+        row,
         {
-          actorType: "customer",
-          actorId: input.customerId,
-          action: "appointment.rescheduled",
-          entity: "appointment",
-          entityId: row.id,
-          before: { startsAt: row.startsAt.toISOString(), staffId: row.staffId },
-          after: { startsAt: input.startsAt.toISOString(), staffId },
+          staffId: input.staffId,
+          startsAt: input.startsAt,
+          audience: "online",
+          actor: { type: "customer", id: input.customerId },
         },
         now,
       );
-
-      const [owner] = await tx
-        .select({ email: customer.email })
-        .from(customer)
-        .where(eq(customer.id, input.customerId));
-      if (owner?.email) {
-        const names = await tx
-          .select({ id: staff.id, firstName: staff.firstName })
-          .from(staff)
-          .where(inArray(staff.id, [row.staffId, staffId]));
-        const nameOf = (id: string) => names.find((n) => n.id === id)?.firstName ?? null;
-        // Une clé unique par déplacement : un client peut déplacer plusieurs fois le même RDV.
-        // Le message garde l'ancien ET le nouveau créneau : si l'envoi tarde (panne) et que le RDV bouge encore,
-        // chaque email reste fidèle au déplacement qu'il annonce.
-        await enqueueEmail(tx, {
-          type: "modification",
-          toEmail: owner.email,
-          appointmentId: row.id,
-          dedupeKey: `modification:${row.id}:${randomUUID()}`,
-          payload: {
-            previousStartsAt: row.startsAt.toISOString(),
-            previousStaffFirstName: nameOf(row.staffId),
-            startsAt: input.startsAt.toISOString(),
-            staffFirstName: nameOf(staffId),
-            // L'horloge qui a décidé des délais : R-32 compare cet instant à celui du nouveau créneau.
-            changedAt: now.toISOString(),
-          },
-        });
-      }
-
-      return { changed: true, staffId, startsAt: input.startsAt, endsAt };
     });
   } catch (error) {
     // R-23 : la base a refusé le chevauchement (course perdue).

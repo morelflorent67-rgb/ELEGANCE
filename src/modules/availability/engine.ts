@@ -21,7 +21,7 @@ function localInstant(date: string, minuteOfDay: number, zone: string): DateTime
 }
 
 /** Plages d'ouverture du jour, en minutes locales ; vide si le salon est fermé (jour de repos ou fermeture, R-01, R-03). */
-function openRangesOn(snapshot: Snapshot, date: string): { from: number; to: number }[] {
+export function openRangesOn(snapshot: Snapshot, date: string): { from: number; to: number }[] {
   if (snapshot.closures.some((c) => c.startsOn <= date && date <= c.endsOn)) return [];
   const weekday = DateTime.fromISO(date, { zone: snapshot.settings.timezone }).weekday;
   return snapshot.openingHours

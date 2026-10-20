@@ -18,3 +18,13 @@ export function formatPhone(e164: string): string {
   const match = /^\+33([1-9])(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(e164);
   return match ? `0${match[1]} ${match[2]} ${match[3]} ${match[4]} ${match[5]}` : e164;
 }
+
+/**
+ * Affichage réduit, pour une liste où le numéro n'a pas à être lisible en entier :
+ * +33612345678 → 06 •• •• •• 78.
+ */
+export function maskPhone(e164: string): string {
+  const match = /^\+33([1-9])\d{6}(\d{2})$/.exec(e164);
+  if (match) return `0${match[1]} •• •• •• ${match[2]}`;
+  return e164.length > 5 ? `${e164.slice(0, 3)} •••• ${e164.slice(-2)}` : "••••";
+}

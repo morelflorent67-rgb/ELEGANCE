@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatPhone, normalizePhone } from "./phone";
+import { formatPhone, maskPhone, normalizePhone } from "./phone";
 
 describe("R-70 : téléphone du compte client", () => {
   it("accepte les numéros français, avec ou sans espaces, et les met en forme internationale", () => {
@@ -41,5 +41,18 @@ describe("R-70 : téléphone du compte client", () => {
   it("affiche un numéro français en groupes de deux chiffres", () => {
     expect(formatPhone("+33612345678")).toBe("06 12 34 56 78");
     expect(formatPhone("+4915123456789")).toBe("+4915123456789");
+  });
+});
+
+describe("R-72 : le téléphone n'est lisible en entier que sur la fiche", () => {
+  it("masque un numéro français en gardant le début et la fin", () => {
+    expect(maskPhone("+33612345678")).toBe("06 •• •• •• 78");
+    expect(maskPhone("+33388977468")).toBe("03 •• •• •• 68");
+  });
+
+  it("masque un numéro étranger sans le montrer en entier", () => {
+    const masked = maskPhone("+4915123456789");
+    expect(masked).toBe("+49 •••• 89");
+    expect(masked).not.toContain("1512345");
   });
 });

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { AuthDriver, AuthUser } from "./types";
+import type { AuthDriver, AuthRole, AuthUser } from "./types";
 
 // Authentification en mémoire : réservée aux tests (voir getAuthDriver, qui la refuse sur Vercel).
 // Les mots de passe sont conservés en clair : aucune donnée réelle ne doit jamais y passer.
@@ -22,6 +22,29 @@ export const memoryAuthState = {
   resets: [] as { email: string; redirectTo: string; code: string }[],
 };
 
+/** Compte de l'équipe pour les tests de bout en bout : `AUTH_MEMORY_STAFF=email:motdepasse` (jamais lu hors mémoire). */
+function seedStaff(): void {
+  const spec = process.env.AUTH_MEMORY_STAFF;
+  const at = spec?.indexOf(":") ?? -1;
+  if (!spec || at < 1) return;
+  const email = spec.slice(0, at).toLowerCase();
+  if (memoryAuthState.users.has(email)) return;
+  memoryAuthState.users.set(email, {
+    id: randomUUID(),
+    email,
+    role: "staff",
+    password: spec.slice(at + 1),
+  });
+}
+
+/** Ajoute un compte de l'équipe (tests). */
+export function addMemoryStaff(email: string, password: string): AuthUser {
+  const key = email.toLowerCase();
+  const user: MemoryUser = { id: randomUUID(), email: key, role: "staff", password };
+  memoryAuthState.users.set(key, user);
+  return { id: user.id, email: user.email, role: "staff" };
+}
+
 export function resetMemoryAuth(): void {
   memoryAuthState.users.clear();
   memoryAuthState.sessions.clear();
@@ -30,12 +53,18 @@ export function resetMemoryAuth(): void {
 }
 
 export function createMemoryDriver(store: SessionStore): AuthDriver {
+  seedStaff();
   const userBySession = async (): Promise<MemoryUser | null> => {
     const sessionId = await store.get();
     const userId = sessionId ? memoryAuthState.sessions.get(sessionId) : undefined;
     if (!userId) return null;
     return [...memoryAuthState.users.values()].find((u) => u.id === userId) ?? null;
   };
+  const toUser = (user: MemoryUser): AuthUser => ({
+    id: user.id,
+    email: user.email,
+    role: user.role as AuthRole,
+  });
   const open = async (user: MemoryUser) => {
     const sessionId = randomUUID();
     memoryAuthState.sessions.set(sessionId, user.id);
@@ -47,16 +76,16 @@ export function createMemoryDriver(store: SessionStore): AuthDriver {
       const key = email.toLowerCase();
       if (memoryAuthState.users.has(key)) return { ok: false, reason: "email_taken" };
       if (password.length < 8) return { ok: false, reason: "weak_password" };
-      const user: MemoryUser = { id: randomUUID(), email: key, password };
+      const user: MemoryUser = { id: randomUUID(), email: key, role: "customer", password };
       memoryAuthState.users.set(key, user);
       await open(user);
-      return { ok: true, user: { id: user.id, email: user.email } };
+      return { ok: true, user: toUser(user) };
     },
     async signIn({ email, password }) {
       const user = memoryAuthState.users.get(email.toLowerCase());
       if (!user || user.password !== password) return { ok: false, reason: "invalid_credentials" };
       await open(user);
-      return { ok: true, user: { id: user.id, email: user.email } };
+      return { ok: true, user: toUser(user) };
     },
     async signOut() {
       const sessionId = await store.get();
@@ -65,7 +94,7 @@ export function createMemoryDriver(store: SessionStore): AuthDriver {
     },
     async currentUser() {
       const user = await userBySession();
-      return user ? { id: user.id, email: user.email } : null;
+      return user ? toUser(user) : null;
     },
     async requestPasswordReset(email, redirectTo) {
       const key = email.toLowerCase();

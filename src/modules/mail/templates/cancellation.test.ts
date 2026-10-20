@@ -43,3 +43,35 @@ describe("email d'annulation (R-30)", () => {
     expect(text).toContain("Coupe homme + Taillage barbe · 30 € · avec Orhan (45 min)");
   });
 });
+
+describe("email d'annulation décidée par le salon (R-33, R-63, D-52)", () => {
+  const salon = { ...base, cancelledBy: "salon" as const };
+
+  it("confirme l'échange et présente des excuses, sans remercier le client de nous avoir prévenus", () => {
+    const email = renderCancellationEmail(salon);
+    expect(email.html).toContain(
+      "Thomas, suite à notre échange, nous avons annulé votre rendez-vous.",
+    );
+    expect(email.html).toContain("Toutes nos excuses");
+    expect(email.html).not.toContain("Merci de nous avoir prévenus");
+    expect(email.text).toContain("suite à notre échange");
+  });
+
+  it("ne dit pas « vous n'êtes pas à l'origine de cette annulation » : le client a été appelé", () => {
+    const email = renderCancellationEmail(salon);
+    expect(email.html).not.toContain("origine");
+    expect(email.html).toContain("Appelez-nous au 03 88 97 74 68");
+  });
+
+  it("se lit sans prénom", () => {
+    const email = renderCancellationEmail({ ...salon, firstName: null });
+    expect(email.html).toContain("Suite à notre échange, nous avons annulé");
+  });
+
+  it("garde l'objet, le créneau et le lien pour reprendre rendez-vous", () => {
+    const email = renderCancellationEmail(salon);
+    expect(email.subject).toBe("Votre rendez-vous du samedi 24 octobre est annulé");
+    expect(email.html).toContain("Samedi 24 octobre 2026 · 10:00");
+    expect(email.html).toContain('href="https://exemple.fr/reservation"');
+  });
+});

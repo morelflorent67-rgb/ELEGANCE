@@ -4,6 +4,8 @@ import {
   cancelAppointment,
   createAppointment,
   rescheduleAppointment,
+  salonCancelAppointment,
+  salonRescheduleAppointment,
 } from "../../src/modules/booking";
 import { processOutbox, type EmailMessage, type EmailTransport } from "../../src/modules/mail";
 import { anonymizeCustomer } from "../../src/modules/customers/profile";
@@ -181,5 +183,59 @@ describe("R-30 : lien « Ajouter à l'agenda » après un déplacement", () => {
     const created = await book();
     await cancelAppointment(t.db, { customerId, appointmentId: created.id }, NOW);
     expect(await loadCalendarEvent(t.db, created.id)).toBeNull();
+  });
+});
+
+describe("R-33, R-63, D-52 : emails d'un changement décidé par le salon", () => {
+  it("l'annulation par le salon présente des excuses et ne remercie pas le client de l'avoir prévenu", async () => {
+    const created = await book();
+    await flush();
+    await salonCancelAppointment(t.db, { appointmentId: created.id, authorStaffId: ENES }, NOW);
+    const sent = await flush();
+    expect(sent).toHaveLength(1);
+    expect(sent[0].subject).toBe("Votre rendez-vous du mardi 10 novembre est annulé");
+    expect(sent[0].html).toContain("Thomas, suite à notre échange, nous avons annulé");
+    expect(sent[0].html).not.toContain("Merci de nous avoir prévenus");
+    expect(sent[0].to.email).toMatch(/@example\.com$/);
+  });
+
+  it("le déplacement par le salon annonce l'ancien et le nouveau créneau avec le texte du salon", async () => {
+    const created = await book();
+    await flush();
+    await salonRescheduleAppointment(
+      t.db,
+      {
+        appointmentId: created.id,
+        staffId: ENES,
+        startsAt: paris("2026-11-10", "14:15"),
+        authorStaffId: ORHAN,
+      },
+      NOW,
+    );
+    const sent = await flush();
+    expect(sent).toHaveLength(1);
+    expect(sent[0].subject).toBe("Votre rendez-vous est déplacé au mardi 10 novembre");
+    expect(sent[0].html).toContain("Suite à notre échange, nous avons déplacé votre rendez-vous");
+    expect(sent[0].html).toContain("Mardi 10 novembre 2026"); // maintenant
+    expect(sent[0].html).toContain("14:15");
+    expect(sent[0].html).toContain("avec Enes");
+  });
+
+  it("un changement du client garde ses textes habituels", async () => {
+    const created = await book();
+    await flush();
+    await rescheduleAppointment(
+      t.db,
+      {
+        customerId,
+        appointmentId: created.id,
+        staffId: ENES,
+        startsAt: paris("2026-11-10", "14:00"),
+      },
+      NOW,
+    );
+    const sent = await flush();
+    expect(sent[0].html).toContain("C&#39;est noté, Thomas.");
+    expect(sent[0].html).not.toContain("Suite à notre échange");
   });
 });

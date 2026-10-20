@@ -25,7 +25,15 @@ export type DomainErrorCode =
   | "change_too_late"
   | "imminent_appointment"
   | "wrong_password"
-  | "email_taken";
+  | "email_taken"
+  // Actions du salon (R-26, R-33, R-51, R-52, R-73, R-74)
+  | "author_required"
+  | "unknown_author"
+  | "appointment_over"
+  | "not_started"
+  | "not_no_show"
+  | "customer_not_blockable"
+  | "customer_has_no_account";
 
 export class DomainError extends Error {
   readonly code: DomainErrorCode;

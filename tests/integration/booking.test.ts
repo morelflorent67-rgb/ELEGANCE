@@ -41,6 +41,8 @@ const book = (overrides: Partial<CreateAppointmentInput> = {}, now: Date = NOW) 
       staffId: ORHAN,
       startsAt: paris(TUESDAY, "10:00"),
       source: "online",
+      // R-74 : une réservation au salon est signée par un membre de l'équipe.
+      ...(overrides.source === "salon" ? { createdByStaffId: ORHAN } : {}),
       ...overrides,
     },
     now,

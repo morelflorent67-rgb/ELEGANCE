@@ -70,3 +70,29 @@ describe("email de modification (R-30)", () => {
     expect(html).toContain('href="https://exemple.fr/api/agenda/abc?t=jeton"');
   });
 });
+
+describe("email de modification décidée par le salon (R-33, R-63, D-52)", () => {
+  const salon = { ...base, changedBy: "salon" as const };
+
+  it("confirme l'échange avec le client au lieu de dire « c'est noté »", () => {
+    const email = renderModificationEmail(salon);
+    expect(email.html).toContain("Bonjour, Thomas.");
+    expect(email.html).toContain(
+      "Suite à notre échange, nous avons déplacé votre rendez-vous. Le précédent créneau est libéré.",
+    );
+    expect(email.html).not.toContain("noté");
+    expect(email.text).toContain("Suite à notre échange");
+  });
+
+  it("garde le nouveau créneau, l'ancien et les liens", () => {
+    const email = renderModificationEmail(salon);
+    expect(email.subject).toBe("Votre rendez-vous est déplacé au mardi 27 octobre");
+    expect(email.html).toContain("Samedi 24 octobre · 10:00");
+    expect(email.html).toContain("Mardi 27 octobre 2026");
+    expect(email.html).toContain("Gérer mon rendez-vous");
+  });
+
+  it("se lit sans prénom", () => {
+    expect(renderModificationEmail({ ...salon, firstName: null }).html).toContain("Bonjour.");
+  });
+});

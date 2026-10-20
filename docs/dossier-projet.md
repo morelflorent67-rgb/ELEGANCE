@@ -300,6 +300,11 @@ Le 20 octobre 2026, 49 décisions ont fixé le cadre du projet ; on ne revient s
 | D-47 | Un client peut déplacer son RDV vers un créneau dans moins de 48 h ; le RDV n'est plus modifiable en ligne ensuite (précise R-30, R-32) | Même souplesse qu'à la réservation ; R-32 se déduit de R-30 : modifiable si on est à 48 h ou plus du début |
 | D-48 | Un client ne peut pas supprimer son compte tant qu'un RDV tombe dans les 48 h : « Contactez le salon ». Les RDV à plus de 48 h sont annulés avec la suppression (précise R-75) | On ne contourne pas la règle des 48 h en supprimant son compte |
 | D-49 | Changer son email, changer son mot de passe ou supprimer son compte demande le mot de passe actuel (précise R-76) | Une session laissée ouverte ne suffit pas à prendre le compte |
+| D-50 | La tablette du salon se connecte avec un compte « équipe » unique, session longue (précise R-72) | Plus sûr qu'un code partagé ; le compte se révoque si la tablette est perdue |
+| D-51 | Quand le salon modifie un RDV, il change le jour, l'heure et le coiffeur ; pour une autre prestation, il annule et refait un RDV (précise R-33, comme D-46) | Prix et durée figés (R-16) |
+| D-52 | Quand le salon modifie ou annule un RDV, l'email part automatiquement à la validation, avec un texte « suite à notre échange » (précise R-63) | Le client est toujours prévenu |
+| D-53 | Le code gérant a 6 chiffres ; l'espace gérant se reverrouille 5 minutes après la dernière action ou en le quittant ; essais limités (précise R-73) | Sécurité des fonctions gérant sur une tablette partagée |
+| D-54 | Un lapin se signale dès l'heure de début du RDV et se corrige ; un RDV terminé n'est ni modifié ni annulé par le salon ; le compteur de lapins se déduit des RDV « non venu » (précise R-33, R-51, R-52) | Pas de tâche programmée ; l'historique reste vrai |
 
 ## Documents liés
 
