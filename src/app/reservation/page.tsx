@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
-import { Suspense } from "react";
+import { Suspense, ViewTransition } from "react";
 import { z } from "zod";
 import { db } from "@/db/client";
 import { Alert, CallButton, PageHeader, btnSecondary } from "@/components/ui";
@@ -20,9 +20,11 @@ export const metadata: Metadata = { title: "Réservation" };
 
 export default function ReservationPage(props: PageProps<"/reservation">) {
   return (
-    <Suspense fallback={<Loading />}>
-      <BookingLoader searchParams={props.searchParams} />
-    </Suspense>
+    <ViewTransition enter="vt-in" default="none">
+      <Suspense fallback={<Loading />}>
+        <BookingLoader searchParams={props.searchParams} />
+      </Suspense>
+    </ViewTransition>
   );
 }
 

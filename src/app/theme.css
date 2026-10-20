@@ -327,3 +327,30 @@
     color: var(--color-ivory);
   }
 }
+
+/* ---------- Passage vitrine → réservation (passation design §6) ----------
+   La vitrine sort en 160 ms (`exit="vt-out"` dans le gabarit de la vitrine), la réservation entre en 240 ms
+   (`enter="vt-in"`). Sans View Transitions (navigateur ancien), la navigation se fait sans animation. */
+@keyframes vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+::view-transition-old(.vt-out) {
+  animation: vt-fade-out 160ms var(--ease-in-soft) both;
+}
+::view-transition-new(.vt-in) {
+  animation: vt-fade-in 240ms var(--ease-out-soft) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

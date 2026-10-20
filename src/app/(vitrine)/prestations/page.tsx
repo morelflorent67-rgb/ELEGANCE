@@ -52,7 +52,10 @@ export default async function PrestationsPage() {
             sizes="100vw"
             className="object-cover object-[50%_78%]"
           />
-          <div className="led-line is-visible absolute inset-x-0 top-0 opacity-85" aria-hidden="true" />
+          <div
+            className="led-line is-visible absolute inset-x-0 top-0 opacity-85"
+            aria-hidden="true"
+          />
         </div>
 
         <div className="mx-auto w-full max-w-[1200px]">
@@ -107,7 +110,9 @@ export default async function PrestationsPage() {
                           {item.performedBy === "apprentice" ? " · par un apprenti" : ""}
                         </span>
                       </div>
-                      <span className="text-[17px] tabular-nums">{formatPrice(item.priceCents)}</span>
+                      <span className="text-[17px] tabular-nums">
+                        {formatPrice(item.priceCents)}
+                      </span>
                       {item.bookableOnline ? (
                         <Link
                           href="/reservation"

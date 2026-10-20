@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { loginTablet, resetData, setManagerCode } from "./helpers";
+import { loginTablet, refreshVitrine, resetData, setManagerCode, sql } from "./helpers";
 
 // Lot 6 : la vitrine publique. Mobile (390 px) : menu plein écran et barre collante. À partir de 1024 px (D-37, la
 // tablette en paysage en fait partie) : liens et bouton Réserver dans l'en-tête, grilles à deux colonnes.
@@ -21,7 +21,9 @@ test.describe("gabarit commun", () => {
     page,
   }) => {
     await page.goto("/prestations");
-    const bar = page.locator("div.fixed").filter({ has: page.getByRole("link", { name: "Réserver", exact: true }) });
+    const bar = page
+      .locator("div.fixed")
+      .filter({ has: page.getByRole("link", { name: "Réserver", exact: true }) });
     if (wide(page)) {
       await expect(bar).toBeHidden();
       const header = page.getByRole("banner");
@@ -38,7 +40,9 @@ test.describe("gabarit commun", () => {
     }
   });
 
-  test("le menu s'ouvre, mène aux pages, se ferme avec Échap et rend le focus", async ({ page }) => {
+  test("le menu s'ouvre, mène aux pages, se ferme avec Échap et rend le focus", async ({
+    page,
+  }) => {
     test.skip(wide(page), "le menu plein écran est celui du mobile");
     await page.goto("/prestations");
     const opener = page.getByRole("button", { name: "Menu" });
@@ -86,9 +90,13 @@ test.describe("gabarit commun", () => {
 });
 
 test.describe("Prestations et tarifs", () => {
-  test("la carte : 10 prestations en trois groupes, avec prix et durée (R-10)", async ({ page }) => {
+  test("la carte : 10 prestations en trois groupes, avec prix et durée (R-10)", async ({
+    page,
+  }) => {
     await page.goto("/prestations");
-    await expect(page.getByRole("heading", { level: 1, name: "Prestations et tarifs" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Prestations et tarifs" }),
+    ).toBeVisible();
     await expect(page.getByText("10 prestations, sur rendez-vous uniquement")).toBeVisible();
     for (const title of ["Coupes", "Barbe et soin", "Techniques"]) {
       await expect(page.getByRole("heading", { level: 2, name: title })).toBeVisible();
@@ -121,10 +129,14 @@ test.describe("Prestations et tarifs", () => {
       "href",
       "tel:+33388977468",
     );
-    await expect(page.getByRole("link", { name: "Appeler pour : Lissage brésilien" })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Appeler pour : Lissage brésilien" }),
+    ).toBeVisible();
     // Les prestations sur appel restent affichées avec leur prix et leur durée.
     await expect(page.getByRole("listitem").filter({ hasText: /^Tribal/ })).toContainText("10 €");
-    await expect(page.getByText("Coloration, tribal, défrisage et lissage brésilien demandent un échange")).toBeVisible();
+    await expect(
+      page.getByText("Coloration, tribal, défrisage et lissage brésilien demandent un échange"),
+    ).toBeVisible();
   });
 
   test("les ancres des catégories mènent aux groupes", async ({ page }) => {
@@ -151,7 +163,11 @@ test.describe("Prestations et tarifs", () => {
     await page.getByLabel("Prix (€)").fill("20,50");
     await page.getByRole("button", { name: "Enregistrer" }).click();
     await expect(
-      page.getByRole("listitem").filter({ hasText: "Coupe homme" }).filter({ visible: true }).first(),
+      page
+        .getByRole("listitem")
+        .filter({ hasText: "Coupe homme" })
+        .filter({ visible: true })
+        .first(),
     ).toContainText("20,50 €");
 
     await page.goto("/prestations");
@@ -245,4 +261,138 @@ test("grand écran (1440 px) : en-tête avec liens, grilles à plusieurs colonne
   // Deux colonnes : « Barbe et soin » est à droite de « Coupes », pas dessous.
   expect(barbe!.x).toBeGreaterThan(coupes!.x + coupes!.width / 2);
   await context.close();
+});
+
+test.describe("pages légales", () => {
+  const docs = [
+    ["/mentions-legales", "Mentions légales", "Éditeur du site"],
+    ["/confidentialite", "Politique de confidentialité", "Données collectées"],
+    ["/conditions", "Conditions d'utilisation", "Modification et annulation"],
+  ] as const;
+
+  for (const [path, title, firstSection] of docs) {
+    test(`${path} : titre, onglets, sommaire et sections`, async ({ page }) => {
+      await page.goto(path);
+      await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible();
+      await expect(page.getByText(/Dernière mise à jour : \d+ \w+ 2026/)).toBeVisible();
+      const tabs = page.getByRole("navigation", { name: "Documents" });
+      await expect(tabs.getByRole("link")).toHaveCount(3);
+      await expect(tabs.locator('[aria-current="page"]')).toHaveCount(1);
+      const summary = page.getByRole("navigation", { name: "Sommaire" });
+      await expect(summary.getByRole("link", { name: new RegExp(firstSection) })).toBeVisible();
+      await summary.getByRole("link").nth(1).click();
+      await expect(page).toHaveURL(/#s02$/);
+      await expect(page.getByRole("heading", { level: 2 }).nth(1)).toBeInViewport();
+      await noHorizontalScroll(page);
+    });
+  }
+
+  test("les onglets passent d'un document à l'autre", async ({ page }) => {
+    await page.goto("/mentions-legales");
+    await page
+      .getByRole("navigation", { name: "Documents" })
+      .getByRole("link", { name: "Conditions" })
+      .click();
+    await expect(page).toHaveURL(/\/conditions$/);
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Conditions d'utilisation" }),
+    ).toBeVisible();
+  });
+
+  test("R-25, R-30, R-32 : les conditions citent les réglages du salon, et les suivent", async ({
+    page,
+  }) => {
+    await page.goto("/conditions");
+    await expect(page.getByText("au maximum 2 rendez-vous à venir")).toBeVisible();
+    await expect(page.getByText(/jusqu'à 48 h avant son début/)).toBeVisible();
+    await sql`update salon_settings set change_cutoff_hours = 24, max_upcoming_per_customer = 3`;
+    await refreshVitrine();
+    await page.goto("/conditions");
+    await expect(page.getByText("au maximum 3 rendez-vous à venir")).toBeVisible();
+    await expect(page.getByText(/jusqu'à 24 h avant son début/)).toBeVisible();
+  });
+
+  test("les mentions donnent l'adresse et le téléphone du salon", async ({ page }) => {
+    await page.goto("/mentions-legales");
+    await expect(
+      page.getByRole("article").getByText(/162 route de Bischwiller, 67300 Schiltigheim/).first(),
+    ).toBeVisible();
+    await expect(page.getByRole("article").getByText(/03 88 97 74 68/).first()).toBeVisible();
+  });
+});
+
+test.describe("référencement", () => {
+  test("robots.txt : tout est interdit tant que l'indexation n'est pas ouverte", async ({
+    request,
+  }) => {
+    const response = await request.get("/robots.txt");
+    expect(response.ok()).toBe(true);
+    const text = await response.text();
+    expect(text).toMatch(/User-Agent: \*/i);
+    expect(text).toMatch(/Disallow: \/\s*$/m);
+    expect(text).not.toMatch(/Sitemap:/i);
+  });
+
+  test("le plan du site liste les pages publiques, sans les espaces privés", async ({
+    request,
+  }) => {
+    const text = await (await request.get("/sitemap.xml")).text();
+    for (const path of [
+      "/prestations",
+      "/salon",
+      "/reservation",
+      "/mentions-legales",
+      "/confidentialite",
+      "/conditions",
+    ]) {
+      expect(text).toContain(`${path}</loc>`);
+    }
+    expect(text).not.toContain("/equipe");
+    expect(text).not.toContain("/compte");
+  });
+
+  test("données structurées : un salon de coiffure avec ses horaires, lus en base", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const raw = await page.locator('script[type="application/ld+json"]').textContent();
+    const ld = JSON.parse(raw!);
+    expect(ld["@type"]).toBe("HairSalon");
+    expect(ld.telephone).toBe("+33388977468");
+    expect(ld.address.addressLocality).toBe("Schiltigheim");
+    expect(ld.openingHoursSpecification).toHaveLength(10);
+    expect(ld.hasOfferCatalog.itemListElement).toHaveLength(10);
+    expect(ld.priceRange).toBe("10 € - 60 €");
+  });
+
+  test("chaque page a son titre, sa description et son lien canonique", async ({ page }) => {
+    for (const [path, title] of [
+      ["/prestations", "Prestations et tarifs · Elegance Strasbourg"],
+      ["/salon", "Le salon · Elegance Strasbourg"],
+      ["/conditions", "Conditions d'utilisation · Elegance Strasbourg"],
+    ]) {
+      await page.goto(path);
+      await expect(page).toHaveTitle(title);
+      await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", /.{40,}/);
+      await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+        "href",
+        new RegExp(`${path}$`),
+      );
+    }
+    await page.goto("/");
+    await expect(page).toHaveTitle(/Barbier sur rendez-vous à Schiltigheim/);
+    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+      "content",
+      /salon-wide\.jpg$/,
+    );
+  });
+});
+
+test("de la vitrine à la réservation en un geste", async ({ page }) => {
+  await page.goto("/prestations");
+  await page.getByRole("link", { name: "Réserver : Coupe homme" }).click();
+  await expect(page).toHaveURL(/\/reservation$/);
+  await expect(
+    page.getByRole("button", { name: "Choisir Coupe homme", exact: true }),
+  ).toBeVisible();
 });

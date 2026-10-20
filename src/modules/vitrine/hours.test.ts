@@ -60,7 +60,11 @@ describe("groupWeekHours : le résumé des horaires (R-01, R-03)", () => {
   it("tout fermé : une seule ligne fermée", () => {
     const closed: WeekHours = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] };
     expect(groupWeekHours(closed)).toEqual([
-      { label: "Dimanche, lundi, mardi, mercredi, jeudi, vendredi, samedi", closed: true, ranges: [] },
+      {
+        label: "Dimanche, lundi, mardi, mercredi, jeudi, vendredi, samedi",
+        closed: true,
+        ranges: [],
+      },
     ]);
   });
 });

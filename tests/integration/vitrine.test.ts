@@ -25,7 +25,12 @@ describe("lecture de la vitrine", () => {
     const tribal = data.services.find((s) => s.id === TRIBAL)!;
     expect(soin.bookableOnline).toBe(true);
     expect(tribal.bookableOnline).toBe(false);
-    expect(callOnlyNames(data.services)).toEqual(["Coloration", "Tribal", "Défrisage", "Lissage brésilien"]);
+    expect(callOnlyNames(data.services)).toEqual([
+      "Coloration",
+      "Tribal",
+      "Défrisage",
+      "Lissage brésilien",
+    ]);
   });
 
   it("R-17 : une prestation sur appel garde son prix et sa durée", async () => {

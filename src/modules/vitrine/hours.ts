@@ -58,7 +58,8 @@ function daysLabel(days: number[]): string {
   }
   const parts: string[] = [];
   for (const run of runs) {
-    if (run.length >= 3) parts.push(`${DAY_NAMES[run[0]]} – ${lower(DAY_NAMES[run[run.length - 1]])}`);
+    if (run.length >= 3)
+      parts.push(`${DAY_NAMES[run[0]]} – ${lower(DAY_NAMES[run[run.length - 1]])}`);
     else run.forEach((d) => parts.push(DAY_NAMES[d]));
   }
   // Seul le premier mot prend sa majuscule : « Mardi, jeudi, samedi ».
@@ -166,7 +167,8 @@ function dayMonth(iso: string): { day: number; month: number; year: number } {
 export function formatClosure(startsOn: string, endsOn: string): string {
   const a = dayMonth(startsOn);
   const b = dayMonth(endsOn);
-  const label = (d: { day: number; month: number }) => `${d.day === 1 ? "1er" : d.day} ${MONTHS[d.month - 1]}`;
+  const label = (d: { day: number; month: number }) =>
+    `${d.day === 1 ? "1er" : d.day} ${MONTHS[d.month - 1]}`;
   if (startsOn === endsOn) return `le ${label(a)}`;
   if (a.month === b.month && a.year === b.year) {
     return `du ${a.day === 1 ? "1er" : a.day} au ${label(b)}`;

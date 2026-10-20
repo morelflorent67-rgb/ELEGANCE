@@ -30,7 +30,9 @@
 - `pnpm db:generate` : génère une migration depuis `src/db/schema.ts` ; `pnpm db:generate --custom --name=...` pour du SQL écrit à la main (contraintes) ; `pnpm db:migrate` l'applique.
 - `pnpm lint`, `pnpm typecheck`, `pnpm test` (unitaires), `pnpm test:integration` (Postgres réel, instance temporaire démarrée toute seule), `pnpm test:e2e` (Playwright mobile et tablette ; démarre seul sa base temporaire, l'authentification en mémoire et le site : `scripts/e2e-server.mjs`), `pnpm test:all` : tout.
 - `pnpm staff:account` : crée le compte « équipe » de la tablette sur Supabase ; `pnpm manager:set-code` (ou `:remote`) : définit le code gérant à 6 chiffres. Les deux se tapent dans le terminal, rien dans le chat ni en ligne de commande.
+- `pnpm measure:vitrine` : mesure ponctuelle de la vitrine (FCP, LCP, CLS, poids) sur un build lancé par `pnpm start -p 3300`.
 - `pnpm smoke:auth` : contrôle manuel de l'authentification Supabase réelle (crée puis supprime un compte jetable sur le projet de test).
+- **`pnpm build` lit la base** (la vitrine est prérendue, `DATABASE_URL` requis, comme sur Vercel et en intégration continue).
 - Variables : copier `.env.example` vers `.env.local`. Jamais de `NEXT_PUBLIC_` pour la base ni pour Supabase.
 
 ## Next.js 16
@@ -47,3 +49,9 @@
 - `src/modules/mail` : file d'envoi (`email_outbox`), modèles d'emails en TypeScript (tableaux HTML), envoi Brevo, reprise. Un email s'écrit dans la file dans la même transaction que son RDV ; l'envoi se fait après la réponse (`after`) et le cron reprend les échecs. Un email peut être « retenu » (`held_for_manager`) jusqu'à la confirmation du gérant : ni l'envoi immédiat ni le cron ne le prennent.
 - `src/modules/auth` : interface d'authentification (Supabase en production, mémoire pour les tests, refusée sur Vercel). `src/modules/customers` : comptes clients, limitation d'essais, état de réservation, « Mes informations » et suppression de compte (`profile.ts`, anonymisation R-75). `src/modules/audit` : journal d'audit, à écrire dans la transaction de l'action.
 - Next 16 garde la page précédente cachée dans le DOM : dans les tests Playwright, filtrer les textes avec `.filter({ visible: true })`.
+
+## Vitrine (lot 6)
+- `src/app/(vitrine)` : accueil, `/prestations`, `/salon`, pages légales ; le gabarit pose le pied de page, la barre « Réserver + Appeler » et les révélations. Chaque page pose son `<SiteHeader />` (`overlay` sur l'accueil). Composants dans `src/components/vitrine`.
+- `src/modules/vitrine` : `load.ts` (lecture en base : carte, équipe active, horaires, fermetures, règles), `cache.ts` (`getVitrine()`, `use cache`, étiquette `vitrine`), puis fonctions pures testées : `hours.ts`, `catalog-view.ts`, `legal.ts`, `seo.ts`. **Tout texte de la vitrine qui cite la carte, l'équipe, les horaires ou une règle vient de la base**, jamais d'une valeur écrite en dur.
+- Les actions du gérant (`asManager`) vident le cache de la vitrine (`updateTag`). Un test qui change la base en SQL direct doit appeler `refreshVitrine()` (`tests/e2e/helpers.ts`) ; `resetData` le fait.
+- Ordinateur (D-37) dès 1024 px : la tablette en paysage (1194 px) a donc la mise en page ordinateur sur la vitrine.

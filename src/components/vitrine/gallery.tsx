@@ -28,15 +28,21 @@ export function Gallery({ photos }: { photos: Photo[] }) {
     if (current === null && el.open) el.close();
   }, [current]);
 
-  const step = (delta: number) =>
-    setCurrent((i) => (i === null ? i : (i + delta + count) % count));
+  const step = (delta: number) => setCurrent((i) => (i === null ? i : (i + delta + count) % count));
   const photo = current === null ? null : photos[current];
 
   return (
     <>
-      <ul aria-label="Galerie photos" className="grid grid-cols-2 gap-3.5 px-6 lg:grid-cols-3 lg:gap-5">
+      <ul
+        aria-label="Galerie photos"
+        className="grid grid-cols-2 gap-3.5 px-6 lg:grid-cols-3 lg:gap-5"
+      >
         {photos.map((p, index) => (
-          <li key={p.src} className={`flex flex-col gap-3 ${LAYOUT[index % LAYOUT.length].item}`} data-reveal>
+          <li
+            key={p.src}
+            className={`flex flex-col gap-3 ${LAYOUT[index % LAYOUT.length].item}`}
+            data-reveal
+          >
             <button
               type="button"
               ref={(el) => {
@@ -58,7 +64,10 @@ export function Gallery({ photos }: { photos: Photo[] }) {
                 priority={index === 0}
               />
               {index === 0 ? (
-                <span className="led-line is-visible absolute inset-x-0 top-0 opacity-80" aria-hidden="true" />
+                <span
+                  className="led-line is-visible absolute inset-x-0 top-0 opacity-80"
+                  aria-hidden="true"
+                />
               ) : null}
             </button>
             <span className="text-label uppercase tracking-[0.28em] text-stone">{p.caption}</span>

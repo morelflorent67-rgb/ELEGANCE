@@ -10,9 +10,11 @@ import { TeamSection } from "@/components/vitrine/team-section";
 import { TextLink } from "@/components/vitrine/text-link";
 import { formatDuration, formatPrice } from "@/lib/format";
 import { photos } from "@/lib/photos";
+import { siteUrl } from "@/lib/env";
 import { highlights, joinNames } from "@/modules/vitrine/catalog-view";
 import { getVitrine } from "@/modules/vitrine/cache";
 import { groupWeekHours, openingPhrase } from "@/modules/vitrine/hours";
+import { jsonLdScript, salonJsonLd } from "@/modules/vitrine/seo";
 
 export const metadata: Metadata = {
   title: { absolute: "Elegance Strasbourg · Barbier sur rendez-vous à Schiltigheim" },
@@ -24,13 +26,18 @@ export const metadata: Metadata = {
 const figCaption = "text-label uppercase tracking-[0.28em] text-stone";
 
 export default async function HomePage() {
-  const { services, team, week, closures } = await getVitrine();
+  const data = await getVitrine();
+  const { services, team, week, closures } = data;
   const phrase = openingPhrase(week);
   const names = joinNames(team.map((m) => m.firstName));
 
   return (
     <>
       <SiteHeader overlay />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdScript(salonJsonLd(data, siteUrl())) }}
+      />
       <main>
         <OpeningHero />
 
@@ -39,10 +46,7 @@ export default async function HomePage() {
             {names ? `${names} vous reçoivent ` : "Nous vous recevons "}
             {phrase ? `${phrase}, ` : ""}uniquement sur rendez-vous.
           </p>
-          <div
-            className="grid grid-cols-3 border-y border-line lg:w-full lg:max-w-xl"
-            data-reveal
-          >
+          <div className="grid grid-cols-3 border-y border-line lg:w-full lg:max-w-xl" data-reveal>
             {["Style", "Soin", "Confiance"].map((word, index) => (
               <div
                 key={word}
@@ -67,9 +71,13 @@ export default async function HomePage() {
                 >
                   <div className="flex flex-1 flex-col gap-1">
                     <span className="text-body font-normal">{service.name}</span>
-                    <span className="text-[13px] text-stone">{formatDuration(service.durationMin)}</span>
+                    <span className="text-[13px] text-stone">
+                      {formatDuration(service.durationMin)}
+                    </span>
                   </div>
-                  <span className="text-[15px] tabular-nums">{formatPrice(service.priceCents)}</span>
+                  <span className="text-[15px] tabular-nums">
+                    {formatPrice(service.priceCents)}
+                  </span>
                   <ChevronRight className="text-gold" />
                 </Link>
               </li>
@@ -82,8 +90,8 @@ export default async function HomePage() {
           <div className="px-6">
             <SectionHeading label="Le lieu" title="Le salon">
               <p className="mt-1 max-w-xl text-body text-ivory-soft">
-                Un plafond de lumière, du bois, des fauteuils capitonnés. Et un coin d&rsquo;attente,
-                canapés en cuir et café.
+                Un plafond de lumière, du bois, des fauteuils capitonnés. Et un coin
+                d&rsquo;attente, canapés en cuir et café.
               </p>
             </SectionHeading>
           </div>
@@ -106,7 +114,10 @@ export default async function HomePage() {
               </figcaption>
             </figure>
 
-            <div className="grid grid-cols-2 items-start gap-3.5 px-6 lg:col-span-5 lg:px-0" data-reveal>
+            <div
+              className="grid grid-cols-2 items-start gap-3.5 px-6 lg:col-span-5 lg:px-0"
+              data-reveal
+            >
               <figure className="flex flex-col gap-3">
                 <div className="relative h-[236px]">
                   <Image

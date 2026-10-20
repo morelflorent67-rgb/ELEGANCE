@@ -8,7 +8,7 @@ import { btnPrimary } from "@/components/ui";
 import { CloseIcon, MenuBars } from "./icons";
 
 const ITEMS = [
-  { href: "/", label: "Accueil", current: true },
+  { href: "/", label: "Accueil" },
   { href: "/prestations", label: "Prestations et tarifs" },
   { href: "/salon", label: "Le salon" },
   { href: "/compte/rendez-vous", label: "Mes rendez-vous" },
@@ -49,7 +49,9 @@ export function SiteMenu({
       if (event.key === "Escape") close();
       if (event.key !== "Tab" || !panel.current) return;
       // Le focus reste dans le menu.
-      const focusable = panel.current.querySelectorAll<HTMLElement>("a[href], button:not([disabled])");
+      const focusable = panel.current.querySelectorAll<HTMLElement>(
+        "a[href], button:not([disabled])",
+      );
       if (focusable.length === 0) return;
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
@@ -118,7 +120,9 @@ export function SiteMenu({
                   className="flex min-h-16 animate-reveal items-center gap-[18px] border-b border-line-subtle text-title-3 text-ivory"
                 >
                   {here ? (
-                    <MenuBars size={12} />
+                    <span className="text-gold">
+                      <MenuBars size={12} />
+                    </span>
                   ) : (
                     <span className="w-3" aria-hidden="true" />
                   )}

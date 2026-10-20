@@ -45,7 +45,9 @@ test("les valeurs, les prestations phares, l'équipe et les horaires viennent de
 }) => {
   await page.goto("/");
   await expect(
-    page.getByText("Orhan, Enes, Kaan et Taha vous reçoivent du mardi au samedi, uniquement sur rendez-vous."),
+    page.getByText(
+      "Orhan, Enes, Kaan et Taha vous reçoivent du mardi au samedi, uniquement sur rendez-vous.",
+    ),
   ).toBeVisible();
   for (const word of ["Style", "Soin", "Confiance"]) {
     await expect(page.getByText(word, { exact: true })).toBeVisible();

@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { CatalogService } from "@/modules/catalog";
-import { callOnlyNames, groupCatalog, highlights, joinFr, joinNames, performerNote } from "./catalog-view";
+import {
+  callOnlyNames,
+  groupCatalog,
+  highlights,
+  joinFr,
+  joinNames,
+  performerNote,
+} from "./catalog-view";
 
 const svc = (over: Partial<CatalogService> & { name: string }): CatalogService => ({
   id: over.name,

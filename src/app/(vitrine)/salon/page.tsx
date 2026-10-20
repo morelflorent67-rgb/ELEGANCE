@@ -27,7 +27,9 @@ export default async function SalonPage() {
             <HexMark />
             <span className="text-label uppercase text-stone">Le lieu</span>
           </div>
-          <h1 className="animate-reveal text-title-page [animation-delay:70ms] lg:text-display">Le salon</h1>
+          <h1 className="animate-reveal text-title-page [animation-delay:70ms] lg:text-display">
+            Le salon
+          </h1>
           <p className="max-w-xl animate-reveal text-body text-ivory-soft [animation-delay:140ms]">
             Un plafond de lumière, des poutres en bois, des fauteuils capitonnés. Et pour patienter,
             des canapés en cuir et un café.

@@ -1,3 +1,4 @@
+import { ViewTransition } from "react";
 import { BookingBar } from "@/components/vitrine/booking-bar";
 import { Reveal } from "@/components/vitrine/reveal";
 import { SiteFooter } from "@/components/vitrine/site-footer";
@@ -7,7 +8,9 @@ import { SiteFooter } from "@/components/vitrine/site-footer";
 export default function VitrineLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <div className="min-h-dvh">{children}</div>
+      <ViewTransition exit="vt-out" default="none">
+        <div className="min-h-dvh">{children}</div>
+      </ViewTransition>
       <SiteFooter />
       <BookingBar />
       <Reveal />

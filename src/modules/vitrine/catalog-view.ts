@@ -55,7 +55,10 @@ export function performerNote(team: TeamMember[]): string | null {
   const barbers = team.filter((m) => m.role === "barber").map((m) => m.firstName);
   if (apprentices.length === 0) return null;
   const who = apprentices.length === 1 ? "notre apprenti" : "nos apprentis";
-  const rest = barbers.length > 0 ? ` Toutes les autres prestations sont réalisées par ${orJoin(barbers)}.` : "";
+  const rest =
+    barbers.length > 0
+      ? ` Toutes les autres prestations sont réalisées par ${orJoin(barbers)}.`
+      : "";
   return `Tarif formation : réalisé par ${orJoin(apprentices)}, ${who}.${rest}`;
 }
 

@@ -22,6 +22,7 @@
     "db:migrate:remote": "node scripts/migrate-remote.mjs",
     "db:seed": "node scripts/seed.mjs",
     "db:seed:remote": "node scripts/seed.mjs --remote",
+    "measure:vitrine": "node scripts/measure-vitrine.mjs",
     "smoke:auth": "node scripts/smoke-supabase-auth.mjs",
     "staff:account": "node scripts/staff-account.mjs",
     "manager:set-code": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/manager-code.mjs",

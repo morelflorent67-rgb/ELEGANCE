@@ -21,11 +21,22 @@ function AccessCard() {
         fill="none"
         aria-hidden="true"
       >
-        <path d="M-10 150 L120 96 L210 120 L360 40" stroke="rgb(239 233 221 / 0.18)" strokeWidth="10" />
+        <path
+          d="M-10 150 L120 96 L210 120 L360 40"
+          stroke="rgb(239 233 221 / 0.18)"
+          strokeWidth="10"
+        />
         <path d="M60 -10 L150 210" stroke="rgb(239 233 221 / 0.1)" strokeWidth="6" />
         <path d="M250 -10 L230 210" stroke="rgb(239 233 221 / 0.1)" strokeWidth="5" />
       </svg>
-      <svg width="34" height="30" viewBox="0 0 34 30" fill="none" className="relative" aria-hidden="true">
+      <svg
+        width="34"
+        height="30"
+        viewBox="0 0 34 30"
+        fill="none"
+        className="relative"
+        aria-hidden="true"
+      >
         <path
           d="M9 1 H25 L33 15 L25 29 H9 L1 15 Z"
           stroke="var(--color-gold)"
@@ -76,7 +87,10 @@ export function HoursAccess({
             ))}
           </ul>
           {closures.length > 0 ? (
-            <ul className="flex flex-col gap-2 border border-line-strong p-4" aria-label="Fermetures exceptionnelles">
+            <ul
+              className="flex flex-col gap-2 border border-line-strong p-4"
+              aria-label="Fermetures exceptionnelles"
+            >
               {closures.map((c) => (
                 <li key={`${c.startsOn}-${c.endsOn}`} className="text-body-sm text-ivory-soft">
                   Fermeture exceptionnelle {formatClosure(c.startsOn, c.endsOn)}
@@ -85,7 +99,9 @@ export function HoursAccess({
               ))}
             </ul>
           ) : null}
-          <p className="text-label uppercase tracking-[0.28em] text-gold">Uniquement sur rendez-vous</p>
+          <p className="text-label uppercase tracking-[0.28em] text-gold">
+            Uniquement sur rendez-vous
+          </p>
           <address className="flex flex-col gap-1.5 not-italic">
             <span className="text-[18px]">{SALON.street}</span>
             <span className="text-body text-ivory-soft">

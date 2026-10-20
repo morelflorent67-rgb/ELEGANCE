@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Sora } from "next/font/google";
+import { siteUrl } from "@/lib/env";
+import { photos } from "@/lib/photos";
 import "./globals.css";
 
 const sora = Sora({
@@ -13,9 +15,25 @@ const sora = Sora({
 const indexable = process.env.ALLOW_INDEXING === "true";
 
 export const metadata: Metadata = {
+  // Adresse publique (SITE_URL) : base des liens canoniques et de l'image de partage. Jamais le domaine en dur.
+  metadataBase: new URL(siteUrl()),
   title: { default: "Elegance Strasbourg", template: "%s · Elegance Strasbourg" },
   description: "Salon de coiffure homme et barbe à Schiltigheim, sur rendez-vous.",
   robots: indexable ? { index: true, follow: true } : { index: false, follow: false },
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    siteName: "Elegance Strasbourg",
+    images: [
+      {
+        url: photos.postesWide.src,
+        width: photos.postesWide.width,
+        height: photos.postesWide.height,
+        alt: photos.postesWide.alt,
+      },
+    ],
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 export const viewport: Viewport = {

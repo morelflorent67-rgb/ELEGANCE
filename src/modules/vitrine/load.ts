@@ -1,6 +1,7 @@
 import { and, asc, eq } from "drizzle-orm";
 import type { Database } from "@/db/types";
 import { staff } from "@/db/schema";
+import { loadSettings } from "@/modules/availability";
 import { loadCatalog, type CatalogService } from "@/modules/catalog";
 import { listClosures, loadWeekHours, type ManagedClosure } from "@/modules/schedule/manage";
 import type { WeekHours } from "./hours";
@@ -14,7 +15,20 @@ export interface TeamMember {
   role: "barber" | "apprentice";
 }
 
+/** Les règles du salon que les pages légales citent : lues dans les réglages, jamais en dur (principe 8). */
+export interface SalonRules {
+  /** R-30 : délai de modification ou d'annulation en ligne, en heures. */
+  changeCutoffHours: number;
+  /** R-25 : rendez-vous à venir au plus, par client. */
+  maxUpcomingPerCustomer: number;
+  /** R-52 : lapins à partir desquels le gérant peut bloquer la réservation en ligne. */
+  noShowBlockThreshold: number;
+  /** R-61 : le rappel part ce nombre d'heures avant le rendez-vous. */
+  reminderHours: number;
+}
+
 export interface VitrineData {
+  rules: SalonRules;
   services: CatalogService[];
   team: TeamMember[];
   week: WeekHours;
@@ -22,7 +36,8 @@ export interface VitrineData {
 }
 
 export async function readVitrine(db: Database, now: Date = new Date()): Promise<VitrineData> {
-  const [services, team, week, closures] = await Promise.all([
+  const [settings, services, team, week, closures] = await Promise.all([
+    loadSettings(db),
     loadCatalog(db),
     db
       .select({ id: staff.id, firstName: staff.firstName, role: staff.role })
@@ -33,6 +48,12 @@ export async function readVitrine(db: Database, now: Date = new Date()): Promise
     listClosures(db, now),
   ]);
   return {
+    rules: {
+      changeCutoffHours: settings.changeCutoffHours,
+      maxUpcomingPerCustomer: settings.maxUpcomingPerCustomer,
+      noShowBlockThreshold: settings.noShowBlockThreshold,
+      reminderHours: settings.reminderHours,
+    },
     services,
     team,
     week,
