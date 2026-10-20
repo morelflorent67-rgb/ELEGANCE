@@ -19,7 +19,7 @@ Tests à la fin du lot 5 : **558 Vitest** (unitaires et intégration sur Postgre
 
 ## Accès
 
-- Dépôt : https://github.com/morelflorent67-rgb/ELEGANCE (public, branche `main`). Je pousse sans redemander ; l'intégration continue doit rester verte. **Exception du lot 5** : la migration 0006 doit être appliquée à Supabase **avant** de pousser (voir « Actions en attente », n° 1).
+- Dépôt : https://github.com/morelflorent67-rgb/ELEGANCE (public, branche `main`). Je pousse sans redemander ; l'intégration continue doit rester verte.  Règle à retenir : quand un lot ajoute une migration, l'appliquer à Supabase (avec l'accord de Florent) **avant** de pousser le code qui la lit.
 - Site de test : https://elegance-git-main-elegance13.vercel.app (protection de déploiement désactivée volontairement, `noindex`).
 - Supabase de test : Postgres 17, région UE. Les clés sont dans `.env.local` (jamais commité). `pnpm db:migrate:remote` et `pnpm db:seed:remote` modifient la base en ligne : annoncer ce qu'on fait.
 - Florent est non technicien : français simple, étapes numérotées, noms exacts des boutons. Ne jamais lui demander de coller un secret dans le chat. Je ne saisis pas de secrets dans les formulaires de sites web : je le guide.
@@ -34,7 +34,7 @@ Tests à la fin du lot 5 : **558 Vitest** (unitaires et intégration sur Postgre
 
 ## Actions en attente (à demander à Florent, jamais sans son accord)
 
-1. **Migration 0006 sur Supabase** (`pnpm db:migrate:remote`) : ajoute la colonne `email_outbox.held_for_manager`. Le code du lot 5 la lit ; **pousser sur `main` avant de migrer casserait le site de test** (envoi des emails). Ordre : migrer, vérifier, pousser. Florent a accepté le principe (« je demande l'accord avant d'appliquer une migration sur Supabase ») : annoncer, puis lancer.
+1. ~~Migration 0006 sur Supabase~~ : **appliquée le 20 octobre 2026** avec l'accord de Florent (colonne `email_outbox.held_for_manager` vérifiée), puis code poussé.
 2. ~~Compte équipe de la tablette~~ et ~~code gérant~~ : faits le 20 octobre 2026. Pour les changer : `pnpm staff:account`, `pnpm manager:set-code` (base locale) ou `pnpm manager:set-code:remote` (base Supabase, modifie la base en ligne). Florent tape lui-même ses secrets dans le terminal, jamais dans le chat.
 3. **Brevo** (compte ouvert) : créer une clé d'API, faire vérifier une adresse d'expéditeur, puis ajouter `BREVO_API_KEY`, `EMAIL_FROM` et `CRON_SECRET` dans Vercel (Settings, Environment Variables). Tant que ce n'est pas fait, les emails restent en file en production (confirmations, annulations, déplacements, et ceux que le gérant libère).
 4. **Supabase** : Authentication, URL Configuration (Site URL et adresse de redirection `…/auth/callback`), puis SMTP Brevo pour le mot de passe oublié.
