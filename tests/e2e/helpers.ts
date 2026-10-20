@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { expect, type Page } from "@playwright/test";
 import { DateTime } from "luxon";
 import postgres from "postgres";
@@ -11,10 +12,15 @@ export const sql = postgres("postgresql://postgres:postgres@127.0.0.1:54399/post
   onnotice: () => {},
 });
 
+const seedSql = readFileSync("src/db/seed.sql", "utf8");
+
 export async function resetData() {
+  // Carte, équipe, horaires et réglages aussi : le gérant les modifie (lot 5), chaque test repart des données de départ.
   await sql.unsafe(
-    "truncate appointment_item, appointment, absence, closure, email_outbox, audit_log, customer, rate_limit restart identity cascade",
+    `truncate appointment_item, appointment, absence, closure, email_outbox, audit_log, customer, rate_limit,
+              service_staff, service, staff, opening_hours, salon_settings restart identity cascade`,
   );
+  await sql.unsafe(seedSql);
   // Aucun code gérant tant qu'un test n'en pose pas un (R-73).
   await sql`update salon_settings set manager_pin_hash = null`;
 }

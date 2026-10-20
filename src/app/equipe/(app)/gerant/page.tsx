@@ -25,11 +25,12 @@ export default function ManagerPage(props: PageProps<"/equipe/gerant">) {
   );
 }
 
-const SOON = [
-  "Carte et tarifs",
-  "Équipe et habilitations",
-  "Horaires et fermetures",
-  "Chiffre d’affaires",
+/** Les fonctions du gérant : un lien quand l'écran existe, sinon « Bientôt ». */
+const TOOLS: { label: string; href?: string }[] = [
+  { label: "Carte et tarifs", href: "/equipe/gerant/carte" },
+  { label: "Équipe et habilitations" },
+  { label: "Horaires et fermetures" },
+  { label: "Chiffre d’affaires" },
 ];
 
 async function Manager({
@@ -104,18 +105,32 @@ async function Manager({
           </div>
         </section>
 
-        <section aria-label="Bientôt" className="flex flex-col gap-3">
+        <section aria-label="Gestion du salon" className="flex flex-col gap-3">
           <h2 className="border-b border-line pb-2 text-label uppercase tracking-[0.3em] text-stone">
-            Bientôt
+            Gestion du salon
           </h2>
           <ul className="grid grid-cols-2 gap-2.5">
-            {SOON.map((label) => (
-              <li
-                key={label}
-                title="Bientôt disponible"
-                className="flex h-14 items-center border border-line px-4 text-[14px] text-stone-dark"
-              >
-                {label}
+            {TOOLS.map(({ label, href }) => (
+              <li key={label}>
+                {href ? (
+                  <Link
+                    href={href}
+                    className="flex h-14 items-center justify-between border border-line-strong px-4 text-[14px] hover:bg-graphite-light"
+                  >
+                    {label}
+                    <span aria-hidden="true" className="text-gold">
+                      →
+                    </span>
+                  </Link>
+                ) : (
+                  <span
+                    aria-disabled="true"
+                    title="Bientôt disponible"
+                    className="flex h-14 items-center border border-line px-4 text-[14px] text-stone-dark"
+                  >
+                    {label}
+                  </span>
+                )}
               </li>
             ))}
           </ul>

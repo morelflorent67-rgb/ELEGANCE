@@ -33,7 +33,12 @@ export type DomainErrorCode =
   | "not_started"
   | "not_no_show"
   | "customer_not_blockable"
-  | "customer_has_no_account";
+  | "customer_has_no_account"
+  // Gestion de la carte et de l'équipe par le gérant (R-10 à R-13)
+  | "invalid_service"
+  | "unknown_staff"
+  | "staff_role_mismatch"
+  | "no_staff_for_service";
 
 export class DomainError extends Error {
   readonly code: DomainErrorCode;

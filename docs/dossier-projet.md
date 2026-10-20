@@ -247,7 +247,7 @@ Ces 52 règles fixent le comportement du moteur de réservation : toutes sont d�
 
 ## Journal des décisions
 
-Le 20 octobre 2026, 49 décisions ont fixé le cadre du projet ; on ne revient sur l'une d'elles qu'en l'écrivant ici.
+Le 20 octobre 2026, 57 décisions ont fixé le cadre du projet ; on ne revient sur l'une d'elles qu'en l'écrivant ici.
 
 | N° | Décision | Raison |
 | --- | --- | --- |
@@ -305,6 +305,9 @@ Le 20 octobre 2026, 49 décisions ont fixé le cadre du projet ; on ne revient s
 | D-52 | Quand le salon modifie ou annule un RDV, l'email part automatiquement à la validation, avec un texte « suite à notre échange » (précise R-63) | Le client est toujours prévenu |
 | D-53 | Le code gérant a 6 chiffres ; l'espace gérant se reverrouille 5 minutes après la dernière action ou en le quittant ; essais limités (précise R-73) | Sécurité des fonctions gérant sur une tablette partagée |
 | D-54 | Un lapin se signale dès l'heure de début du RDV et se corrige ; un RDV terminé n'est ni modifié ni annulé par le salon ; le compteur de lapins se déduit des RDV « non venu » (précise R-33, R-51, R-52) | Pas de tâche programmée ; l'historique reste vrai |
+| D-55 | L'équipe déclare une absence et prépare le traitement des RDV touchés depuis la tablette ; le code gérant n'est demandé que pour confirmer, donc avant tout email au client (précise R-42, R-43, R-73) | Un coiffeur malade ne doit pas attendre que le gérant déverrouille la tablette ; R-43 reste respectée |
+| D-56 | Le traitement d'un RDV touché s'applique tout de suite au planning (déplacé ou annulé), mais ses emails restent en attente jusqu'à la confirmation du gérant, qui les envoie d'un coup ; l'équipe appelle les clients entre-temps (précise R-43, D-20, D-52) | Planning toujours vrai, créneaux libérés sans attendre, aucun message sans accord du gérant |
+| D-57 | Fermeture exceptionnelle, nouveaux horaires, départ d'un coiffeur ou habilitation retirée qui touchent des RDV déjà pris suivent le même circuit que les absences : liste des RDV touchés, déplacement ou annulation avec excuses, confirmation du gérant avant email ; « confier à un collègue » n'est proposé que si un collègue habilité est libre (précise R-03, R-13, R-42) | Un seul circuit à apprendre et à tester ; aucun RDV oublié un jour de fermeture |
 
 ## Documents liés
 

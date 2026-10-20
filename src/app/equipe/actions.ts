@@ -22,6 +22,12 @@ import {
 } from "@/modules/booking";
 import { loadStaffChoices, loadStaffChoicesFor, type StaffChoice } from "@/modules/catalog";
 import {
+  createService,
+  moveService,
+  setServiceActive,
+  updateService,
+} from "@/modules/catalog/manage";
+import {
   deleteCustomerAsManager,
   searchCustomers,
   setOnlineBookingBlocked,
@@ -405,5 +411,65 @@ export async function deleteCustomerAction(
       actorId: user.id,
     });
     return { ok: true, cancelled: result.cancelledAppointmentIds.length };
+  });
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Carte et habilitations (R-10 à R-13, R-16, R-17) : réservées au gérant (R-73)
+
+const serviceFields = {
+  name: z.string().max(200),
+  category: z.string().max(200).nullable(),
+  priceCents: z.number(),
+  durationMin: z.number(),
+  bookableOnline: z.boolean(),
+};
+
+export async function createServiceAction(
+  input: unknown,
+): Promise<TeamResult<{ serviceId: string }>> {
+  const parsed = z
+    .object({
+      ...serviceFields,
+      performedBy: z.enum(["barber", "apprentice"]),
+      staffIds: z.array(uuid).max(20),
+    })
+    .safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid_service" };
+  return asManager<{ serviceId: string }>(async (user) => ({
+    ok: true,
+    serviceId: await createService(db(), parsed.data, user.id),
+  }));
+}
+
+export async function updateServiceAction(input: unknown): Promise<TeamResult> {
+  const parsed = z
+    .object({ serviceId: uuid, ...serviceFields, staffIds: z.array(uuid).max(20) })
+    .safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid_service" };
+  return asManager(async (user) => {
+    const { serviceId, ...changes } = parsed.data;
+    await updateService(db(), serviceId, changes, user.id);
+    return { ok: true };
+  });
+}
+
+export async function setServiceActiveAction(input: unknown): Promise<TeamResult> {
+  const parsed = z.object({ serviceId: uuid, active: z.boolean() }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asManager(async (user) => {
+    await setServiceActive(db(), parsed.data.serviceId, parsed.data.active, user.id);
+    return { ok: true };
+  });
+}
+
+export async function moveServiceAction(input: unknown): Promise<TeamResult> {
+  const parsed = z
+    .object({ serviceId: uuid, direction: z.enum(["up", "down"]) })
+    .safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asManager(async (user) => {
+    await moveService(db(), parsed.data.serviceId, parsed.data.direction, user.id);
+    return { ok: true };
   });
 }

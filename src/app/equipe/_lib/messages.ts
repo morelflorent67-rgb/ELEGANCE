@@ -27,6 +27,13 @@ const MESSAGES: Partial<Record<TeamError, string>> = {
   author_required: "Choisissez qui fait la modification.",
   unknown_author: "Ce prénom ne fait plus partie de l'équipe.",
   customer_not_blockable: "Le client n'a pas encore assez de lapins pour être bloqué.",
+  invalid_service:
+    "Vérifiez le nom, le prix et la durée : un multiple de 15 minutes, jusqu'à 8 heures.",
+  unknown_staff: "Ce membre de l'équipe n'existe plus ou n'est plus actif. Rechargez la page.",
+  staff_role_mismatch:
+    "Les coiffeurs réalisent les prestations des coiffeurs, les apprentis celles du tarif formation.",
+  no_staff_for_service:
+    "Une prestation réservable en ligne a besoin d'au moins un coiffeur habilité. Cochez un nom, ou passez-la « sur appel ».",
   manager_locked: "L'espace gérant est verrouillé. Saisissez le code gérant.",
   not_signed_in: "Votre session a expiré. Reconnectez-vous.",
   rate_limited: "Trop d'essais. Patientez un instant.",
