@@ -34,6 +34,7 @@ export function SlotPicker({
   value,
   onPick,
   reloadKey,
+  compact = false,
 }: {
   load: (from: string, days: number) => Promise<TeamResult<{ days: SalonDayView[] }>>;
   /** « AAAA-MM-JJ », heure de Paris. */
@@ -44,6 +45,8 @@ export function SlotPicker({
   onPick: (slot: PickedSalonSlot) => void;
   /** Change quand les prestations ou le coiffeur changent : les créneaux sont relus. */
   reloadKey: string;
+  /** Panneau étroit : jours sur deux rangées, créneaux sur 3 colonnes. */
+  compact?: boolean;
 }) {
   const [week, setWeek] = useState(() =>
     weekStart(startDate && startDate >= today ? startDate : today),
@@ -82,7 +85,9 @@ export function SlotPicker({
 
   return (
     <div className="flex flex-col gap-3.5">
-      <div className="flex items-center gap-2">
+      <div
+        className={`flex items-center gap-2 ${compact ? "flex-wrap" : "flex-wrap sm:flex-nowrap"}`}
+      >
         <button
           type="button"
           aria-label="Semaine précédente"
@@ -102,7 +107,15 @@ export function SlotPicker({
             <path d="M15 5l-7 7 7 7" />
           </svg>
         </button>
-        <div role="tablist" aria-label="Jours" className="grid flex-1 grid-cols-7 gap-1.5">
+        <div
+          role="tablist"
+          aria-label="Jours"
+          className={`grid gap-1.5 ${
+            compact
+              ? "order-last w-full grid-cols-4"
+              : "order-last w-full grid-cols-4 sm:order-none sm:w-auto sm:flex-1 sm:grid-cols-7"
+          }`}
+        >
           {(days.length > 0 ? days : placeholderDays(week)).map((d) => {
             const on = d.date === selected;
             const full = !d.closed && d.slots.length === 0 && days.length > 0;
@@ -134,7 +147,7 @@ export function SlotPicker({
           type="button"
           aria-label="Semaine suivante"
           onClick={() => setWeek(addDays(week, 7))}
-          className="flex h-11 w-11 shrink-0 items-center justify-center border border-line-strong text-ivory"
+          className={`flex h-11 w-11 shrink-0 ${compact ? "ml-auto" : "ml-auto sm:ml-0"} items-center justify-center border border-line-strong text-ivory`}
         >
           <svg
             width="16"
@@ -160,7 +173,7 @@ export function SlotPicker({
         </p>
       ) : day && day.slots.length > 0 ? (
         <div
-          className="grid grid-cols-4 gap-2 lg:grid-cols-6"
+          className={`grid gap-2 ${compact ? "grid-cols-3" : "grid-cols-4 lg:grid-cols-6"}`}
           aria-label={`Créneaux du ${day.label}`}
         >
           {day.slots.map((slot) => {

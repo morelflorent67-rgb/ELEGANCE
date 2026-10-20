@@ -184,7 +184,7 @@ export function PlanningBoard({
               type="date"
               name="jour"
               defaultValue={day.date}
-              className="h-12 border border-line-strong bg-ink px-3 text-[15px] text-ivory"
+              className="h-12 w-[160px] border border-line-strong bg-ink px-3 text-[15px] text-ivory"
             />
             <button
               type="submit"

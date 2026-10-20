@@ -488,4 +488,3 @@ describe("RDV que le salon peut encore déplacer", () => {
     await expectRefused(loadSalonMovable(t.db, created.id, NOW), "not_modifiable");
   });
 });
-

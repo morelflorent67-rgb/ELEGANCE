@@ -29,6 +29,7 @@
 - `pnpm db:seed` : données de départ (équipe, carte, horaires, réglages), rejouable sans rien écraser ; `pnpm db:seed:remote` et `pnpm db:migrate:remote` visent la base Supabase (modifient la base en ligne : demander l'accord avant).
 - `pnpm db:generate` : génère une migration depuis `src/db/schema.ts` ; `pnpm db:generate --custom --name=...` pour du SQL écrit à la main (contraintes) ; `pnpm db:migrate` l'applique.
 - `pnpm lint`, `pnpm typecheck`, `pnpm test` (unitaires), `pnpm test:integration` (Postgres réel, instance temporaire démarrée toute seule), `pnpm test:e2e` (Playwright mobile et tablette ; démarre seul sa base temporaire, l'authentification en mémoire et le site : `scripts/e2e-server.mjs`), `pnpm test:all` : tout.
+- `pnpm staff:account` : crée le compte « équipe » de la tablette sur Supabase ; `pnpm manager:set-code` (ou `:remote`) : définit le code gérant à 6 chiffres. Les deux se tapent dans le terminal, rien dans le chat ni en ligne de commande.
 - `pnpm smoke:auth` : contrôle manuel de l'authentification Supabase réelle (crée puis supprime un compte jetable sur le projet de test).
 - Variables : copier `.env.example` vers `.env.local`. Jamais de `NEXT_PUBLIC_` pour la base ni pour Supabase.
 
@@ -41,6 +42,7 @@
 - `src/modules/booking` : `createAppointment` (création), `rescheduleAppointment` et `cancelAppointment` (modification et annulation par le client, délai de 48 h revérifié, R-30 à R-32) : seuls chemins d'écriture d'un RDV (transaction, verrous, revérification, R-13/14/16/17/18/20 à 25).
 - Les modules reçoivent la base en paramètre (`Database`), jamais le client global : ils se testent sur une base de test.
 - Refus métier = `DomainError` avec un code stable (`src/lib/domain-error.ts`) ; l'interface le traduit en français.
+- `src/modules/booking/salon-changes.ts` : annulation, déplacement et lapins décidés par le salon (R-33, R-51, R-74) : auteur obligatoire, journal. `src/modules/staff` : accès équipe, auteurs, code gérant (R-72, R-73). `src/modules/planning` : planning du jour et fiche RDV. `src/modules/customers/staff-view.ts` : recherche, fiche, blocage, suppression par le gérant. `src/app/equipe` : la tablette ; chaque page et chaque action y vérifie elle-même l'accès (`requireStaff`, `asStaff`, `asManager`).
 - `src/modules/mail` : file d'envoi (`email_outbox`), modèles d'emails en TypeScript (tableaux HTML), envoi Brevo, reprise. Un email s'écrit dans la file dans la même transaction que son RDV ; l'envoi se fait après la réponse (`after`) et le cron reprend les échecs.
 - `src/modules/auth` : interface d'authentification (Supabase en production, mémoire pour les tests, refusée sur Vercel). `src/modules/customers` : comptes clients, limitation d'essais, état de réservation, « Mes informations » et suppression de compte (`profile.ts`, anonymisation R-75). `src/modules/audit` : journal d'audit, à écrire dans la transaction de l'action.
 - Next 16 garde la page précédente cachée dans le DOM : dans les tests Playwright, filtrer les textes avec `.filter({ visible: true })`.

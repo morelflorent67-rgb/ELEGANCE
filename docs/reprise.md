@@ -1,7 +1,7 @@
 # Reprise du projet : où on en est
 
 Ce document permet de reprendre le travail dans une **nouvelle conversation**, sans rien perdre. Il se met à jour à la fin de chaque lot.
-À jour au **20 octobre 2026**, fin du lot 3 (terminé, en attente de validation de Florent).
+À jour au **20 octobre 2026**, fin du lot 4 (terminé, en attente de validation de Florent).
 
 ## Avancement
 
@@ -10,11 +10,11 @@ Ce document permet de reprendre le travail dans une **nouvelle conversation**, s
 | 0 | Socle : projet, dépôt, base, tests, déploiement | Validé |
 | 1 | Moteur de créneaux, schéma, contrainte anti-chevauchement | Validé |
 | 2 | Réservation client, comptes, email de confirmation | Validé |
-| 3 | Espace client : Mes RDV, modifier ou annuler jusqu'à 48 h, « Reprendre le même RDV », Mes informations, suppression du compte | **Terminé, à valider par Florent** |
-| 4 | Planning tablette : 4 colonnes, fiche RDV, réservation par le salon, lapins, code gérant, choix de l'auteur | **À faire : proposer le plan, attendre la validation** |
+| 3 | Espace client : Mes RDV, modifier ou annuler jusqu'à 48 h, « Reprendre le même RDV », Mes informations, suppression du compte | Validé |
+| 4 | Planning tablette : 4 colonnes, fiche RDV, réservation par le salon, lapins, code gérant, choix de l'auteur | **Terminé, à valider par Florent** |
 | 5 à 8 | Gestion, vitrine, emails et tableau de bord, recette | À venir (voir `transmission-code.md`) |
 
-Tests à la fin du lot 3 : **294 Vitest** (unitaires et intégration sur Postgres réel) et **88 parcours Playwright** (mobile et tablette). Aucun ne doit casser. Lint, typecheck et build verts.
+Tests à la fin du lot 4 : **391 Vitest** (unitaires et intégration sur Postgres réel) et **134 parcours Playwright** (115 exécutés ; 19 réservés à la tablette sont sautés sur mobile). Aucun ne doit casser. Lint, typecheck et build verts.
 
 ## Accès
 
@@ -32,21 +32,28 @@ Tests à la fin du lot 3 : **294 Vitest** (unitaires et intégration sur Postgre
 
 ## Actions en attente (à demander à Florent, jamais sans son accord)
 
-1. ~~Migration `0005` et `pnpm smoke:auth`~~ : faits le 20 octobre 2026 avec l'accord de Florent (migration appliquée, authentification Supabase conforme).
-2. **Brevo** (compte ouvert) : créer une clé d'API, faire vérifier une adresse d'expéditeur, puis ajouter `BREVO_API_KEY`, `EMAIL_FROM` et `CRON_SECRET` dans Vercel (Settings, Environment Variables). Tant que ce n'est pas fait, les emails restent en file en production.
-3. **Supabase** : Authentication, URL Configuration (Site URL et adresse de redirection `…/auth/callback`), puis SMTP Brevo pour le mot de passe oublié.
-4. **Vercel Pro** : à prendre avec le client juste avant la livraison (c'est lui qui paie). Passer alors le cron de `vercel.json` à `* * * * *`. D'ici là, l'envoi immédiat des emails couvre le cas normal.
-5. Les clés Supabase et le mot de passe de la base, passés dans le chat, sont laissés tels quels par décision de Florent.
-6. Domaine définitif, textes légaux validés par un professionnel : avant la mise en ligne.
+1. **Compte équipe de la tablette** (lot 4, nouveau) : `pnpm staff:account` crée l'utilisateur Supabase de la tablette (email, mot de passe de 12 caractères au moins, tapés dans le terminal). Il modifie le projet Supabase en ligne : annoncer, guider pas à pas. Puis, sur la tablette : ouvrir `/equipe/connexion` une seule fois.
+2. **Code gérant** (lot 4, nouveau) : `pnpm manager:set-code` (base locale) ou `pnpm manager:set-code:remote` (base Supabase, modifie la base en ligne). Florent choisit lui-même ses 6 chiffres, tapés dans le terminal sans s'afficher ; ne jamais les lui faire écrire dans le chat. Tant qu'il n'est pas défini, l'espace gérant reste fermé et le dit.
+3. **Brevo** (compte ouvert) : créer une clé d'API, faire vérifier une adresse d'expéditeur, puis ajouter `BREVO_API_KEY`, `EMAIL_FROM` et `CRON_SECRET` dans Vercel (Settings, Environment Variables). Tant que ce n'est pas fait, les emails restent en file en production (confirmations, et désormais aussi annulations et déplacements décidés par le salon).
+4. **Supabase** : Authentication, URL Configuration (Site URL et adresse de redirection `…/auth/callback`), puis SMTP Brevo pour le mot de passe oublié.
+5. **Vercel Pro** : à prendre avec le client juste avant la livraison (c'est lui qui paie). Passer alors le cron de `vercel.json` à `* * * * *`. D'ici là, l'envoi immédiat des emails couvre le cas normal.
+6. Les clés Supabase et le mot de passe de la base, passés dans le chat, sont laissés tels quels par décision de Florent.
+7. Domaine définitif, textes légaux validés par un professionnel : avant la mise en ligne.
+8. **Vérifier sur la vraie tablette** (iPad, paysage) : le planning, la réservation et l'espace gérant ont été vérifiés par captures à 1194 × 834 et 390 × 844, pas sur l'appareil réel.
 
-## Points d'attention pour le lot 4
+## Ce que le lot 4 a ajouté
 
-- `cancelAppointment` et `rescheduleAppointment` sont **réservés au client** (délai de 48 h, RDV du client). Le salon modifie ou annule à tout moment (R-33) : écrire des variantes « salon » qui réutilisent les mêmes contrôles de créneau, sans le délai, avec l'auteur choisi sur la tablette (R-74) et une entrée au journal. `createAppointment` accepte déjà `source: "salon"` et `createdByStaffId`.
-- Email d'annulation et de modification : les modèles actuels parlent au client qui a agi lui-même (« Merci de nous avoir prévenus »). Pour un changement décidé par le salon (R-63, D-20 : l'équipe appelle, un email confirme), prévoir un texte adapté ; la file `email_outbox` et son champ `payload` sont prêts.
-- `anonymizeCustomer(db, { onImminent: "cancel", actor: { type: "manager" } })` existe pour « le gérant supprime une fiche client » (R-75) : il reste l'écran et le code gérant (R-73).
-- R-51 (RDV honoré par défaut une fois passé) n'est pas encore codé : « Mes RDV » traite aujourd'hui un RDV confirmé et terminé comme passé. Le signalement des lapins (R-52) et le blocage par le gérant (colonne `online_booking_blocked`, déjà respectée par la réservation en ligne) arrivent au lot 4.
-- « Non venu » n'est jamais montré au client dans « Passés ».
-- Le journal d'audit reçoit déjà les actions du client ; R-43, R-54, R-74 arrivent aux lots 4 et 5.
+- `src/modules/staff` (accès équipe, auteurs, code gérant : `manager-code.ts` haché scrypt, `manager-unlock.ts` preuve de 5 minutes, `manager.ts` saisie limitée), `src/modules/booking/salon-changes.ts` (annulation, déplacement, lapins du salon), `src/modules/customers/staff-view.ts` (recherche, fiche, blocage, suppression par le gérant, clients à surveiller), `src/modules/planning` (planning du jour, fiche RDV), `src/modules/appointments/status.ts` (R-51 calculé, pas enregistré).
+- Pages `/equipe/*` (voir `docs/decisions.md`, entrée « Écrans de la tablette »), route `POST /equipe/verrouiller`, scripts `pnpm staff:account` et `pnpm manager:set-code[:remote]`.
+- Décisions métier D-50 à D-54 dans `docs/dossier-projet.md`.
+
+## Points d'attention pour le lot 5
+
+- **Absences** (R-40 à R-43) : le planning affiche déjà les absences et ne propose jamais de créneau pendant l'une d'elles. Il reste l'écran de saisie, la liste des RDV touchés (confier à un collègue, déplacer, annuler avec excuses : `salonRescheduleAppointment` et `salonCancelAppointment` existent et exigent un auteur) et la confirmation du gérant avant tout email (R-43). L'entrée « Absences » du menu est grisée.
+- **Espace gérant** : `/equipe/gerant` est prêt à recevoir Carte et tarifs, Équipe et habilitations, Horaires et fermetures (entrées grisées « Bientôt »). Toute nouvelle fonction gérant : page derrière `managerUnlocked`, action derrière `asManager` (prolonge le déverrouillage), entrée au journal avec `actorType: "manager"`.
+- Le chiffre d'affaires (lot 7) doit compter `isHonored` (R-51), pas le champ `status = honored`.
+- `DaySlots.closed` existe : « Fermé » et « Complet » se distinguent.
+- Les emails de rappel (R-61) et d'avis (R-64) restent au lot 7 ; ceux du salon (modification, annulation) sont faits.
 
 ## Pièges déjà rencontrés
 
@@ -56,14 +63,16 @@ Tests à la fin du lot 3 : **294 Vitest** (unitaires et intégration sur Postgre
 - Drizzle modifie la conversion des dates du client `postgres` qu'on lui passe : pour du SQL brut avec des `Date`, utiliser un autre client.
 - Les tests d'intégration vident toutes les tables entre deux tests (`tests/integration/helpers.ts`) : y ajouter toute nouvelle table.
 - Tests Playwright : un serveur de test resté ouvert (port 3100) est **réutilisé avec son ancien build** et fait échouer les parcours au hasard. Avant de lancer `pnpm test:e2e` après un `pnpm build`, s'assurer qu'aucun `scripts/e2e-server.mjs` ne tourne. Les fichiers de test partagent une seule connexion à la base : ne jamais appeler `sql.end()` dans un fichier.
+- Verrouillage gérant : `proxy.ts` ne voit pas les en-têtes de préchargement des liens de Next 16 (il supprimait le cookie au survol d'un lien), et une Server Action n'a pas renvoyé le `Set-Cookie` d'une suppression : le verrouillage passe par `POST /equipe/verrouiller`. Un chargement complet de page (onglet rechargé) reverrouille aussi : dans les tests, ressaisir le code après chaque `page.goto`.
+- Playwright : le profil « tablette » est aussi `isMobile` ; distinguer le téléphone par la largeur (< 768 px). Un cookie `Secure` sur http n'est pas renvoyé par WebKit.
 - Un changement d'heure tombe le dernier dimanche d'octobre : les tests de dates autour du 25 octobre 2026 s'en souviennent (10 h à Paris = 8 h UTC avant, 9 h UTC après).
 
 ## Message à coller pour démarrer la prochaine conversation
 
 ```text
 Tu es le développeur principal du site et de l'application de réservation d'Elegance Strasbourg.
-Lis CLAUDE.md, puis docs/reprise.md : les lots 0, 1, 2 et 3 sont validés.
-Prépare le plan du lot 4 (voir docs/transmission-code.md et le dossier projet), pose-moi les questions nécessaires, puis attends ma validation avant d'écrire du code.
+Lis CLAUDE.md, puis docs/reprise.md : les lots 0, 1, 2, 3 et 4 sont validés.
+Prépare le plan du lot 5 (voir docs/transmission-code.md et le dossier projet), pose-moi les questions nécessaires, puis attends ma validation avant d'écrire du code.
 Travaille ensuite comme avant : tests d'abord, une règle R-xx = au moins un test, décisions notées dans docs/decisions.md, vérification sur mobile et sur tablette.
 À la fin du lot, mets à jour docs/reprise.md et prépare le message de la conversation suivante.
 ```

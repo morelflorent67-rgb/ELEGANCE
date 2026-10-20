@@ -388,6 +388,7 @@ export function AppointmentPanel({
                   value={slot?.iso ?? null}
                   onPick={setSlot}
                   reloadKey={`${moveStaffId}:${reloadKey}`}
+                  compact
                 />
                 {slot ? (
                   <p role="status" className="text-[14px] text-ivory">

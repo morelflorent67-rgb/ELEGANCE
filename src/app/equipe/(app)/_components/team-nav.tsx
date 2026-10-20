@@ -88,14 +88,14 @@ function Clock() {
 }
 
 const tab =
-  "flex h-[72px] w-[76px] shrink-0 flex-col items-center justify-center gap-1.5 text-[11px] no-underline";
+  "flex h-[72px] w-14 shrink-0 flex-col md:w-[76px] items-center justify-center gap-1.5 text-[11px] no-underline";
 
 export function TeamNav() {
   const pathname = usePathname();
   return (
     <nav
       aria-label="Navigation du salon"
-      className="flex shrink-0 items-center gap-1 border-b border-line-subtle bg-charcoal px-2 py-1 md:w-[88px] md:flex-col md:border-b-0 md:border-r md:px-0 md:py-4"
+      className="flex shrink-0 items-center gap-1 overflow-x-auto border-b border-line-subtle bg-charcoal px-2 py-1 md:w-[88px] md:flex-col md:border-b-0 md:border-r md:px-0 md:overflow-visible md:py-4"
     >
       <span className="hidden md:mb-4 md:block">
         <Logo width={60} />
@@ -133,10 +133,12 @@ export function TeamNav() {
             type="submit"
             className="flex min-h-11 items-center px-2 text-[11px] text-stone underline underline-offset-4 hover:text-ivory"
           >
-            Quitter
+            Déconnexion
           </button>
         </form>
-        <Clock />
+        <span className="hidden md:block">
+          <Clock />
+        </span>
       </div>
     </nav>
   );

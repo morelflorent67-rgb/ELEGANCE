@@ -144,4 +144,3 @@ describe("jour fermé ou complet (tablette : « Fermé » et non « Complet »)"
     expect(days.map((d) => d.closed)).toEqual([true, false, true, false]); // lundi, mardi, mercredi fermé, jeudi
   });
 });
-

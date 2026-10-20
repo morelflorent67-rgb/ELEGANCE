@@ -463,4 +463,3 @@ describe("R-52 : clients à surveiller dans l'espace gérant", () => {
     expect(await listFlaggedCustomers(t.db)).toEqual([]);
   });
 });
-
