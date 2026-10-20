@@ -244,6 +244,9 @@
     background: var(--color-led);
     box-shadow: 0 0 8px 1px rgb(255 255 255 / 0.45);
     transform-origin: left center;
+  }
+  /* Masquées seulement quand le script de révélation tourne (html.js-reveal) : sans JavaScript, tout reste visible. */
+  .js-reveal .led-line:not(.is-visible) {
     transform: scaleX(0);
   }
   .led-line[data-origin="center"] {
@@ -254,7 +257,7 @@
   }
 
   /* Révélation au défilement : data-reveal sur l'élément, --i pour la cascade (70 ms) */
-  [data-reveal] {
+  .js-reveal [data-reveal]:not(.is-visible) {
     opacity: 0;
   }
   [data-reveal].is-visible {
@@ -310,10 +313,10 @@
     animation-iteration-count: 1 !important;
     transition-duration: 1ms !important;
   }
-  [data-reveal] {
+  .js-reveal [data-reveal]:not(.is-visible) {
     opacity: 1;
   }
-  .led-line {
+  .js-reveal .led-line:not(.is-visible) {
     transform: none;
   }
   .trace path {

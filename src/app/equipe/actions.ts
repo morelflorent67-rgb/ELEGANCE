@@ -1,5 +1,6 @@
 "use server";
 
+import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { DateTime } from "luxon";
@@ -53,6 +54,7 @@ import {
 } from "@/modules/schedule/manage";
 import { sendEmailsForAppointment } from "@/modules/mail/send-now";
 import { hitRateLimit } from "@/modules/security/rate-limit";
+import { VITRINE_TAG } from "@/modules/vitrine/tag";
 import { loginStaff, currentStaffUser } from "@/modules/staff";
 import { unlockManager } from "@/modules/staff/manager";
 import {
@@ -98,7 +100,12 @@ async function asManager<T>(
     if (!(await managerUnlocked(user))) return { ok: false, error: "manager_locked" };
     const result = await run(user);
     // « 5 minutes après la dernière action » : une action réussie prolonge le déverrouillage.
-    if (result.ok) await grantManagerUnlock(user);
+    if (result.ok) {
+      await grantManagerUnlock(user);
+      // La carte, l'équipe, les horaires et les fermetures ne se changent que par ici : la vitrine, qui les garde en
+      // cache, repart de la base tout de suite. Une purge de trop est sans conséquence.
+      updateTag(VITRINE_TAG);
+    }
     return result;
   });
 }

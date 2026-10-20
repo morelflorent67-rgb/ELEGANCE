@@ -52,6 +52,7 @@ const env = {
   AUTH_MEMORY_STAFF: "equipe@elegance.test:mot-de-passe-equipe", // compte de la tablette, en mémoire seulement
   APP_SECRET: "secret-des-tests-de-bout-en-bout",
   EMAIL_TRANSPORT: "log", // aucun email ne part
+  E2E_ROUTES: "1", // /api/e2e/revalidate : vide le cache de la vitrine après une remise à zéro de la base
   SITE_URL: `http://127.0.0.1:${SITE_PORT}`,
   // Aucune clé Supabase réelle ne doit servir ici, même si un fichier .env.local en contient.
   SUPABASE_URL: "http://127.0.0.1:1",
