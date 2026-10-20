@@ -50,6 +50,12 @@ async function Confirmation({
   if (!appointment) notFound();
   const settings = await loadSettings(database);
 
+  // R-30, R-32 : modifiable en ligne jusqu'à 48 h avant, sauf si le RDV a été pris moins de 48 h avant.
+  const deadline = new Date(
+    appointment.startsAt.getTime() - settings.changeCutoffHours * 3_600_000,
+  );
+  const changeableOnline = appointment.createdAt.getTime() <= deadline.getTime();
+
   const calendarUrl = `/api/agenda/${appointment.id}?t=${signToken(appSecret(), calendarSubject(appointment.id))}`;
 
   return (
@@ -130,8 +136,9 @@ async function Confirmation({
           Voir mes rendez-vous
         </Link>
         <p className="mt-1.5 text-body-sm leading-normal text-stone">
-          Modifiable ou annulable jusqu&rsquo;à {settings.changeCutoffHours} h avant, depuis Mes
-          RDV.
+          {changeableOnline
+            ? `Modifiable ou annulable jusqu'à ${settings.changeCutoffHours} h avant, depuis Mes RDV.`
+            : `Ce rendez-vous ne peut pas être modifié en ligne : pour un changement, appelez le salon au ${SALON.phoneDisplay}.`}
         </p>
         <Link
           href="/"

@@ -9,6 +9,7 @@ export interface AppointmentView {
   startsAt: Date;
   endsAt: Date;
   status: AppointmentStatus;
+  createdAt: Date;
   staffFirstName: string;
   note: string | null;
   items: { name: string; priceCents: number; durationMin: number }[];
@@ -23,6 +24,7 @@ async function withItems(
     startsAt: Date;
     endsAt: Date;
     status: AppointmentStatus;
+    createdAt: Date;
     staffFirstName: string;
     note: string | null;
   }[],
@@ -59,6 +61,7 @@ const columns = {
   startsAt: appointment.startsAt,
   endsAt: appointment.endsAt,
   status: appointment.status,
+  createdAt: appointment.createdAt,
   staffFirstName: staff.firstName,
   note: appointment.customerNote,
 };

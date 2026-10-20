@@ -228,7 +228,7 @@ export function BookingFlow({
               <button
                 type="button"
                 onClick={() => edit(1)}
-                className="min-h-11 self-start text-button-sm uppercase text-ivory"
+                className="min-h-11 self-start py-2 text-left text-button-sm uppercase leading-snug text-ivory"
               >
                 Ajouter une prestation à la suite
               </button>

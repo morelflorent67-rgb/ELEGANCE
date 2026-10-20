@@ -238,7 +238,7 @@ Ces 52 règles fixent le comportement du moteur de réservation : toutes sont d�
 | N° | Règle | Statut |
 | --- | --- | --- |
 | R-70 | Le compte client demande prénom, nom, téléphone, email et mot de passe. | Décidé |
-| R-71 | Le compte se crée au moment de confirmer la première réservation, avec acceptation des conditions. | Décidé |
+| R-71 | Le compte se crée à l'étape d'identification de la première réservation (avant le récapitulatif), avec acceptation des conditions (D-44). | Décidé |
 | R-72 | La tablette reste connectée en mode équipe : planning, RDV et fiches clients. | Décidé |
 | R-73 | Les fonctions gérant demandent un code : tarifs, équipe, horaires, chiffre d'affaires, suppressions. | Décidé |
 | R-74 | Sur la tablette, qui modifie ou annule un RDV choisit son nom ; l'action est inscrite au journal. | Décidé |
@@ -247,7 +247,7 @@ Ces 52 règles fixent le comportement du moteur de réservation : toutes sont d�
 
 ## Journal des décisions
 
-Le 20 octobre 2026, 43 décisions ont fixé le cadre du projet ; on ne revient sur l'une d'elles qu'en l'écrivant ici.
+Le 20 octobre 2026, 45 décisions ont fixé le cadre du projet ; on ne revient sur l'une d'elles qu'en l'écrivant ici.
 
 | N° | Décision | Raison |
 | --- | --- | --- |
@@ -294,6 +294,8 @@ Le 20 octobre 2026, 43 décisions ont fixé le cadre du projet ; on ne revient s
 | D-41 | Le salon est limité à 2 RDV à venir par client (R-25) mais peut réserver pour un client bloqué en ligne (R-52) | Le blocage ne vise que la réservation en ligne |
 | D-42 | L'inscription ne bloque pas sur la vérification de l'email : l'email de confirmation en tient lieu (précise R-71) | Ne pas casser le parcours de réservation ; le mot de passe oublié passe par l'email |
 | D-43 | La suppression d'un compte efface le nom, le téléphone et l'email, et garde les RDV passés sans identité (précise R-75) | Le chiffre d'affaires et le journal restent justes |
+| D-44 | Le compte se crée à l'étape 4 du parcours (« Créer mon compte »), et non au clic sur « Confirmer » (précise R-71) | Parcours de la maquette ; un abandon laisse un compte sans RDV, sans conséquence |
+| D-45 | « Mot de passe oublié » fait partie de la V1 : lien par email, réponse identique que l'adresse ait un compte ou non | Sans lui, un client qui oublie son mot de passe est bloqué (D-42) |
 
 ## Documents liés
 

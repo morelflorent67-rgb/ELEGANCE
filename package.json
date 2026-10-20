@@ -21,7 +21,8 @@
     "db:reset": "node scripts/db-local.mjs reset",
     "db:migrate:remote": "node scripts/migrate-remote.mjs",
     "db:seed": "node scripts/seed.mjs",
-    "db:seed:remote": "node scripts/seed.mjs --remote"
+    "db:seed:remote": "node scripts/seed.mjs --remote",
+    "smoke:auth": "node scripts/smoke-supabase-auth.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

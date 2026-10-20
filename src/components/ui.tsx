@@ -96,7 +96,7 @@ export function PageHeader({ backHref, label }: { backHref: string; label?: stri
       {label ? (
         <span className="text-label uppercase text-ivory">{label}</span>
       ) : (
-        <Link href="/" aria-label="Accueil">
+        <Link href="/" aria-label="Accueil" className="flex min-h-11 items-center">
           <Logo />
         </Link>
       )}
