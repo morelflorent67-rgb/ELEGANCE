@@ -1,7 +1,7 @@
 # Reprise du projet : où on en est
 
 Ce document permet de reprendre le travail dans une **nouvelle conversation**, sans rien perdre. Il se met à jour à la fin de chaque lot.
-À jour au **20 octobre 2026**, fin du lot 5 (terminé, **à valider par Florent**).
+À jour au **20 octobre 2026**, fin du lot 5 (validé par Florent le 20 octobre 2026).
 
 ## Avancement
 
@@ -12,7 +12,7 @@ Ce document permet de reprendre le travail dans une **nouvelle conversation**, s
 | 2 | Réservation client, comptes, email de confirmation | Validé |
 | 3 | Espace client : Mes RDV, modifier ou annuler jusqu'à 48 h, « Reprendre le même RDV », Mes informations, suppression du compte | Validé |
 | 4 | Planning tablette : 4 colonnes, fiche RDV, réservation par le salon, lapins, code gérant, choix de l'auteur | Validé |
-| 5 | Gestion : carte et habilitations, équipe, horaires, fermetures, absences et RDV touchés | Terminé, à valider |
+| 5 | Gestion : carte et habilitations, équipe, horaires, fermetures, absences et RDV touchés | Validé |
 | 6 à 8 | Vitrine, emails et tableau de bord, recette | À venir (voir `transmission-code.md`) |
 
 Tests à la fin du lot 5 : **558 Vitest** (unitaires et intégration sur Postgres réel) et **196 parcours Playwright** (146 exécutés ; 50 réservés à la tablette ou au mobile sont sautés selon le profil). Aucun ne doit casser. Lint, typecheck et build verts.
@@ -38,7 +38,7 @@ Tests à la fin du lot 5 : **558 Vitest** (unitaires et intégration sur Postgre
 2. ~~Compte équipe de la tablette~~ et ~~code gérant~~ : faits le 20 octobre 2026. Pour les changer : `pnpm staff:account`, `pnpm manager:set-code` (base locale) ou `pnpm manager:set-code:remote` (base Supabase, modifie la base en ligne). Florent tape lui-même ses secrets dans le terminal, jamais dans le chat.
 3. **Brevo** (compte ouvert) : créer une clé d'API, faire vérifier une adresse d'expéditeur, puis ajouter `BREVO_API_KEY`, `EMAIL_FROM` et `CRON_SECRET` dans Vercel (Settings, Environment Variables). Tant que ce n'est pas fait, les emails restent en file en production (confirmations, annulations, déplacements, et ceux que le gérant libère).
 4. **Supabase** : Authentication, URL Configuration (Site URL et adresse de redirection `…/auth/callback`), puis SMTP Brevo pour le mot de passe oublié.
-5. **Vercel Pro** : à prendre avec le client juste avant la livraison (c'est lui qui paie). Passer alors le cron de `vercel.json` à `* * * * *`. D'ici là, l'envoi immédiat des emails couvre le cas normal.
+5. **Vercel Pro et région** : à prendre avec le client juste avant la livraison (c'est lui qui paie). Passer alors le cron de `vercel.json` à `* * * * *`. D'ici là, l'envoi immédiat des emails couvre le cas normal. **Lenteur des pages de la tablette sur le site de test** : probablement la région des fonctions Vercel (par défaut les États-Unis) loin de la base Supabase (Irlande). Florent a décidé de reporter : à ce moment-là, ajouter `"regions": ["fra1"]` dans `vercel.json`, mesurer avant et après, et réduire au besoin les requêtes par page (le nombre de RDV à traiter de la barre est recalculé à chaque écran).
 6. Les clés Supabase et le mot de passe de la base, passés dans le chat, sont laissés tels quels par décision de Florent.
 7. Domaine définitif, textes légaux validés par un professionnel : avant la mise en ligne.
 8. **Vérifier sur la vraie tablette** (iPad, paysage ; tout a été vérifié par captures à 1194 × 834 et 390 × 844, pas sur l'appareil réel) : planning, réservation, espace gérant (carte, équipe, horaires) et absences.
