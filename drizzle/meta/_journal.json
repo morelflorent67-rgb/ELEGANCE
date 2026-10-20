@@ -43,6 +43,13 @@
       "when": 1792510472943,
       "tag": "0005_email_outbox_payload",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792521000986,
+      "tag": "0006_email_held_for_manager",
+      "breakpoints": true
     }
   ]
 }

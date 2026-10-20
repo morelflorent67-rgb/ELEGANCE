@@ -249,6 +249,7 @@ async function claim(db: Database, options: ProcessOptions): Promise<Row[]> {
       .where(
         and(
           eq(emailOutbox.status, "pending"),
+          eq(emailOutbox.heldForManager, false), // R-43 : retenu jusqu'à la confirmation du gérant
           lte(emailOutbox.nextAttemptAt, now),
           ...(options.ids ? [inArray(emailOutbox.id, options.ids)] : []),
         ),

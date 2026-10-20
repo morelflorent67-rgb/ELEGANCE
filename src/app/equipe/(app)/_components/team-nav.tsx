@@ -39,7 +39,9 @@ const ITEMS = [
     icon: icon(<path d="M12 5v14M5 12h14" />),
   },
   {
+    href: "/equipe/absences",
     label: "Absences",
+    match: (p: string) => p.startsWith("/equipe/absences"),
     icon: icon(
       <>
         <circle cx="10" cy="8" r="4" />
@@ -90,7 +92,8 @@ function Clock() {
 const tab =
   "flex h-[72px] w-14 shrink-0 flex-col md:w-[76px] items-center justify-center gap-1.5 text-[11px] no-underline";
 
-export function TeamNav() {
+/** `toHandle` : rendez-vous à traiter (absence, fermeture…), affiché en pastille sur « Absences » (R-42). */
+export function TeamNav({ toHandle = 0 }: { toHandle?: number }) {
   const pathname = usePathname();
   return (
     <nav
@@ -122,7 +125,18 @@ export function TeamNav() {
             aria-current={current ? "page" : undefined}
             className={`${tab} ${current ? "bg-graphite-light text-ivory" : "text-stone hover:text-ivory"}`}
           >
-            {item.icon}
+            <span className="relative flex">
+              {item.icon}
+              {item.label === "Absences" && toHandle > 0 ? (
+                <span
+                  role="status"
+                  aria-label={`${toHandle} rendez-vous à traiter`}
+                  className="absolute -right-2.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center bg-brick px-1 text-[11px] font-medium leading-none text-ink"
+                >
+                  {toHandle}
+                </span>
+              ) : null}
+            </span>
             {item.label}
           </Link>
         );

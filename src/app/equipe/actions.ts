@@ -20,6 +20,13 @@ import {
   salonRescheduleAppointment,
   undoNoShow,
 } from "@/modules/booking";
+import {
+  declareAbsence,
+  deleteAbsence,
+  listAppointmentsToHandle,
+  needsHold,
+  releaseHeldEmails,
+} from "@/modules/absences";
 import { loadStaffChoices, loadStaffChoicesFor, type StaffChoice } from "@/modules/catalog";
 import {
   createService,
@@ -300,37 +307,49 @@ export async function createSalonAppointment(
   });
 }
 
+/**
+ * `held` : le rendez-vous était à traiter (absence, fermeture…) ou avait déjà un email retenu : l'email du client attend
+ * la confirmation du gérant (R-43, D-56) au lieu de partir tout de suite (D-52).
+ */
 export async function rescheduleAppointmentAsSalon(
   input: unknown,
-): Promise<TeamResult<{ changed: boolean }>> {
+): Promise<TeamResult<{ changed: boolean; held: boolean }>> {
   const parsed = z
     .object({ appointmentId: uuid, staffId, startsAt: isoInstant, authorId: z.string() })
     .safeParse(input);
   if (!parsed.success) return { ok: false, error: "invalid" };
   return asStaff(async () => {
+    const hold = await needsHold(db(), parsed.data.appointmentId);
     const result = await salonRescheduleAppointment(db(), {
       appointmentId: parsed.data.appointmentId,
       staffId: parsed.data.staffId,
       startsAt: new Date(parsed.data.startsAt),
       authorStaffId: parsed.data.authorId,
+      holdEmails: hold,
     });
-    if (result.changed) after(() => sendEmailsForAppointment(db(), parsed.data.appointmentId));
-    return { ok: true, changed: result.changed };
+    if (result.changed && !hold) {
+      after(() => sendEmailsForAppointment(db(), parsed.data.appointmentId));
+    }
+    return { ok: true, changed: result.changed, held: hold && result.changed };
   });
 }
 
-export async function cancelAppointmentAsSalon(input: unknown): Promise<TeamResult> {
+export async function cancelAppointmentAsSalon(
+  input: unknown,
+): Promise<TeamResult<{ held: boolean }>> {
   const parsed = z.object({ appointmentId: uuid, authorId: z.string() }).safeParse(input);
   if (!parsed.success) return { ok: false, error: "invalid" };
   return asStaff(async () => {
+    const hold = await needsHold(db(), parsed.data.appointmentId);
     const result = await salonCancelAppointment(db(), {
       appointmentId: parsed.data.appointmentId,
       authorStaffId: parsed.data.authorId,
+      holdEmails: hold,
     });
-    if (!result.alreadyCancelled) {
+    if (!result.alreadyCancelled && !hold) {
       after(() => sendEmailsForAppointment(db(), parsed.data.appointmentId));
     }
-    return { ok: true };
+    return { ok: true, held: hold && !result.alreadyCancelled };
   });
 }
 
@@ -560,5 +579,50 @@ export async function removeClosureAction(input: unknown): Promise<TeamResult> {
   return asManager(async (user) => {
     await removeClosure(db(), parsed.data.closureId, user.id);
     return { ok: true };
+  });
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Absences et rendez-vous à traiter (R-40 à R-43, D-55 à D-57) : déclarées par l'équipe, confirmées par le gérant
+
+export async function declareAbsenceAction(
+  input: unknown,
+): Promise<TeamResult<{ toHandle: number }>> {
+  const parsed = z
+    .object({
+      staffId: uuid,
+      startDate: isoDate,
+      endDate: isoDate,
+      startTime: z.string().max(5).optional(),
+      endTime: z.string().max(5).optional(),
+      reason: z.string().max(200),
+      authorId: z.string(),
+    })
+    .safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid_absence" };
+  return asStaff<{ toHandle: number }>(async () => {
+    const { authorId, ...absence } = parsed.data;
+    await declareAbsence(db(), absence, authorId);
+    return { ok: true, toHandle: (await listAppointmentsToHandle(db())).length };
+  });
+}
+
+export async function deleteAbsenceAction(input: unknown): Promise<TeamResult> {
+  const parsed = z.object({ absenceId: uuid, authorId: z.string() }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asStaff(async () => {
+    await deleteAbsence(db(), parsed.data.absenceId, parsed.data.authorId);
+    return { ok: true };
+  });
+}
+
+/** R-43 : le gérant confirme, avec son code ; les emails retenus partent alors. */
+export async function releaseHeldEmailsAction(): Promise<TeamResult<{ count: number }>> {
+  return asManager<{ count: number }>(async (user) => {
+    const released = await releaseHeldEmails(db(), user.id);
+    for (const appointmentId of released.appointmentIds) {
+      after(() => sendEmailsForAppointment(db(), appointmentId));
+    }
+    return { ok: true, count: released.count };
   });
 }

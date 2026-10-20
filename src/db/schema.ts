@@ -253,6 +253,8 @@ export const emailOutbox = pgTable(
     lastError: text("last_error"),
     /** Données propres au message qui ne se relisent pas dans le RDV (ex. l'ancien créneau d'un déplacement). */
     payload: jsonb("payload"),
+    /** Retenu jusqu'à la confirmation du gérant : rien ne part au client sans elle (R-43, D-56). */
+    heldForManager: boolean("held_for_manager").notNull().default(false),
     dedupeKey: text("dedupe_key").notNull().unique(), // un même message ne part pas deux fois
     createdAt: instant("created_at").notNull().defaultNow(),
     sentAt: instant("sent_at"),

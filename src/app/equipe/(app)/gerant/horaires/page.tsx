@@ -7,6 +7,7 @@ import { DateTime } from "luxon";
 import { db } from "@/db/client";
 import { loadSettings } from "@/modules/availability";
 import { listClosures, loadWeekHours } from "@/modules/schedule/manage";
+import { ToHandleNotice } from "../../_components/to-handle-notice";
 import { managerUnlocked, requireStaff } from "../../../_lib/session";
 import { HorairesManager } from "./horaires-manager";
 
@@ -53,6 +54,9 @@ async function Horaires() {
             rendez-vous ne la chevauche. Les rendez-vous déjà pris ne bougent pas.
           </p>
         </div>
+        <Suspense fallback={null}>
+          <ToHandleNotice />
+        </Suspense>
         <HorairesManager week={week} closures={closures} today={today} />
       </div>
     </main>

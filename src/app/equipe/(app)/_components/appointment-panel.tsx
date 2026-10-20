@@ -148,7 +148,11 @@ export function AppointmentPanel({
         }
         return;
       }
-      onToast(message);
+      // R-43, D-56 : un rendez-vous à traiter (absence, fermeture…) ne prévient pas le client avant le gérant.
+      const held = "held" in result && result.held === true;
+      onToast(
+        held ? `${message.split(" · ")[0]} · l’email attend la confirmation du gérant.` : message,
+      );
       close();
       if (mode === "cancel") onSelect(null);
       router.refresh();

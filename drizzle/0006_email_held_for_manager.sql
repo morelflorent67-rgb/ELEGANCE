@@ -1,0 +1,1 @@
+ALTER TABLE "email_outbox" ADD COLUMN "held_for_manager" boolean DEFAULT false NOT NULL;

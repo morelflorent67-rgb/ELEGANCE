@@ -204,7 +204,14 @@ export type ChangeActor = { type: "customer" | "staff"; id: string };
 export async function applyReschedule(
   tx: Database,
   row: AppointmentRow,
-  input: { staffId: string | "any"; startsAt: Date; audience: Audience; actor: ChangeActor },
+  input: {
+    staffId: string | "any";
+    startsAt: Date;
+    audience: Audience;
+    actor: ChangeActor;
+    /** L'email du client attend la confirmation du gérant (R-43, D-56). */
+    holdEmails?: boolean;
+  },
   now: Date,
 ): Promise<RescheduledAppointment> {
   const settings = await loadSettings(tx);
@@ -298,6 +305,7 @@ export async function applyReschedule(
       toEmail: owner.email,
       appointmentId: row.id,
       dedupeKey: `modification:${row.id}:${randomUUID()}`,
+      ...(input.holdEmails ? { held: true } : {}),
       payload: {
         previousStartsAt: row.startsAt.toISOString(),
         previousStaffFirstName: nameOf(row.staffId),

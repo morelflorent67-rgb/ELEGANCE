@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { db } from "@/db/client";
 import { listServicesForManager } from "@/modules/catalog/manage";
 import { listActiveStaff } from "@/modules/staff";
+import { ToHandleNotice } from "../../_components/to-handle-notice";
 import { managerUnlocked, requireStaff } from "../../../_lib/session";
 import { CarteManager } from "./carte-manager";
 
@@ -49,6 +50,9 @@ async function Carte() {
             déjà pris gardent leur prix et leur durée.
           </p>
         </div>
+        <Suspense fallback={null}>
+          <ToHandleNotice />
+        </Suspense>
         <CarteManager
           services={services}
           team={team.map((m) => ({ id: m.id, firstName: m.firstName, role: m.role }))}

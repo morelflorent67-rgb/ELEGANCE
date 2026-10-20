@@ -45,6 +45,9 @@ export type DomainErrorCode =
   // Horaires et fermetures (R-01, R-03)
   | "invalid_hours"
   | "invalid_closure"
+  | "invalid_absence"
+  | "absence_in_past"
+  | "unknown_absence"
   | "closure_in_past"
   | "unknown_closure";
 

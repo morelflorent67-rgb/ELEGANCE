@@ -42,6 +42,10 @@ const MESSAGES: Partial<Record<TeamError, string>> = {
     "Vérifiez les horaires : chaque plage finit après son début, sur la grille de 15 minutes, sans toucher la suivante, et au moins un jour doit rester ouvert.",
   invalid_closure:
     "Vérifiez les dates : la fin ne peut pas précéder le début. Le motif fait 80 caractères au plus.",
+  invalid_absence:
+    "Vérifiez l'absence : la fin ne peut pas précéder le début, et des heures précises se donnent sur un seul jour, par quarts d'heure.",
+  absence_in_past: "Cette absence est déjà terminée.",
+  unknown_absence: "Cette absence n'existe plus.",
   closure_in_past: "Cette fermeture est déjà terminée.",
   unknown_closure: "Cette fermeture n'existe plus.",
   manager_locked: "L'espace gérant est verrouillé. Saisissez le code gérant.",

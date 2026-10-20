@@ -18,6 +18,8 @@ export async function enqueueEmail(
     runAt?: Date;
     /** Données propres au message (ex. l'ancien créneau d'un déplacement). Rien de plus que ce que l'email affiche. */
     payload?: Record<string, unknown>;
+    /** Retenu jusqu'à la confirmation du gérant (R-43, D-56) : ni l'envoi immédiat ni le cron ne le prennent. */
+    held?: boolean;
   },
 ): Promise<void> {
   await db
@@ -28,6 +30,7 @@ export async function enqueueEmail(
       appointmentId: input.appointmentId,
       dedupeKey: input.dedupeKey,
       ...(input.payload ? { payload: input.payload } : {}),
+      ...(input.held ? { heldForManager: true } : {}),
       ...(input.runAt ? { nextAttemptAt: input.runAt } : {}),
     })
     .onConflictDoNothing({ target: emailOutbox.dedupeKey });

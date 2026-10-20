@@ -5,6 +5,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { db } from "@/db/client";
 import { listStaffForManager } from "@/modules/staff/manage";
+import { ToHandleNotice } from "../../_components/to-handle-notice";
 import { managerUnlocked, requireStaff } from "../../../_lib/session";
 import { EquipeManager } from "./equipe-manager";
 
@@ -53,6 +54,9 @@ async function Equipe() {
             .
           </p>
         </div>
+        <Suspense fallback={null}>
+          <ToHandleNotice />
+        </Suspense>
         <EquipeManager members={members} />
       </div>
     </main>

@@ -61,6 +61,8 @@ export interface SalonCancelInput {
   appointmentId: string;
   /** Membre de l'équipe qui annule (R-74). */
   authorStaffId: string;
+  /** L'email attend la confirmation du gérant (R-43, D-56) : rendez-vous touché par une absence, une fermeture… */
+  holdEmails?: boolean;
 }
 
 /**
@@ -107,6 +109,7 @@ export async function salonCancelAppointment(
         appointmentId: row.id,
         dedupeKey: `cancellation:${row.id}`,
         payload: { by: "salon" },
+        ...(input.holdEmails ? { held: true } : {}),
       });
     }
     return { alreadyCancelled: false };
@@ -119,6 +122,8 @@ export interface SalonRescheduleInput {
   staffId: string | "any";
   startsAt: Date;
   authorStaffId: string;
+  /** L'email attend la confirmation du gérant (R-43, D-56). */
+  holdEmails?: boolean;
 }
 
 /**
@@ -144,6 +149,7 @@ export async function salonRescheduleAppointment(
           startsAt: input.startsAt,
           audience: "salon",
           actor: { type: "staff", id: authorId },
+          holdEmails: input.holdEmails,
         },
         now,
       );

@@ -6,6 +6,7 @@ import { db } from "@/db/client";
 import { listFlaggedCustomers } from "@/modules/customers/staff-view";
 import { loadSettings } from "@/modules/availability";
 import { managerUnlocked, requireStaff } from "../../_lib/session";
+import { ToHandleNotice } from "../_components/to-handle-notice";
 import { ManagerGate } from "./manager-gate";
 import { CustomerFinder, LockButton } from "./manager-tools";
 
@@ -66,6 +67,10 @@ async function Manager({
               : ""}
           </p>
         ) : null}
+
+        <Suspense fallback={null}>
+          <ToHandleNotice />
+        </Suspense>
 
         <section aria-label="Clients" className="flex flex-col gap-4">
           <h2 className="border-b border-line pb-2 text-label uppercase tracking-[0.3em] text-stone">
