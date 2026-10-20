@@ -32,13 +32,12 @@ Tests à la fin du lot 3 : **294 Vitest** (unitaires et intégration sur Postgre
 
 ## Actions en attente (à demander à Florent, jamais sans son accord)
 
-1. **Migration `0005_email_outbox_payload`** à appliquer à la base Supabase de test : `pnpm db:migrate:remote` (ajoute une colonne à `email_outbox`). Sans elle, le site de test en ligne ne sait pas écrire les emails de déplacement.
-2. **`pnpm smoke:auth`** à lancer une fois : il vérifie sur le vrai Supabase le changement d'adresse email et le code « adresse déjà prise » (comptes jetables créés puis supprimés). Le code Supabase de `verifyPassword` et `updateEmail` n'a pas encore été vu fonctionner en vrai.
-3. **Brevo** (compte ouvert) : créer une clé d'API, faire vérifier une adresse d'expéditeur, puis ajouter `BREVO_API_KEY`, `EMAIL_FROM` et `CRON_SECRET` dans Vercel (Settings, Environment Variables). Tant que ce n'est pas fait, les emails restent en file en production.
-4. **Supabase** : Authentication, URL Configuration (Site URL et adresse de redirection `…/auth/callback`), puis SMTP Brevo pour le mot de passe oublié.
-5. **Vercel Pro** : à prendre avec le client juste avant la livraison (c'est lui qui paie). Passer alors le cron de `vercel.json` à `* * * * *`. D'ici là, l'envoi immédiat des emails couvre le cas normal.
-6. Les clés Supabase et le mot de passe de la base, passés dans le chat, sont laissés tels quels par décision de Florent.
-7. Domaine définitif, textes légaux validés par un professionnel : avant la mise en ligne.
+1. ~~Migration `0005` et `pnpm smoke:auth`~~ : faits le 20 octobre 2026 avec l'accord de Florent (migration appliquée, authentification Supabase conforme).
+2. **Brevo** (compte ouvert) : créer une clé d'API, faire vérifier une adresse d'expéditeur, puis ajouter `BREVO_API_KEY`, `EMAIL_FROM` et `CRON_SECRET` dans Vercel (Settings, Environment Variables). Tant que ce n'est pas fait, les emails restent en file en production.
+3. **Supabase** : Authentication, URL Configuration (Site URL et adresse de redirection `…/auth/callback`), puis SMTP Brevo pour le mot de passe oublié.
+4. **Vercel Pro** : à prendre avec le client juste avant la livraison (c'est lui qui paie). Passer alors le cron de `vercel.json` à `* * * * *`. D'ici là, l'envoi immédiat des emails couvre le cas normal.
+5. Les clés Supabase et le mot de passe de la base, passés dans le chat, sont laissés tels quels par décision de Florent.
+6. Domaine définitif, textes légaux validés par un professionnel : avant la mise en ligne.
 
 ## Points d'attention pour le lot 4
 

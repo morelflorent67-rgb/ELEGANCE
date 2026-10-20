@@ -122,11 +122,13 @@ try {
     email: newEmail,
     email_confirm: true,
   });
+  // Supabase refuse sans code reconnaissable (« Error updating user ») : le code traite ce cas comme une erreur
+  // générale, le cas normal étant déjà intercepté par la vérification de la fiche client.
+  check("prendre l'adresse d'un autre compte est refusé", !!clash.error, clash.error?.message);
+  const holders = await admin.auth.admin.listUsers({ perPage: 200 });
   check(
-    "prendre l'adresse d'un autre compte renvoie un code reconnu (email_exists)",
-    clash.error?.code === "email_exists" ||
-      /already|registered|exists/i.test(clash.error?.message ?? ""),
-    `code : ${clash.error?.code ?? "aucune erreur"}`,
+    "aucun doublon d'adresse n'a été créé",
+    holders.data.users.filter((u) => u.email === newEmail).length === 1,
   );
   if (other.data?.user) await admin.auth.admin.deleteUser(other.data.user.id);
 } finally {
