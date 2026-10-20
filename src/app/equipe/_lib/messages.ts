@@ -24,6 +24,7 @@ const MESSAGES: Partial<Record<TeamError, string>> = {
   not_modifiable: "Ce rendez-vous est déjà annulé ou signalé : il ne se modifie plus.",
   not_started: "Le rendez-vous n'a pas encore commencé.",
   not_no_show: "Ce rendez-vous n'est pas signalé comme un lapin.",
+  invalid_amount: "Le montant doit être un nombre d'euros entre 0 et 1 000, avec au plus deux décimales.",
   author_required: "Choisissez qui fait la modification.",
   unknown_author: "Ce prénom ne fait plus partie de l'équipe.",
   customer_not_blockable: "Le client n'a pas encore assez de lapins pour être bloqué.",

@@ -5,6 +5,7 @@ import { appointment, appointmentItem, customer, staff } from "@/db/schema";
 import { DomainError } from "@/lib/domain-error";
 import { recordAudit } from "@/modules/audit/record";
 import { enqueueEmail } from "@/modules/mail/outbox";
+import { scheduleReminder } from "@/modules/mail/reminders";
 import { assertActiveAuthor } from "@/modules/staff/team";
 import {
   checkSlot,
@@ -188,6 +189,14 @@ export async function createAppointment(
           toEmail: client.email,
           appointmentId: created.id,
           dedupeKey: `confirmation:${created.id}`,
+        });
+        // R-61 : le rappel de J-72 h, pour un RDV pris plus tôt.
+        await scheduleReminder(tx, {
+          appointmentId: created.id,
+          toEmail: client.email,
+          startsAt: input.startsAt,
+          now,
+          reminderHours: settings.reminderHours,
         });
       }
 

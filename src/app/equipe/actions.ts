@@ -14,6 +14,7 @@ import { getAuthDriver } from "@/modules/auth";
 import type { AuthUser } from "@/modules/auth/types";
 import { getSlotsForRange, loadSettings } from "@/modules/availability";
 import {
+  adjustAppointmentAmount,
   createAppointment,
   loadSalonMovable,
   markNoShow,
@@ -371,6 +372,31 @@ export async function markNoShowAction(
       authorStaffId: parsed.data.authorId,
     });
     return { ok: true, noShowCount: result.noShowCount };
+  });
+}
+
+/**
+ * Corrige le montant encaissé d'un RDV à la clôture (R-53, R-54) : toute l'équipe, signée d'un prénom (R-74).
+ * `amountCents` null rétablit le prix de la carte.
+ */
+export async function adjustAmountAction(
+  input: unknown,
+): Promise<TeamResult<{ amountCents: number; adjusted: boolean }>> {
+  const parsed = z
+    .object({
+      appointmentId: uuid,
+      authorId: z.string(),
+      amountCents: z.number().int().nullable(),
+    })
+    .safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asStaff(async () => {
+    const result = await adjustAppointmentAmount(db(), {
+      appointmentId: parsed.data.appointmentId,
+      authorStaffId: parsed.data.authorId,
+      amountCents: parsed.data.amountCents,
+    });
+    return { ok: true, ...result };
   });
 }
 

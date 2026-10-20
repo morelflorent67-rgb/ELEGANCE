@@ -25,6 +25,8 @@ export interface SalonRules {
   noShowBlockThreshold: number;
   /** R-61 : le rappel part ce nombre d'heures avant le rendez-vous. */
   reminderHours: number;
+  /** R-64 : le salon a renseigné sa page d'avis, donc une invitation part le lendemain d'un rendez-vous honoré. */
+  reviewInvitations: boolean;
 }
 
 export interface VitrineData {
@@ -53,6 +55,7 @@ export async function readVitrine(db: Database, now: Date = new Date()): Promise
       maxUpcomingPerCustomer: settings.maxUpcomingPerCustomer,
       noShowBlockThreshold: settings.noShowBlockThreshold,
       reminderHours: settings.reminderHours,
+      reviewInvitations: !!settings.reviewUrl,
     },
     services,
     team,

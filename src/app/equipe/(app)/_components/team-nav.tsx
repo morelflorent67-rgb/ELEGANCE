@@ -50,13 +50,15 @@ const ITEMS = [
     ),
   },
   {
+    href: "/equipe/gerant/bilan",
     label: "Bilan",
+    match: (p: string) => p.startsWith("/equipe/gerant/bilan"),
     icon: icon(<path d="M5 20V11M12 20V4M19 20v-7" />),
   },
   {
     href: "/equipe/gerant",
     label: "Gérant",
-    match: (p: string) => p.startsWith("/equipe/gerant"),
+    match: (p: string) => p.startsWith("/equipe/gerant") && !p.startsWith("/equipe/gerant/bilan"),
     icon: icon(
       <>
         <rect x="5" y="11" width="14" height="10" />
@@ -104,19 +106,6 @@ export function TeamNav({ toHandle = 0 }: { toHandle?: number }) {
         <Logo width={60} />
       </span>
       {ITEMS.map((item) => {
-        if (!("href" in item)) {
-          return (
-            <span
-              key={item.label}
-              aria-disabled="true"
-              title="Bientôt disponible"
-              className={`${tab} cursor-not-allowed text-stone-dark opacity-60`}
-            >
-              {item.icon}
-              {item.label}
-            </span>
-          );
-        }
         const current = item.match(pathname);
         return (
           <Link

@@ -15,6 +15,7 @@ import {
   type ServiceRow,
 } from "@/modules/availability";
 import { enqueueEmail } from "@/modules/mail/outbox";
+import { scheduleReminder } from "@/modules/mail/reminders";
 
 // Modification et annulation d'un RDV par le client (R-30 à R-32). Le délai se décide ici, sur l'horloge reçue en
 // paramètre, avec `salon_settings.change_cutoff_hours` : le navigateur n'a jamais le dernier mot.
@@ -316,6 +317,16 @@ export async function applyReschedule(
         // D-52 : un changement décidé par le salon se dit autrement (« suite à notre échange »).
         ...(input.actor.type === "staff" ? { by: "salon" } : {}),
       },
+    });
+    // R-61 : le rappel suit le nouveau créneau ; celui de l'ancien est abandonné à l'envoi.
+    // Un rappel qui attend la confirmation du gérant (RDV touché par une absence…) partirait trop tôt : il reste
+    // dans la file comme les autres emails et le programme d'envoi le repousse tant que le RDV est à traiter.
+    await scheduleReminder(tx, {
+      appointmentId: row.id,
+      toEmail: owner.email,
+      startsAt: input.startsAt,
+      now,
+      reminderHours: settings.reminderHours,
     });
   }
 

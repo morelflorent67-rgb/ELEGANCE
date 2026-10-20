@@ -34,6 +34,8 @@ export type DomainErrorCode =
   | "not_no_show"
   | "customer_not_blockable"
   | "customer_has_no_account"
+  // Correction du montant à la clôture (R-53, R-54)
+  | "invalid_amount"
   // Gestion de la carte et de l'équipe par le gérant (R-10 à R-13)
   | "invalid_service"
   | "unknown_staff"

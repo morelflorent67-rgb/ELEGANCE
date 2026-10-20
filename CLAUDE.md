@@ -50,6 +50,12 @@
 - `src/modules/auth` : interface d'authentification (Supabase en production, mémoire pour les tests, refusée sur Vercel). `src/modules/customers` : comptes clients, limitation d'essais, état de réservation, « Mes informations » et suppression de compte (`profile.ts`, anonymisation R-75). `src/modules/audit` : journal d'audit, à écrire dans la transaction de l'action.
 - Next 16 garde la page précédente cachée dans le DOM : dans les tests Playwright, filtrer les textes avec `.filter({ visible: true })`.
 
+## Emails et bilan (lot 7)
+- Rappel (R-61, D-59) : `scheduleReminder` (`src/modules/mail/reminders.ts`) le met en file dans la transaction de la réservation et du déplacement ; le programme d'envoi (`worker.ts`) l'abandonne si le RDV est annulé ou déplacé et le repousse (`Defer`) tant qu'il est « à traiter ».
+- Invitation à un avis (R-64, D-58) : `scheduleReviewInvitations` (`mail/review-invitations.ts`), appelée par le cron avant l'envoi. Un seul bouton vers `salon_settings.review_url` (pas de lien, pas d'invitation) ; désabonnement par `/avis/desinscription` (lien signé, `customer.review_opt_out`).
+- `src/modules/dashboard` : `period.ts`, `compute.ts` (fonctions pures) et `load.ts`. Page `/equipe/gerant/bilan`, derrière le code gérant (D-60). `src/modules/booking/adjust-amount.ts` : correction du montant encaissé (R-53, R-54, D-62).
+- Les emails de RDV d'un même RDV sont plusieurs lignes de `email_outbox` (confirmation, rappel…) : un test qui compte les emails d'un RDV filtre sur `type`.
+
 ## Vitrine (lot 6)
 - `src/app/(vitrine)` : accueil, `/prestations`, `/salon`, pages légales ; le gabarit pose le pied de page, la barre « Réserver + Appeler » et les révélations. Chaque page pose son `<SiteHeader />` (`overlay` sur l'accueil). Composants dans `src/components/vitrine`.
 - `src/modules/vitrine` : `load.ts` (lecture en base : carte, équipe active, horaires, fermetures, règles), `cache.ts` (`getVitrine()`, `use cache`, étiquette `vitrine`), puis fonctions pures testées : `hours.ts`, `catalog-view.ts`, `legal.ts`, `seo.ts`. **Tout texte de la vitrine qui cite la carte, l'équipe, les horaires ou une règle vient de la base**, jamais d'une valeur écrite en dur.

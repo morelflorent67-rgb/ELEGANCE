@@ -23,6 +23,7 @@ const data: VitrineData = {
     maxUpcomingPerCustomer: 2,
     noShowBlockThreshold: 2,
     reminderHours: 72,
+    reviewInvitations: false,
   },
   services: [
     service("Coupe homme", 1800),

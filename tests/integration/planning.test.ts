@@ -231,6 +231,14 @@ describe("fiche d'un RDV", () => {
     });
   });
 
+  it("donne le montant corrigé à la clôture (R-53), ou null tant qu'il n'a pas été corrigé", async () => {
+    const thomas = await client("Thomas", "Durand");
+    const created = await book(thomas, ORHAN, "10:00", [COUPE_BARBE], "salon");
+    expect((await loadAppointmentCard(t.db, created.id, NOW))?.adjustedAmountCents).toBeNull();
+    await t.sql`update appointment set adjusted_amount_cents = 2000 where id = ${created.id}`;
+    expect((await loadAppointmentCard(t.db, created.id, NOW))?.adjustedAmountCents).toBe(2000);
+  });
+
   it("n'a pas de fiche pour un RDV inconnu", async () => {
     expect(await loadAppointmentCard(t.db, "00000000-0000-4000-8000-0000000000ff", NOW)).toBeNull();
   });

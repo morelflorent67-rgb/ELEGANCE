@@ -9,6 +9,11 @@ export {
   type RescheduleInput,
 } from "./change-appointment";
 export {
+  adjustAppointmentAmount,
+  MAX_ADJUSTED_AMOUNT_CENTS,
+  type AdjustAmountInput,
+} from "./adjust-amount";
+export {
   countNoShows,
   loadSalonMovable,
   markNoShow,

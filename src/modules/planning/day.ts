@@ -29,6 +29,8 @@ export interface PlanningAppointment {
   summary: string;
   items: { name: string; priceCents: number; durationMin: number }[];
   totalPriceCents: number;
+  /** Montant encaissé corrigé à la clôture (R-53, R-54), ou null : le prix de la carte. */
+  adjustedAmountCents: number | null;
   durationMinutes: number;
   note: string | null;
   source: "online" | "salon";
@@ -79,6 +81,7 @@ const columns = {
   endsAt: appointment.endsAt,
   status: appointment.status,
   source: appointment.source,
+  adjustedAmountCents: appointment.adjustedAmountCents,
   note: appointment.customerNote,
   customerId: customer.id,
   firstName: customer.firstName,
@@ -152,6 +155,7 @@ async function hydrate(
       summary: own.map((i) => i.name).join(" + "),
       items: own.map(({ name, priceCents, durationMin }) => ({ name, priceCents, durationMin })),
       totalPriceCents: own.reduce((sum, i) => sum + i.priceCents, 0),
+      adjustedAmountCents: row.adjustedAmountCents,
       durationMinutes: own.reduce((sum, i) => sum + i.durationMin, 0),
       note: row.note,
       source: row.source,

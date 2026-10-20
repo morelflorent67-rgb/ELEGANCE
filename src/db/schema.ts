@@ -58,10 +58,13 @@ export const salonSettings = pgTable(
     maxUpcomingPerCustomer: integer("max_upcoming_per_customer").notNull().default(2), // R-25
     noShowBlockThreshold: integer("no_show_block_threshold").notNull().default(2), // R-52
     reminderHours: integer("reminder_hours").notNull().default(72), // R-61
+    /** Page d'avis externe vers laquelle mène l'invitation (R-64). Vide : aucune invitation n'est envoyée. */
+    reviewUrl: text("review_url"),
     managerPinHash: text("manager_pin_hash"), // R-73
   },
   (t) => [
     check("salon_settings_single_row", sql`${t.id} = true`),
+    check("salon_settings_review_url", sql`${t.reviewUrl} is null or ${t.reviewUrl} ~ '^https?://[^ ]+$'`),
     check("salon_settings_positive", sql`${t.minNoticeMinutes} >= 0 and ${t.maxHorizonDays} > 0`),
     check(
       "salon_settings_steps",
@@ -149,6 +152,7 @@ export const customer = pgTable(
     phone: text("phone"),
     email: text("email"),
     onlineBookingBlocked: boolean("online_booking_blocked").notNull().default(false), // R-52
+    reviewOptOut: boolean("review_opt_out").notNull().default(false), // R-64 : ne veut plus des invitations à un avis
     anonymizedAt: instant("anonymized_at"),
     createdAt: instant("created_at").notNull().defaultNow(),
   },

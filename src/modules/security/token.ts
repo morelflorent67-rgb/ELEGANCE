@@ -14,3 +14,6 @@ export function verifyToken(secret: string, subject: string, token: string): boo
 }
 
 export const calendarSubject = (appointmentId: string) => `agenda:${appointmentId}`;
+
+/** Lien « Ne plus recevoir ces invitations » de l'email d'avis (R-64). */
+export const reviewOptOutSubject = (customerId: string) => `avis-desinscription:${customerId}`;

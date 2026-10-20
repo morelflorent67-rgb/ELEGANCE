@@ -31,7 +31,7 @@ const TOOLS: { label: string; href?: string }[] = [
   { label: "Carte et tarifs", href: "/equipe/gerant/carte" },
   { label: "Équipe et habilitations", href: "/equipe/gerant/equipe" },
   { label: "Horaires et fermetures", href: "/equipe/gerant/horaires" },
-  { label: "Chiffre d’affaires" },
+  { label: "Bilan et chiffre d’affaires", href: "/equipe/gerant/bilan" },
 ];
 
 async function Manager({

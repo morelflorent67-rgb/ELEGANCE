@@ -6,6 +6,7 @@ const rules = {
   maxUpcomingPerCustomer: 2,
   noShowBlockThreshold: 2,
   reminderHours: 72,
+  reviewInvitations: false,
 };
 
 const text = (slug: (typeof LEGAL_SLUGS)[number], r = rules) =>
@@ -83,6 +84,13 @@ describe("la politique de confidentialité décrit ce que le site fait vraiment"
     expect(privacy).toContain("3 jours");
     const other = text("confidentialite", { ...rules, reminderHours: 48 });
     expect(other).toContain("2 jours");
+  });
+
+  it("R-64 : l'invitation à donner son avis n'est citée que si le salon l'a lancée", () => {
+    expect(privacy).not.toContain("donner votre avis");
+    const launched = text("confidentialite", { ...rules, reviewInvitations: true });
+    expect(launched).toContain("le lendemain d'un rendez-vous, une invitation à donner votre avis");
+    expect(launched).toContain("permet de ne plus en recevoir");
   });
 
   it("cookies : seulement les cookies nécessaires, ni publicité ni mesure d'audience", () => {

@@ -58,7 +58,8 @@ const book = (overrides: Partial<Parameters<typeof createAppointment>[1]> = {}) 
     NOW,
   );
 
-const outbox = () => t.sql`select * from email_outbox order by created_at`;
+// Ces tests suivent l'email de confirmation ; les rappels programmés avec le RDV ont les leurs (reminders.test.ts).
+const outbox = () => t.sql`select * from email_outbox where type <> 'reminder' order by created_at`;
 
 describe("R-60 : un email de confirmation part dès la réservation", () => {
   it("met l'email en file dans la même transaction que le RDV, sans rien envoyer", async () => {

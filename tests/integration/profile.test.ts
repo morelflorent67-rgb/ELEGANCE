@@ -339,7 +339,7 @@ describe("R-75 : suppression du compte par le client (anonymisation, D-43)", () 
   it("supprime les emails en attente et efface l'adresse des emails déjà envoyés", async () => {
     const created = await bookFar(); // met l'email de confirmation en file
     const sent = await bookFar("2026-11-11");
-    await t.sql`update email_outbox set status = 'sent', sent_at = now() where appointment_id = ${sent.id}`;
+    await t.sql`update email_outbox set status = 'sent', sent_at = now() where appointment_id = ${sent.id} and type = 'confirmation'`;
     await deleteAccount(t.db, browser, me.id, { password: "motdepasse" }, ctx);
     const rows = await t.sql`select appointment_id, to_email, status from email_outbox`;
     expect(rows).toEqual([{ appointment_id: sent.id, to_email: "", status: "sent" }]);

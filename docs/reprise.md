@@ -1,7 +1,7 @@
 # Reprise du projet : où on en est
 
 Ce document permet de reprendre le travail dans une **nouvelle conversation**, sans rien perdre. Il se met à jour à la fin de chaque lot.
-À jour au **20 octobre 2026**, fin du lot 6 (validé par Florent le 20 octobre 2026). Les lots 0 à 6 sont validés.
+À jour au **20 octobre 2026**, fin du lot 7 (terminé, **à valider par Florent**). Les lots 0 à 6 sont validés.
 
 ## Avancement
 
@@ -14,9 +14,10 @@ Ce document permet de reprendre le travail dans une **nouvelle conversation**, s
 | 4 | Planning tablette : 4 colonnes, fiche RDV, réservation par le salon, lapins, code gérant, choix de l'auteur | Validé |
 | 5 | Gestion : carte et habilitations, équipe, horaires, fermetures, absences et RDV touchés | Validé |
 | 6 | Vitrine : accueil, prestations, le salon, pages légales, référencement local, animations, version ordinateur | Validé |
-| 7 à 8 | Emails et tableau de bord, recette | À venir (voir `transmission-code.md`) |
+| 7 | Emails (rappel, invitation à un avis) et tableau de bord, correction du montant encaissé | Terminé, à valider (migration 0007 à appliquer sur Supabase avant de pousser) |
+| 8 | Recette | À venir (voir `transmission-code.md`) |
 
-Tests à la fin du lot 6 : **605 Vitest** (unitaires et intégration sur Postgres réel) et **258 parcours Playwright** (206 exécutés ; 52 réservés à la tablette ou au mobile sont sautés selon le profil). Aucun ne doit casser. Lint, typecheck et build verts.
+Tests à la fin du lot 7 : **699 Vitest** (197 unitaires et 502 d'intégration sur Postgres réel) et **284 parcours Playwright** (224 exécutés ; 60 réservés à la tablette ou au mobile sont sautés selon le profil). Aucun ne doit casser. Lint, typecheck et build verts. Vérification visuelle du lot 7 par captures à 1194 × 834 et 390 × 844 (Bilan, fiche RDV, emails), pas sur appareil réel.
 
 ## Accès
 
@@ -27,7 +28,8 @@ Tests à la fin du lot 6 : **605 Vitest** (unitaires et intégration sur Postgre
 
 ## Ce qui existe
 
-- `src/modules/availability` (créneaux, fonctions pures), `booking` (`createAppointment`, `rescheduleAppointment`, `cancelAppointment` : seuls chemins d'écriture d'un RDV), `catalog` (lecture de la carte ; `manage.ts` : gestion par le gérant), `customers`, `auth`, `mail`, `calendar`, `appointments`, `audit` (`recordAudit`), `vitrine` (lecture en cache, horaires, textes légaux, données structurées), `security`, `staff` (accès équipe ; `manage.ts` : gestion de l'équipe), `schedule` (horaires et fermetures), `absences` (absences, RDV à traiter, emails retenus), `planning`.
+- `src/modules/availability` (créneaux, fonctions pures), `booking` (`createAppointment`, `rescheduleAppointment`, `cancelAppointment` : seuls chemins d'écriture d'un RDV), `catalog` (lecture de la carte ; `manage.ts` : gestion par le gérant), `customers`, `auth`, `mail`, `calendar`, `appointments`, `audit` (`recordAudit`), `vitrine` (lecture en cache, horaires, textes légaux, données structurées), `security`, `staff` (accès équipe ; `manage.ts` : gestion de l'équipe), `schedule` (horaires et fermetures), `absences` (absences, RDV à traiter, emails retenus), `planning`, `dashboard` (bilan : périodes, totaux, lapins récents).
+- Tablette, lot 7 : `/equipe/gerant/bilan` (le tableau de bord, derrière le code gérant). Public, lot 7 : `/avis/desinscription` (lien signé de l'email d'avis).
 - Vitrine (lot 6) : `/`, `/prestations`, `/salon`, `/mentions-legales`, `/confidentialite`, `/conditions`, `/robots.txt`, `/sitemap.xml`.
 - Pages clients : `/reservation`, `/reservation/confirmation`, `/connexion`, `/inscription`, `/mot-de-passe-oublie`, `/mot-de-passe/nouveau`, `/compte/rendez-vous`, `/compte/informations`, `/compte/supprime`.
 - Tablette : `/equipe` (planning), `/equipe/reserver`, `/equipe/clients/[id]`, `/equipe/absences`, `/equipe/gerant` (code gérant) et, derrière le code, `/equipe/gerant/carte`, `/equipe/gerant/equipe`, `/equipe/gerant/horaires`, `/equipe/gerant/clients/[id]`.
@@ -38,14 +40,25 @@ Tests à la fin du lot 6 : **605 Vitest** (unitaires et intégration sur Postgre
 
 1. ~~Migration 0006 sur Supabase~~ : **appliquée le 20 octobre 2026** avec l'accord de Florent (colonne `email_outbox.held_for_manager` vérifiée), puis code poussé.
 2. ~~Compte équipe de la tablette~~ et ~~code gérant~~ : faits le 20 octobre 2026. Pour les changer : `pnpm staff:account`, `pnpm manager:set-code` (base locale) ou `pnpm manager:set-code:remote` (base Supabase, modifie la base en ligne). Florent tape lui-même ses secrets dans le terminal, jamais dans le chat.
-3. **Brevo** (compte ouvert) : créer une clé d'API, faire vérifier une adresse d'expéditeur, puis ajouter `BREVO_API_KEY`, `EMAIL_FROM` et `CRON_SECRET` dans Vercel (Settings, Environment Variables). Tant que ce n'est pas fait, les emails restent en file en production (confirmations, annulations, déplacements, et ceux que le gérant libère).
+3. **Brevo** (compte ouvert) : créer une clé d'API, faire vérifier une adresse d'expéditeur, puis ajouter `BREVO_API_KEY`, `EMAIL_FROM` et `CRON_SECRET` dans Vercel (Settings, Environment Variables). Tant que ce n'est pas fait, les emails restent en file en production (confirmations, **rappels**, **invitations à un avis**, annulations, déplacements, et ceux que le gérant libère). Les rappels et invitations partent au passage du cron : en Hobby, une fois par jour (7 h UTC) ; avec Vercel Pro, `* * * * *`.
 4. **Supabase** : Authentication, URL Configuration (Site URL et adresse de redirection `…/auth/callback`), puis SMTP Brevo pour le mot de passe oublié.
 5. **Vercel Pro et région** : à prendre avec le client juste avant la livraison (c'est lui qui paie). Passer alors le cron de `vercel.json` à `* * * * *`. D'ici là, l'envoi immédiat des emails couvre le cas normal. **Lenteur des pages de la tablette sur le site de test** : probablement la région des fonctions Vercel (par défaut les États-Unis) loin de la base Supabase (Irlande). Florent a décidé de reporter : à ce moment-là, ajouter `"regions": ["fra1"]` dans `vercel.json`, mesurer avant et après, et réduire au besoin les requêtes par page (le nombre de RDV à traiter de la barre est recalculé à chaque écran). La vitrine, elle, est mise en cache (lot 6) : elle n'appelle pas la base à chaque affichage.
 6. Les clés Supabase et le mot de passe de la base, passés dans le chat, sont laissés tels quels par décision de Florent.
 7. Domaine définitif : à poser dans `SITE_URL` (Vercel) ; ensuite `ALLOW_INDEXING=true` ouvre l'indexation (robots, plan du site et données structurées suivent tout seuls).
-8. **Textes légaux** (lot 6, Florent les complétera quand il aura les informations) : rédigés d'après ce que le site fait réellement, mais **à faire valider par un professionnel** avant l'ouverture. À fournir par le salon (champs entre crochets visibles sur les pages ; `placeholdersOf` dans `src/modules/vitrine/legal.ts` les liste) : forme juridique, capital, SIRET, directeur de la publication, adresse de l'hébergeur (Vercel), email de contact, durée de conservation d'un compte inactif, modalités de réponse aux droits RGPD, conditions de suspension et responsabilité. Quand les avis seront lancés : citer l'invitation à donner son avis dans la confidentialité.
+8. **Textes légaux** (lot 6, Florent les complétera quand il aura les informations) : rédigés d'après ce que le site fait réellement, mais **à faire valider par un professionnel** avant l'ouverture. À fournir par le salon (champs entre crochets visibles sur les pages ; `placeholdersOf` dans `src/modules/vitrine/legal.ts` les liste) : forme juridique, capital, SIRET, directeur de la publication, adresse de l'hébergeur (Vercel), email de contact, durée de conservation d'un compte inactif, modalités de réponse aux droits RGPD, conditions de suspension et responsabilité. L'invitation à donner son avis est citée automatiquement dans la confidentialité dès que `review_url` est renseigné.
 9. **Vérifier la vitrine sur un vrai téléphone** (site de test) : accueil (ouverture animée, menu), prestations, le salon (galerie), pages légales. Vérifiée par captures à 390 × 844, 1194 × 834 et 1440 × 900, pas sur appareil réel.
 10. **Vérifier sur la vraie tablette** (iPad, paysage ; tout a été vérifié par captures à 1194 × 834 et 390 × 844, pas sur l'appareil réel) : planning, réservation, espace gérant (carte, équipe, horaires) et absences.
+11. ~~Migration 0007 sur Supabase~~ : **appliquée le 21 octobre 2026** avec l'accord de Florent (colonnes `customer.review_opt_out` et `salon_settings.review_url` vérifiées), puis code poussé. **Lien d'avis provisoire** : `review_url` contient le lien de la **page Google** du salon (`https://share.google/YX65pWXAg7cuZyrT7`), pas le lien direct « Donner un avis ». À remplacer par le lien direct (Google Business Profile, « Demander des avis », forme `https://g.page/r/…/review`) : une ligne SQL `update salon_settings set review_url = '…'` sur Supabase, avec l'accord de Florent. Avec ce lien, les invitations sont déjà actives dès que Brevo envoie.
+12. **Après Brevo** : essayer un vrai rappel et une vraie invitation à soi-même (aucun email réel n'a été envoyé pendant le lot : les tests utilisent un faux transport et les modèles ont été vérifiés par captures). Vérifier l'affichage dans Gmail, Apple Mail et Outlook, mode sombre compris.
+
+## Ce que le lot 7 a ajouté
+
+- **Rappel (R-61, D-59)** : email « Dans 3 jours » (maquette Email-Rappel), programmé dans la file **à la réservation et à chaque déplacement**, 72 h avant (`salon_settings.reminder_hours`), seulement pour un RDV pris plus tôt. Abandonné si le RDV est annulé, déplacé ou passé ; **repoussé** tant que le RDV est « à traiter » ou qu'un email attend le gérant. Si la date limite de modification est passée à l'envoi, le texte renvoie au téléphone.
+- **Invitation à un avis (R-64, D-58)** : le cron programme, le lendemain d'un RDV honoré, un email avec **un seul bouton** « Laisser un avis » vers `salon_settings.review_url` (la grille de notes de la maquette est supprimée, décision de Florent), « Reprendre le même RDV » et « Ne plus recevoir ces invitations » (`/avis/desinscription`, lien signé, confirmation par bouton). **Sans `review_url`, aucune invitation ne part.** La confidentialité cite l'invitation seulement quand le lien existe.
+- **Bilan** (`/equipe/gerant/bilan`, derrière le code gérant) : chiffre d'affaires indicatif, rendez-vous (en ligne / au salon), lapins, détail par membre, lapins récents (rang, client bloqué), périodes jour, semaine (lundi au dimanche) et mois avec flèches « Précédent / Suivant » (D-60, D-61). Le menu « Bilan » est actif.
+- **Correction du montant encaissé** (R-53, R-54, D-62) : bouton « Corriger le montant » dans la fiche RDV, pour toute l'équipe (nom choisi, R-74), dès que le RDV a commencé et tant que ce n'est ni un lapin ni une annulation ; 0 à 1 000 €, retour possible au prix de la carte ; chaque correction est au journal. Le chiffre d'affaires lit ce montant.
+- Au passage : le message de la fiche RDV sur l'email « envoyé aussitôt » dit maintenant la vérité pour un RDV à traiter (défaut connu du lot 5).
+- **Migration 0007** (`customer.review_opt_out`, `salon_settings.review_url`). Aucune nouvelle dépendance. Décisions : D-58 à D-62 (`dossier-projet.md`) et `decisions.md`.
 
 ## Ce que le lot 6 a ajouté
 
@@ -69,14 +82,13 @@ Tests à la fin du lot 6 : **605 Vitest** (unitaires et intégration sur Postgre
 
 ## Points d'attention pour la suite
 
-- **Lot 7** : le chiffre d'affaires compte `isHonored` (R-51), pas le champ `status = honored`. Les emails de rappel (R-61) et d'avis (R-64) restent à faire ; ceux du salon (modification, annulation, retenue puis confirmation) sont faits. Un rappel ne doit pas partir pour un RDV annulé ni « à traiter ». Le tableau de bord vit dans `/equipe/bilan` (la barre de la tablette affiche déjà « Bilan », pas encore actif).
+- **Lot 8 (recette)** : la recette du lot 7 se fait avec de vrais emails (action 12) et la vraie tablette (Bilan, correction du montant). Le chiffre d'affaires compte `isHonored` (R-51), pas le champ `status = honored` ; c'est un repère, la caisse fait foi (R-55).
 - **`pnpm build` lit la base** (vitrine prérendue). Sur Vercel : `DATABASE_URL` ou `POSTGRES_URL` doivent exister aussi à la construction ; à vérifier au premier déploiement du lot 6.
-- **Avis (D-38)** : rien n'est construit côté vitrine (ni section, ni drapeau `NEXT_PUBLIC_REVIEWS`) ; ils viendront avec le modèle de données des avis, après le lancement.
+- **Avis (D-38, D-58)** : aucun avis n'est enregistré ni affiché chez nous ; l'invitation mène à la page d'avis externe du salon (`review_url`). Le lien se change en SQL (pas d'écran de saisie) : un champ dans l'espace gérant serait un petit ajout. La section Avis de la vitrine reste à faire si le salon veut afficher des avis un jour.
 - Sur la vitrine, « Réserver » mène à `/reservation` sans présélection de prestation. Une présélection par lien (`?prestation=`) serait un petit ajout si Florent la veut.
 - La carte d'accès est un plan dessiné avec un bouton « Itinéraire » (Google Maps) : aucune carte tierce.
 - Le menu lit la session à chaque affichage d'une page publique (derrière `<Suspense>`) pour afficher « Connecté : … ».
 - Le planning n'affiche que l'équipe active : les RDV d'un membre retiré ne se voient que dans `/equipe/absences` tant qu'ils ne sont pas traités.
-- Petit défaut connu : la fiche RDV du planning annonce, avant l'action, « un email d'annulation lui est envoyé aussitôt », même pour un RDV à traiter dont l'email sera retenu ; le message affiché après l'action dit la vérité. À corriger si on touche à ce panneau.
 - Pas de bouton « jours fériés » : le gérant saisit ses fermetures (R-03). À proposer à Florent si besoin.
 - `DaySlots.closed` distingue « Fermé » et « Complet ».
 
@@ -93,15 +105,18 @@ Tests à la fin du lot 6 : **605 Vitest** (unitaires et intégration sur Postgre
 - Verrouillage gérant : `proxy.ts` ne voit pas les en-têtes de préchargement des liens de Next 16, et une Server Action n'a pas renvoyé le `Set-Cookie` d'une suppression : le verrouillage passe par `POST /equipe/verrouiller`. Un chargement complet de page (`goto`, `reload`) reverrouille, de façon pas toujours fiable : dans les tests, passer d'un écran à l'autre par les liens, et ressaisir le code après un `goto`.
 - Playwright : le profil « tablette » est aussi `isMobile` ; distinguer le téléphone par la largeur (< 768 px). Un cookie `Secure` sur http n'est pas renvoyé par WebKit. Dans l'écran des absences, la liste des emails retenus est dans la même région que les cartes : compter les cartes avec le bouton « Déplacer », pas avec `listitem` seul.
 - Mise en page : dans une colonne `flex` qui défile, les enfants rétrécissent (un bouton de 52 px devenait une barre). Ajouter `[&>*]:shrink-0` au conteneur.
+- Un RDV pris à plus de 72 h met **deux** lignes dans `email_outbox` (confirmation et rappel) : un test qui compte les emails d'un RDV filtre sur `type`. Les jeux de test de l'invitation à un avis posent `salon_settings.review_url`.
+- Un parcours Playwright qui a besoin du code gérant sur une page précise (le Bilan) fait `goto` puis saisit le code **sur la page même** (la saisie du code s'y affiche) : un chargement complet reverrouille.
+- Le shell de l'outil Bash refuse parfois un heredoc avec apostrophes : écrire le script Python dans un fichier avec l'outil Write.
 - Un changement d'heure tombe le dernier dimanche d'octobre : les tests de dates autour du 25 octobre 2026 s'en souviennent (10 h à Paris = 8 h UTC avant, 9 h UTC après).
 
 ## Message à coller pour démarrer la prochaine conversation
 
 ```text
 Tu es le développeur principal du site et de l'application de réservation d'Elegance Strasbourg.
-Lis CLAUDE.md, puis docs/reprise.md : les lots 0, 1, 2, 3, 4, 5 et 6 sont validés.
-Prépare le plan du lot 7, emails et tableau de bord (voir docs/transmission-code.md, docs/design/ et les maquettes du canevas : Email-Rappel, Email-Avis, Tablette-Dashboard), pose-moi les questions nécessaires, puis attends ma validation avant d'écrire du code.
+Lis CLAUDE.md, puis docs/reprise.md : les lots 0, 1, 2, 3, 4, 5, 6 et 7 sont validés.
+Prépare le plan du lot 8, la recette (voir docs/transmission-code.md et la liste « Actions en attente » de docs/reprise.md : Brevo, Supabase, domaine, vraie tablette, vrai téléphone, textes légaux), pose-moi les questions nécessaires, puis attends ma validation avant d'écrire du code.
 Travaille ensuite comme avant : tests d'abord, une règle R-xx = au moins un test, décisions notées dans docs/decisions.md, vérification sur mobile et sur tablette.
 À la fin du lot, mets à jour docs/reprise.md et prépare le message de la conversation suivante.
-Point de départ : [Ajoutez ici le résultat de l'essai de la vitrine (lot 6) sur votre téléphone, et du lot 5 sur la vraie tablette, ou le message d'erreur s'il y en a un.]
+Point de départ : [Ajoutez ici le résultat de l'essai du lot 7 : le Bilan et la correction du montant sur la vraie tablette, et, si Brevo est branché, les emails de rappel et d'avis reçus, ou le message d'erreur s'il y en a un.]
 ```

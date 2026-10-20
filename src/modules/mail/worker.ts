@@ -1,4 +1,5 @@
 import { and, asc, eq, inArray, lte } from "drizzle-orm";
+import { DateTime } from "luxon";
 import type { Database } from "@/db/types";
 import {
   appointment,
@@ -8,11 +9,15 @@ import {
   salonSettings,
   staff,
 } from "@/db/schema";
-import { calendarSubject, signToken } from "@/modules/security/token";
+import { listAppointmentsToHandle } from "@/modules/absences/to-handle";
+import { isHonored } from "@/modules/appointments/status";
+import { calendarSubject, reviewOptOutSubject, signToken } from "@/modules/security/token";
 import { z } from "zod";
 import { renderCancellationEmail } from "./templates/cancellation";
 import { renderConfirmationEmail } from "./templates/confirmation";
 import { renderModificationEmail } from "./templates/modification";
+import { renderReminderEmail } from "./templates/reminder";
+import { renderReviewInvitationEmail } from "./templates/review-invitation";
 import type { RenderedEmail } from "./layout";
 import { EmailSendError, type EmailMessage, type EmailTransport } from "./transport";
 
@@ -42,7 +47,38 @@ export interface ProcessResult {
 
 type Row = typeof emailOutbox.$inferSelect;
 
+/**
+ * Les RDV dont le client ne doit rien recevoir pour l'instant : « à traiter » (R-42) ou avec un email retenu pour le gérant
+ * (R-43). La liste se calcule une seule fois par passage, et seulement si un rappel la demande : elle ne change pas
+ * pendant l'envoi, et la recalculer pour chaque rappel multiplierait les allers-retours vers la base.
+ */
+type HoldCheck = (appointmentId: string) => Promise<boolean>;
+
+function holdChecker(db: Database, now: Date): HoldCheck {
+  let held: Promise<Set<string>> | null = null;
+  return async (appointmentId) => {
+    held ??= (async () => {
+      const [toHandle, retained] = await Promise.all([
+        listAppointmentsToHandle(db, now),
+        db
+          .select({ appointmentId: emailOutbox.appointmentId })
+          .from(emailOutbox)
+          .where(and(eq(emailOutbox.heldForManager, true), eq(emailOutbox.status, "pending"))),
+      ]);
+      const ids = new Set(toHandle.map((a) => a.id));
+      for (const row of retained) if (row.appointmentId) ids.add(row.appointmentId);
+      return ids;
+    })();
+    return (await held).has(appointmentId);
+  };
+}
+
 class Skip extends Error {}
+/** Pas maintenant, sans que ce soit un échec : l'email reste en file et sera repris plus tard (ne compte pas comme un essai). */
+class Defer extends Error {}
+
+/** Un rappel repoussé (RDV à traiter) est repris au prochain passage du cron, au plus tard dans cet intervalle. */
+const DEFER_MINUTES = 6 * 60;
 
 const minutes = (n: number) => n * 60_000;
 
@@ -53,11 +89,15 @@ interface EmailAppointment {
   createdAt: Date;
   status: (typeof appointment.$inferSelect)["status"];
   staffFirstName: string;
+  customerId: string;
   customerFirstName: string | null;
+  reviewOptOut: boolean;
   items: { name: string; durationMin: number; priceCents: number }[];
   totalPriceCents: number;
   durationMinutes: number;
   cutoffHours: number;
+  timezone: string;
+  reviewUrl: string | null;
 }
 
 async function loadEmailAppointment(db: Database, row: Row): Promise<EmailAppointment> {
@@ -70,7 +110,9 @@ async function loadEmailAppointment(db: Database, row: Row): Promise<EmailAppoin
       createdAt: appointment.createdAt,
       status: appointment.status,
       staffFirstName: staff.firstName,
+      customerId: appointment.customerId,
       customerFirstName: customer.firstName,
+      reviewOptOut: customer.reviewOptOut,
     })
     .from(appointment)
     .innerJoin(staff, eq(staff.id, appointment.staffId))
@@ -96,6 +138,8 @@ async function loadEmailAppointment(db: Database, row: Row): Promise<EmailAppoin
     totalPriceCents: items.reduce((sum, i) => sum + i.priceCents, 0),
     durationMinutes: items.reduce((sum, i) => sum + i.durationMin, 0),
     cutoffHours: settings?.changeCutoffHours ?? 48,
+    timezone: settings?.timezone ?? "Europe/Paris",
+    reviewUrl: settings?.reviewUrl ?? null,
   };
 }
 
@@ -225,7 +269,93 @@ async function renderCancellation(
   );
 }
 
-async function render(db: Database, row: Row, options: ProcessOptions): Promise<EmailMessage> {
+const reminderPayload = z.object({ startsAt: z.iso.datetime() });
+
+/** Jours de Paris entre l'envoi et le RDV : 3 pour un rappel à 72 h, 0 si le RDV est aujourd'hui. */
+const daysBetween = (from: Date, to: Date, zone: string) =>
+  Math.round(
+    DateTime.fromJSDate(to, { zone })
+      .startOf("day")
+      .diff(DateTime.fromJSDate(from, { zone }).startOf("day"), "days").days,
+  );
+
+async function renderReminder(
+  db: Database,
+  row: Row,
+  options: ProcessOptions,
+  now: Date,
+  isHeld: HoldCheck,
+): Promise<EmailMessage> {
+  const appt = await loadEmailAppointment(db, row);
+  if (isCancelled(appt)) throw new Skip("rendez-vous annulé avant l'envoi");
+  const payload = reminderPayload.safeParse(row.payload);
+  if (!payload.success) throw new Skip("créneau absent du rappel");
+  // Le rappel annonce un créneau précis : si le RDV a été déplacé, le déplacement en a programmé un nouveau.
+  if (appt.startsAt.getTime() !== new Date(payload.data.startsAt).getTime()) {
+    throw new Skip("rendez-vous déplacé avant l'envoi");
+  }
+  if (appt.status !== "confirmed") throw new Skip("rendez-vous plus confirmé");
+  if (appt.startsAt.getTime() <= now.getTime()) throw new Skip("rendez-vous déjà passé");
+  // R-42, R-43 : un RDV « à traiter », ou dont un email attend le gérant, ne reçoit rien tant qu'il n'est pas traité.
+  if (await isHeld(appt.id)) throw new Defer("rendez-vous à traiter");
+
+  const changeDeadline = new Date(appt.startsAt.getTime() - appt.cutoffHours * 3_600_000);
+  return message(
+    row,
+    appt,
+    renderReminderEmail({
+      firstName: appt.customerFirstName,
+      startsAt: appt.startsAt,
+      items: appt.items,
+      totalPriceCents: appt.totalPriceCents,
+      durationMinutes: appt.durationMinutes,
+      staffFirstName: appt.staffFirstName,
+      daysAway: daysBetween(now, appt.startsAt, appt.timezone),
+      changeDeadline,
+      // R-30, R-32 : si le cron est en retard, la date limite peut être passée à l'envoi.
+      changeableOnline: now.getTime() <= changeDeadline.getTime(),
+      manageUrl: `${options.baseUrl}/compte/rendez-vous`,
+      logoUrl: `${options.baseUrl}/email/logo.png`,
+    }),
+  );
+}
+
+async function renderReviewInvitation(
+  db: Database,
+  row: Row,
+  options: ProcessOptions,
+  now: Date,
+): Promise<EmailMessage> {
+  const appt = await loadEmailAppointment(db, row);
+  // R-51, D-54 : le lapin se signale et se corrige jusqu'au dernier moment ; on revérifie à l'envoi.
+  if (!isHonored(appt, now)) throw new Skip("rendez-vous non honoré");
+  if (appt.reviewOptOut) throw new Skip("le client ne veut plus de ces invitations");
+  if (!appt.reviewUrl) throw new Skip("page d'avis non renseignée");
+
+  const token = signToken(options.secret, reviewOptOutSubject(appt.customerId));
+  return message(
+    row,
+    appt,
+    renderReviewInvitationEmail({
+      firstName: appt.customerFirstName,
+      startsAt: appt.startsAt,
+      items: appt.items,
+      staffFirstName: appt.staffFirstName,
+      reviewUrl: appt.reviewUrl,
+      rebookUrl: `${options.baseUrl}/reservation?reprendre=${appt.id}`,
+      unsubscribeUrl: `${options.baseUrl}/avis/desinscription?c=${appt.customerId}&t=${token}`,
+      logoUrl: `${options.baseUrl}/email/logo.png`,
+    }),
+  );
+}
+
+async function render(
+  db: Database,
+  row: Row,
+  options: ProcessOptions,
+  now: Date,
+  isHeld: HoldCheck,
+): Promise<EmailMessage> {
   switch (row.type) {
     case "confirmation":
       return renderConfirmation(db, row, options);
@@ -233,8 +363,11 @@ async function render(db: Database, row: Row, options: ProcessOptions): Promise<
       return renderModification(db, row, options);
     case "cancellation":
       return renderCancellation(db, row, options);
+    case "reminder":
+      return renderReminder(db, row, options, now, isHeld);
+    case "review_invitation":
+      return renderReviewInvitation(db, row, options, now);
     default:
-      // Rappel, avis : lot 7.
       throw new EmailSendError(`Type d'email non géré : ${row.type}`, true);
   }
 }
@@ -289,10 +422,11 @@ async function claim(db: Database, options: ProcessOptions): Promise<Row[]> {
 export async function processOutbox(db: Database, options: ProcessOptions): Promise<ProcessResult> {
   const now = options.now ?? new Date();
   const result: ProcessResult = { sent: 0, retried: 0, failed: 0 };
+  const isHeld = holdChecker(db, now);
 
   for (const row of await claim(db, options)) {
     try {
-      const message = await render(db, row, options);
+      const message = await render(db, row, options, now, isHeld);
       await options.transport.send(message);
       await db
         .update(emailOutbox)
@@ -300,6 +434,19 @@ export async function processOutbox(db: Database, options: ProcessOptions): Prom
         .where(eq(emailOutbox.id, row.id));
       result.sent++;
     } catch (error) {
+      if (error instanceof Defer) {
+        // Pas un essai : l'attente ne doit pas épuiser les reprises.
+        await db
+          .update(emailOutbox)
+          .set({
+            attempts: row.attempts - 1,
+            lastError: error.message,
+            nextAttemptAt: new Date(now.getTime() + minutes(DEFER_MINUTES)),
+          })
+          .where(eq(emailOutbox.id, row.id));
+        result.retried++;
+        continue;
+      }
       const reason = error instanceof Error ? error.message : String(error);
       const permanent =
         error instanceof Skip || (error instanceof EmailSendError && error.permanent);

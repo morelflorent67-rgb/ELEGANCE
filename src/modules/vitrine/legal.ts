@@ -69,7 +69,7 @@ function privacy(rules: SalonRules): Raw[] {
     ],
     [
       "Utilisation",
-      `Ces informations servent à gérer vos rendez-vous et à vous écrire à leur sujet : email de confirmation avec un lien d'ajout à l'agenda, rappel ${hoursToWords(rules.reminderHours)} avant le rendez-vous, email si le salon modifie ou annule un rendez-vous. Aucun SMS n'est envoyé. Vos données ne sont ni vendues ni cédées à des tiers à des fins commerciales.`,
+      `Ces informations servent à gérer vos rendez-vous et à vous écrire à leur sujet : email de confirmation avec un lien d'ajout à l'agenda, rappel ${hoursToWords(rules.reminderHours)} avant le rendez-vous, email si le salon modifie ou annule un rendez-vous${rules.reviewInvitations ? ", et, le lendemain d'un rendez-vous, une invitation à donner votre avis (un lien dans cet email permet de ne plus en recevoir)" : ""}. Aucun SMS n'est envoyé. Vos données ne sont ni vendues ni cédées à des tiers à des fins commerciales.`,
     ],
     [
       "Prestataires",

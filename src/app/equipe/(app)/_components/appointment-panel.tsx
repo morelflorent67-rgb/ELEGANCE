@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { capitalize, formatDay, formatDuration, formatPrice, formatTime } from "@/lib/format";
+import { centsToEuroInput, parseEuros } from "@/lib/money";
 import type { StaffChoice } from "@/modules/catalog";
 import type { DayPlanning, PlanningAppointment } from "@/modules/planning";
 import { teamMessage, type TeamResult } from "../../_lib/messages";
 import {
+  adjustAmountAction,
   cancelAppointmentAsSalon,
   fetchSalonDays,
   fetchSalonStaffChoices,
@@ -19,7 +21,7 @@ import {
 import { AuthorPicker, type TeamMemberView } from "./author-picker";
 import { SlotPicker, type PickedSalonSlot } from "./slot-picker";
 
-type Mode = "idle" | "cancel" | "noshow" | "undo" | "move";
+type Mode = "idle" | "cancel" | "noshow" | "undo" | "move" | "amount" | "amount-reset";
 
 const STATUS_LABEL: Record<PlanningAppointment["status"], string> = {
   upcoming: "À venir",
@@ -69,6 +71,9 @@ export function AppointmentPanel({
   const [slot, setSlot] = useState<PickedSalonSlot | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
+  // Montant encaissé (R-53, R-54), saisi en euros.
+  const [amountText, setAmountText] = useState("");
+
   useEffect(() => {
     onBusy(mode !== "idle");
     return () => onBusy(false);
@@ -99,6 +104,9 @@ export function AppointmentPanel({
     setAuthorId(null);
     setSlot(null);
     setMode(next);
+    if (next === "amount" && appointment) {
+      setAmountText(centsToEuroInput(appointment.adjustedAmountCents ?? appointment.totalPriceCents));
+    }
     if (next === "move" && appointment && choices.length === 0) {
       fetchSalonStaffChoices({ appointmentId: appointment.id }).then((result) => {
         if (result.ok) setChoices(result.choices);
@@ -129,6 +137,21 @@ export function AppointmentPanel({
       } else if (mode === "undo") {
         result = await undoNoShowAction({ appointmentId: appointment.id, authorId });
         message = `Lapin retiré pour ${firstName(appointment.customerName)}.`;
+      } else if (mode === "amount" || mode === "amount-reset") {
+        const cents = mode === "amount" ? parseEuros(amountText) : null;
+        if (mode === "amount" && cents === null) {
+          setError(teamMessage("invalid_amount"));
+          return;
+        }
+        const adjusted = await adjustAmountAction({
+          appointmentId: appointment.id,
+          authorId,
+          amountCents: cents,
+        });
+        result = adjusted;
+        message = adjusted.ok
+          ? `Montant ${adjusted.adjusted ? "corrigé" : "rétabli"} pour ${firstName(appointment.customerName)} : ${formatPrice(adjusted.amountCents)}.`
+          : "";
       } else if (mode === "move" && slot) {
         result = await rescheduleAppointmentAsSalon({
           appointmentId: appointment.id,
@@ -214,8 +237,12 @@ export function AppointmentPanel({
   const started = a.status !== "upcoming" && a.status !== "cancelled";
   const canChange = a.status === "upcoming" || a.status === "in_progress";
   const canNoShow = a.status === "in_progress" || a.status === "honored";
+  // R-53 : le montant se corrige une fois le RDV commencé, tant qu'il compte (ni lapin ni annulé).
+  const canAdjust = a.status === "in_progress" || a.status === "honored";
+  const amountTyped = parseEuros(amountText);
   const needsSlot = mode === "move";
-  const ready = !!authorId && (!needsSlot || !!slot) && !pending;
+  const ready =
+    !!authorId && (!needsSlot || !!slot) && (mode !== "amount" || amountTyped !== null) && !pending;
   const phoneHref = `tel:${a.phone.replace(/\s/g, "")}`;
 
   return (
@@ -264,6 +291,12 @@ export function AppointmentPanel({
           ))}
           {a.items.length > 1 ? (
             <span className="text-ivory-soft">Total · {formatPrice(a.totalPriceCents)}</span>
+          ) : null}
+          {a.adjustedAmountCents !== null ? (
+            <span className="text-ivory">
+              Montant encaissé · {formatPrice(a.adjustedAmountCents)}
+              <span className="text-stone"> (carte : {formatPrice(a.totalPriceCents)})</span>
+            </span>
           ) : null}
           <span className="text-stone">
             {formatDuration(a.durationMinutes)} · avec {a.staffFirstName}
@@ -318,6 +351,15 @@ export function AppointmentPanel({
                 </button>
               </div>
             ) : null}
+            {canAdjust ? (
+              <button
+                type="button"
+                onClick={() => open("amount")}
+                className="h-[52px] text-[14px] text-ivory-soft underline underline-offset-4"
+              >
+                {a.adjustedAmountCents !== null ? "Corriger le montant encaissé" : "Corriger le montant"}
+              </button>
+            ) : null}
             {canNoShow ? (
               <button
                 type="button"
@@ -351,17 +393,52 @@ export function AppointmentPanel({
                   ? `Signaler un lapin pour ${firstName(a.customerName)} ?`
                   : mode === "undo"
                     ? `Retirer le lapin de ${firstName(a.customerName)} ?`
-                    : "Déplacer le rendez-vous"}
+                    : mode === "amount"
+                      ? `Montant encaissé pour ${firstName(a.customerName)}`
+                      : mode === "amount-reset"
+                        ? `Rétablir le prix de la carte (${formatPrice(a.totalPriceCents)}) ?`
+                        : "Déplacer le rendez-vous"}
             </span>
             {mode === "cancel" ? (
               <p className="text-[13px] leading-normal text-stone">
-                Appelez d’abord le client : un email d’annulation lui est envoyé aussitôt.
+                Appelez d’abord le client. Un email d’annulation lui est ensuite envoyé ; pour un rendez-vous à traiter (absence, fermeture), il attend la confirmation du gérant.
               </p>
+            ) : null}
+            {mode === "amount" ? (
+              <div className="flex flex-col gap-2.5">
+                <label htmlFor="amount-input" className="text-label uppercase text-stone">
+                  Montant (€)
+                </label>
+                <input
+                  id="amount-input"
+                  inputMode="decimal"
+                  autoComplete="off"
+                  value={amountText}
+                  onChange={(event) => setAmountText(event.target.value)}
+                  className="h-[52px] w-full min-w-0 border border-line-strong bg-ink px-4 text-[16px] tabular-nums text-ivory"
+                />
+                <p className="text-[13px] leading-normal text-stone">
+                  Prix de la carte : {formatPrice(a.totalPriceCents)}. Chaque correction est inscrite au
+                  journal ; le chiffre d’affaires du Bilan n’est qu’un repère, la caisse fait foi.
+                </p>
+                {a.adjustedAmountCents !== null ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setError(null);
+                      setMode("amount-reset");
+                    }}
+                    className="min-h-11 self-start text-[13px] text-ivory-soft underline underline-offset-4"
+                  >
+                    Rétablir le prix de la carte
+                  </button>
+                ) : null}
+              </div>
             ) : null}
             {mode === "move" ? (
               <div className="flex flex-col gap-3.5">
                 <p className="text-[13px] leading-normal text-stone">
-                  Appelez d’abord le client : un email lui confirme le nouveau créneau.
+                  Appelez d’abord le client. Un email lui confirme le nouveau créneau ; pour un rendez-vous à traiter, il attend la confirmation du gérant.
                 </p>
                 {choices.length > 0 ? (
                   <div role="group" aria-label="Coiffeur" className="grid grid-cols-2 gap-2">
