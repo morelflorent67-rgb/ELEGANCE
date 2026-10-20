@@ -19,7 +19,12 @@ console.log(
   `Base visée : ${parsed.hostname}:${parsed.port || 5432} (utilisateur ${parsed.username})`,
 );
 
-const sql = postgres(parsed.toString(), { prepare: false, max: 1, ssl: "require" });
+const sql = postgres(parsed.toString(), {
+  prepare: false,
+  max: 1,
+  ssl: "require",
+  onnotice: () => {},
+});
 try {
   const [{ version }] = await sql`select version()`;
   console.log(version);

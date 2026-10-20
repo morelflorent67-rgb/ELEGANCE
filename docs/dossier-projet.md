@@ -160,8 +160,8 @@ Ces 52 règles fixent le comportement du moteur de réservation : toutes sont d�
 | R-01 | Le salon est ouvert du mardi au samedi, de 10 h à 12 h et de 13 h à 19 h. | Décidé |
 | R-02 | Tous les coiffeurs suivent ces horaires ; une exception individuelle passe par une absence (R-40). | Décidé |
 | R-03 | Le gérant modifie les horaires et déclare les fermetures exceptionnelles : jours fériés, congés annuels. | Décidé |
-| R-04 | Un créneau commence toutes les 15 minutes ; un RDV finit au plus tard à 19 h et ne chevauche jamais la pause. | Décidé |
-| R-05 | Le dernier départ possible découle de la durée ; la règle « dernier créneau à 18 h 30 » disparaît. | Décidé |
+| R-04 | En ligne, un créneau commence toutes les 30 minutes, comme sur Planity ; le salon, lui, réserve toutes les 15 minutes (D-39). Un RDV finit au plus tard à 19 h et ne chevauche jamais la pause. | Décidé |
+| R-05 | Le dernier départ possible découle de la durée, sur la grille du moment ; la règle « dernier créneau à 18 h 30 » disparaît. En ligne, une prestation de 45 min part au plus tard à 18 h. | Décidé |
 | R-06 | En ligne, un client réserve au plus tard 1 h avant le RDV et au plus tôt 6 semaines avant. | Décidé |
 | R-07 | Le salon reçoit uniquement sur rendez-vous : pas de client sans RDV. | Décidé |
 
@@ -247,7 +247,7 @@ Ces 52 règles fixent le comportement du moteur de réservation : toutes sont d�
 
 ## Journal des décisions
 
-Le 20 octobre 2026, 38 décisions ont fixé le cadre du projet ; on ne revient sur l'une d'elles qu'en l'écrivant ici.
+Le 20 octobre 2026, 43 décisions ont fixé le cadre du projet ; on ne revient sur l'une d'elles qu'en l'écrivant ici.
 
 | N° | Décision | Raison |
 | --- | --- | --- |
@@ -289,6 +289,11 @@ Le 20 octobre 2026, 38 décisions ont fixé le cadre du projet ; on ne revient s
 | D-36 | Soin du visage réservable en ligne, tribal sur appel | La carte de ce document fait foi ; la livraison design les avait inversés |
 | D-37 | Pages ordinateur dérivées du mobile par Claude Code | Non dessinées ; conteneur de 1 200 px, grilles de 2 à 3 colonnes dès 1 024 px |
 | D-38 | Avis développés mais masqués jusqu'à leur lancement | Prévu juste après la V1 ; aucun avis sur l'accueil |
+| D-39 | Créneaux de 30 minutes en ligne, de 15 minutes au salon (modifie R-04) | Parcours familier de Planity ; le salon garde la finesse pour combler les trous laissés par un RDV de 45 min |
+| D-40 | « Sans préférence » attribue le coiffeur qui a le moins de RDV ce jour-là ; à égalité, l'ordre d'affichage (précise R-20) | Répartition équitable de la charge, règle simple et prévisible |
+| D-41 | Le salon est limité à 2 RDV à venir par client (R-25) mais peut réserver pour un client bloqué en ligne (R-52) | Le blocage ne vise que la réservation en ligne |
+| D-42 | L'inscription ne bloque pas sur la vérification de l'email : l'email de confirmation en tient lieu (précise R-71) | Ne pas casser le parcours de réservation ; le mot de passe oublié passe par l'email |
+| D-43 | La suppression d'un compte efface le nom, le téléphone et l'email, et garde les RDV passés sans identité (précise R-75) | Le chiffre d'affaires et le journal restent justes |
 
 ## Documents liés
 

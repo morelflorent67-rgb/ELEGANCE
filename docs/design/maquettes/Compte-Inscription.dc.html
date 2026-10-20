@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Inscription</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500&amp;display=swap">
+<style>
+body{margin:0;background:#0b0a09}
+a{color:#efe9dd}
+</style>
+</helmet>
+<div style="width: 390px; height: 1060px; position: relative; overflow: hidden; background: #0b0a09; color: #efe9dd; font-family: Sora, 'Century Gothic', Arial, sans-serif; display: flex; flex-direction: column">
+
+<header style="height: 64px; flex-shrink: 0; box-sizing: border-box; padding: 0 10px; display: flex; align-items: center; justify-content: space-between">
+<a href="Compte-Connexion.dc.html" aria-label="Retour" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#efe9dd" stroke-width="1.4" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></a>
+<a href="Main.dc.html" aria-label="Accueil" style="background: #efe9dd; padding: 8px 10px; display: flex"><img src="/_blob/d67b08c08d1c0b21a21cc3b7a8a91573" alt="Elegance Strasbourg" style="width: 92px; height: auto; display: block"></a>
+<span style="width: 44px; height: 44px"></span>
+</header>
+
+<main style="flex: 1; padding: 32px 24px 32px; display: flex; flex-direction: column; gap: 26px">
+<div style="display: flex; flex-direction: column; gap: 12px">
+<span style="font-size: 11px; letter-spacing: 0.32em; text-transform: uppercase; color: #a8a297">Mon compte</span>
+<h1 style="margin: 0; font-size: 32px; line-height: 1.15; font-weight: 300; letter-spacing: -0.01em">Créer un compte</h1>
+<p style="margin: 0; font-size: 15px; line-height: 1.55; color: #c9c3b7">Pour réserver en ligne et gérer vos rendez-vous.</p>
+</div>
+<div style="height: 1px; background: #ffffff; opacity: 0.6"></div>
+<form style="display: flex; flex-direction: column; gap: 18px">
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<div style="display: flex; flex-direction: column; gap: 8px; min-width: 0"><label for="i-pre" style="font-size: 13px; color: #c9c3b7">Prénom</label><input id="i-pre" type="text" autocomplete="given-name" style="width: 100%; height: 52px; box-sizing: border-box; padding: 0 14px; background: #0b0a09; border: 1px solid rgba(239,233,221,0.28); color: #efe9dd; font: inherit; font-size: 16px; border-radius: 0"></div>
+<div style="display: flex; flex-direction: column; gap: 8px; min-width: 0"><label for="i-nom" style="font-size: 13px; color: #c9c3b7">Nom</label><input id="i-nom" type="text" autocomplete="family-name" style="width: 100%; height: 52px; box-sizing: border-box; padding: 0 14px; background: #0b0a09; border: 1px solid rgba(239,233,221,0.28); color: #efe9dd; font: inherit; font-size: 16px; border-radius: 0"></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px"><label for="i-tel" style="font-size: 13px; color: #c9c3b7">Téléphone</label><input id="i-tel" type="tel" autocomplete="tel" aria-describedby="i-telh" style="height: 52px; box-sizing: border-box; padding: 0 16px; background: #0b0a09; border: 1px solid rgba(239,233,221,0.28); color: #efe9dd; font: inherit; font-size: 16px; border-radius: 0"><span id="i-telh" style="font-size: 13px; line-height: 1.5; color: #a8a297">Pour que le salon puisse vous joindre au sujet d'un rendez-vous.</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><label for="i-mail" style="font-size: 13px; color: #c9c3b7">Email</label><input id="i-mail" type="email" autocomplete="email" style="height: 52px; box-sizing: border-box; padding: 0 16px; background: #0b0a09; border: 1px solid rgba(239,233,221,0.28); color: #efe9dd; font: inherit; font-size: 16px; border-radius: 0"></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><label for="i-pass" style="font-size: 13px; color: #c9c3b7">Mot de passe</label><input id="i-pass" type="password" autocomplete="new-password" aria-describedby="i-passh" style="height: 52px; box-sizing: border-box; padding: 0 16px; background: #0b0a09; border: 1px solid rgba(239,233,221,0.28); color: #efe9dd; font: inherit; font-size: 16px; border-radius: 0"><span id="i-passh" style="font-size: 13px; color: #a8a297">8 caractères minimum.</span></div>
+<label style="display: flex; gap: 14px; align-items: flex-start; min-height: 44px; font-size: 14px; line-height: 1.5; color: #c9c3b7"><input type="checkbox" checked="{{ cgu }}" onChange="{{ toggleCgu }}" style="width: 22px; height: 22px; margin: 0; flex-shrink: 0; accent-color: #efe9dd"><span>J'accepte les <a href="#conditions" style="color: #efe9dd">conditions d'utilisation</a> et la <a href="#confidentialite" style="color: #efe9dd">politique de confidentialité</a>.</span></label>
+<sc-if value="{{ cgu }}" hint-placeholder-val="{{ false }}"><a href="Compte-RDV.dc.html" style="height: 56px; background: #efe9dd; color: #0b0a09; text-decoration: none; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; letter-spacing: 0.26em; text-transform: uppercase">Créer mon compte</a></sc-if>
+<sc-if value="{{ cguOff }}" hint-placeholder-val="{{ true }}"><button type="button" disabled style="height: 56px; border: 0; background: #2a2723; color: #8f897e; font: inherit; font-size: 13px; font-weight: 500; letter-spacing: 0.26em; text-transform: uppercase">Créer mon compte</button></sc-if>
+</form>
+<div style="margin-top: auto; display: flex; justify-content: center; align-items: center; gap: 8px; font-size: 14px; color: #a8a297">Déjà un compte ?<a href="Compte-Connexion.dc.html" style="min-height: 44px; display: flex; align-items: center; color: #efe9dd">Se connecter</a></div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1060}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var self = this, s = this.state || {}, cgu = !!s.cgu;
+    return {
+      cgu: cgu, cguOff: !cgu,
+      toggleCgu: function () { self.setState({ cgu: !cgu }); }
+    };
+  }
+}
+</script>
+</body>
+</html>
