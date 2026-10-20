@@ -1,0 +1,139 @@
+/*
+ * Elegance Strasbourg — thème Tailwind CSS v4 (Next.js)
+ * À importer dans app/globals.css à la place de @import "tailwindcss".
+ * Police : charger Sora (300, 400, 500) avec next/font/google, variable CSS --font-sora.
+ *
+ *   import { Sora } from "next/font/google";
+ *   const sora = Sora({ subsets: ["latin"], weight: ["300", "400", "500"], variable: "--font-sora" });
+ *   <html lang="fr" className={sora.variable}>
+ *
+ * Échelle d'espacement : celle de Tailwind par défaut (4 px) correspond déjà au système
+ * (p-6 = 24 px, gap-14 = 56 px…). Points de rupture par défaut conservés (640/768/1024/1280).
+ */
+
+@import "tailwindcss";
+
+@theme {
+  /* ---------- Couleurs ---------- */
+  --color-*: initial;
+  --color-ink: #0b0a09;            /* bg.base — fond de toutes les pages, texte sur ivoire */
+  --color-charcoal: #141210;       /* bg.raised — cartes, champs, carte d'accès */
+  --color-graphite: #1a1816;       /* bg.elevated — panneaux, résumés d'étape, blocs du planning */
+  --color-graphite-light: #221f1c; /* bg.hover — survol, appui, élément en cours */
+  --color-disabled: #2a2723;       /* bouton désactivé */
+  --color-ivory: #efe9dd;          /* text.primary, plaque du logo, bouton principal */
+  --color-ivory-soft: #c9c3b7;     /* text.secondary */
+  --color-stone: #a8a297;          /* text.muted */
+  --color-stone-dark: #8f897e;     /* text.faint — minimum autorisé pour du texte */
+  --color-gold: #b8935a;           /* détails seulement : repères, chevrons, focus */
+  --color-gold-shine: #f0d39a;     /* reflet doré de la confirmation uniquement */
+  --color-led: #ffffff;            /* lignes de lumière, jamais en aplat ni en texte */
+  --color-brick: #d9745f;          /* erreur, annulation, lapin */
+  --color-sage: #9bb58c;           /* validation discrète */
+  --color-line-subtle: rgb(239 233 221 / 0.12);
+  --color-line: rgb(239 233 221 / 0.16);
+  --color-line-strong: rgb(239 233 221 / 0.28);
+  --color-line-hover: rgb(239 233 221 / 0.5);
+  --color-scrim: rgb(5 5 4 / 0.78);
+  --color-bar: rgb(11 10 9 / 0.94);
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  /* ---------- Typographie ---------- */
+  --font-sans: var(--font-sora), "Century Gothic", Arial, sans-serif;
+
+  --text-display: 2.5rem;           --text-display--line-height: 1.1;   --text-display--letter-spacing: -0.02em; --text-display--font-weight: 300;
+  --text-title-page: 2.125rem;      --text-title-page--line-height: 1.1; --text-title-page--letter-spacing: -0.02em; --text-title-page--font-weight: 300;
+  --text-title-1: 2rem;             --text-title-1--line-height: 1.15;  --text-title-1--letter-spacing: -0.01em; --text-title-1--font-weight: 300;
+  --text-title-2: 1.75rem;          --text-title-2--line-height: 1.15;  --text-title-2--letter-spacing: -0.01em; --text-title-2--font-weight: 300;
+  --text-title-3: 1.25rem;          --text-title-3--line-height: 1.3;   --text-title-3--font-weight: 400;
+  --text-body-lg: 1.1875rem;        --text-body-lg--line-height: 1.5;   --text-body-lg--font-weight: 300;
+  --text-body: 1rem;                --text-body--line-height: 1.55;
+  --text-body-sm: 0.875rem;         --text-body-sm--line-height: 1.5;
+  --text-label: 0.6875rem;          --text-label--line-height: 1.2;     --text-label--letter-spacing: 0.32em;
+  --text-button: 0.8125rem;         --text-button--line-height: 1;      --text-button--letter-spacing: 0.26em;  --text-button--font-weight: 500;
+  --text-button-sm: 0.75rem;        --text-button-sm--line-height: 1;   --text-button-sm--letter-spacing: 0.22em;
+
+  /* ---------- Angles : aucun coin arrondi ---------- */
+  --radius-*: initial;
+
+  /* ---------- Mouvement ---------- */
+  --ease-out-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-draw: cubic-bezier(0.6, 0, 0.2, 1);
+  --ease-in-soft: cubic-bezier(0.4, 0, 1, 1);
+  --ease-trace: cubic-bezier(0.55, 0, 0.25, 1);
+  --ease-shine: cubic-bezier(0.5, 0, 0.3, 1);
+
+  --animate-reveal: reveal 600ms var(--ease-out-soft) both;
+  --animate-led: led 1000ms var(--ease-draw) both;
+  --animate-led-fast: led 280ms var(--ease-draw) both;
+  --animate-step-in: step-in 260ms var(--ease-out-soft) both;
+  --animate-panel-in: panel-in 240ms var(--ease-out-soft) both;
+  --animate-sheet-up: sheet-up 280ms var(--ease-out-soft) both;
+  --animate-fade-in: fade-in 280ms ease both;
+  --animate-logo-reveal: logo-reveal 900ms var(--ease-draw) 350ms both;
+  --animate-photo-in: photo-in 1400ms var(--ease-out-soft) both;
+  --animate-trace: trace 1100ms var(--ease-trace) 100ms forwards;
+  --animate-shine: shine 1100ms var(--ease-shine) 1000ms both;
+  --animate-loader: loader-bar 1200ms var(--ease-draw) infinite;
+
+  @keyframes reveal { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  @keyframes led { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  @keyframes step-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @keyframes panel-in { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: none; } }
+  @keyframes sheet-up { from { transform: translateY(100%); } to { transform: none; } }
+  @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes logo-reveal { from { clip-path: inset(0 50% 0 50%); } to { clip-path: inset(0 0 0 0); } }
+  @keyframes photo-in { from { opacity: 0; transform: scale(1.04); } to { opacity: 1; transform: none; } }
+  @keyframes trace { to { stroke-dashoffset: 0; } }
+  @keyframes shine { from { background-position: 100% 0; } to { background-position: 0 0; } }
+  @keyframes loader-bar { 0% { transform: scaleX(0); } 45% { transform: scaleX(1); } 100% { transform: scaleX(1); opacity: 0; } }
+}
+
+/* ---------- Base ---------- */
+@layer base {
+  html { background: var(--color-ink); color: var(--color-ivory); color-scheme: dark; }
+  body { font-family: var(--font-sans); font-weight: 300; -webkit-font-smoothing: antialiased; }
+  ::selection { background: var(--color-ivory); color: var(--color-ink); }
+  :focus-visible { outline: 2px solid var(--color-gold); outline-offset: 3px; }
+  input, select, textarea { font-size: 16px; } /* évite le zoom automatique sur iPhone */
+}
+
+/* ---------- Utilitaires du système ---------- */
+@layer components {
+  /* Étiquette de section : 11 px, capitales, très espacée */
+  .label-caps { font-size: var(--text-label); letter-spacing: var(--text-label--letter-spacing); text-transform: uppercase; color: var(--color-stone); }
+
+  /* Ligne de lumière : ajouter .is-visible à l'entrée à l'écran */
+  .led-line { height: 1px; background: var(--color-led); box-shadow: 0 0 8px 1px rgb(255 255 255 / 0.45); transform-origin: left center; transform: scaleX(0); }
+  .led-line[data-origin="center"] { transform-origin: center; }
+  .led-line.is-visible { animation: var(--animate-led); }
+
+  /* Révélation au défilement : data-reveal sur l'élément, --i pour la cascade (70 ms) */
+  [data-reveal] { opacity: 0; }
+  [data-reveal].is-visible { animation: var(--animate-reveal); animation-delay: calc(var(--i, 0) * 70ms); }
+
+  /* Tracé SVG : pathLength="1" sur le path */
+  .trace path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: var(--animate-trace); }
+
+  /* Ouverture de l'accueil : data-opening sur chaque élément animé ;
+     motion.ts ajoute .opening-skip sur <html> au premier geste → état final immédiat */
+  .opening-skip [data-opening] { animation: none !important; opacity: 1 !important; transform: none !important; clip-path: none !important; }
+  .opening-skip [data-opening] path { animation: none !important; stroke-dashoffset: 0 !important; }
+
+  /* Reflet doré — confirmation du rendez-vous uniquement */
+  .gold-shine {
+    background: linear-gradient(100deg, var(--color-ivory) 0%, var(--color-ivory) 40%, var(--color-gold-shine) 50%, var(--color-ivory) 60%, var(--color-ivory) 100%);
+    background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: var(--animate-shine);
+  }
+}
+
+/* ---------- Réduire les animations ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
+  [data-reveal] { opacity: 1; }
+  .led-line { transform: none; }
+  .trace path { stroke-dashoffset: 0; }
+  .gold-shine { background: none; color: var(--color-ivory); }
+}

@@ -1,0 +1,19 @@
+# Base locale de développement et de test : Postgres 17, comme en intégration continue.
+# Démarrage : pnpm db:start   Arrêt : pnpm db:stop
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "54322:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  db-data:

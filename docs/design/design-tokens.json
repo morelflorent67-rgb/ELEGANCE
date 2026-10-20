@@ -1,0 +1,135 @@
+{
+  "$meta": {
+    "name": "Elegance Strasbourg — Direction A « Lumière »",
+    "version": "1.0.0",
+    "date": "2026-10-20",
+    "note": "Source unique des valeurs. theme.css et motion.ts en sont la traduction directe."
+  },
+  "color": {
+    "bg": {
+      "base": "#0b0a09",
+      "raised": "#141210",
+      "elevated": "#1a1816",
+      "hover": "#221f1c",
+      "disabled": "#2a2723"
+    },
+    "text": {
+      "primary": "#efe9dd",
+      "secondary": "#c9c3b7",
+      "muted": "#a8a297",
+      "faint": "#8f897e",
+      "onIvory": "#0b0a09"
+    },
+    "surface": {
+      "ivory": "#efe9dd"
+    },
+    "accent": {
+      "gold": "#b8935a",
+      "goldShine": "#f0d39a"
+    },
+    "light": {
+      "led": "#ffffff"
+    },
+    "state": {
+      "error": "#d9745f",
+      "success": "#9bb58c"
+    },
+    "line": {
+      "subtle": "rgba(239, 233, 221, 0.12)",
+      "default": "rgba(239, 233, 221, 0.16)",
+      "strong": "rgba(239, 233, 221, 0.28)",
+      "hover": "rgba(239, 233, 221, 0.50)"
+    },
+    "overlay": {
+      "scrim": "rgba(5, 5, 4, 0.78)",
+      "bar": "rgba(11, 10, 9, 0.94)"
+    },
+    "$contrast": {
+      "text.primary sur bg.base": "16.4:1",
+      "text.secondary sur bg.base": "11.3:1",
+      "text.muted sur bg.base": "7.8:1",
+      "text.faint sur bg.elevated": "5.1:1 (minimum autorisé pour du texte)",
+      "accent.gold sur bg.base": "6.9:1",
+      "state.error sur bg.base": "6.2:1",
+      "text.onIvory sur surface.ivory": "16.4:1"
+    }
+  },
+  "font": {
+    "family": {
+      "sans": "Sora, 'Century Gothic', Arial, sans-serif",
+      "email": "Sora, Arial, Helvetica, sans-serif"
+    },
+    "weight": { "light": 300, "regular": 400, "medium": 500 }
+  },
+  "typography": {
+    "display":  { "size": "40px", "lineHeight": 1.1,  "weight": 300, "letterSpacing": "-0.02em", "usage": "Confirmation du RDV" },
+    "titlePage":{ "size": "34px", "lineHeight": 1.1,  "weight": 300, "letterSpacing": "-0.02em", "usage": "Titre des pages vitrine (Prestations, Le salon)" },
+    "title1":   { "size": "32px", "lineHeight": 1.15, "weight": 300, "letterSpacing": "-0.01em", "usage": "Titre des pages compte, mentions légales" },
+    "title2":   { "size": "28px", "lineHeight": 1.15, "weight": 300, "letterSpacing": "-0.01em", "usage": "Titres de section" },
+    "title3":   { "size": "20px", "lineHeight": 1.3,  "weight": 400, "letterSpacing": "0",       "usage": "Titres d'étape, jours" },
+    "bodyLg":   { "size": "19px", "lineHeight": 1.5,  "weight": 300, "letterSpacing": "0",       "usage": "Introduction" },
+    "body":     { "size": "16px", "lineHeight": 1.55, "weight": 300, "letterSpacing": "0",       "usage": "Texte courant, lignes de carte (400)" },
+    "bodySm":   { "size": "14px", "lineHeight": 1.5,  "weight": 400, "letterSpacing": "0",       "usage": "Aides, légendes" },
+    "label":    { "size": "11px", "lineHeight": 1.2,  "weight": 400, "letterSpacing": "0.32em",  "textTransform": "uppercase", "usage": "Étiquettes de section" },
+    "button":   { "size": "13px", "lineHeight": 1,    "weight": 500, "letterSpacing": "0.26em",  "textTransform": "uppercase", "usage": "Bouton principal" },
+    "buttonSm": { "size": "12px", "lineHeight": 1,    "weight": 400, "letterSpacing": "0.22em",  "textTransform": "uppercase", "usage": "Boutons secondaires, liens d'action" },
+    "numeric":  { "fontVariantNumeric": "tabular-nums", "usage": "Heures, prix, compteurs" }
+  },
+  "space": {
+    "1": "4px", "2": "8px", "3": "12px", "4": "16px", "5": "20px", "6": "24px", "7": "28px",
+    "8": "32px", "10": "40px", "12": "48px", "14": "56px", "16": "64px", "18": "72px", "24": "96px"
+  },
+  "layout": {
+    "gutterMobile": "24px",
+    "gutterTablet": "32px",
+    "sectionGapMobile": "56px",
+    "sectionGapTablet": "96px",
+    "headerMobile": "64px",
+    "bookingBar": "88px",
+    "tabletHeader": "72px",
+    "tabletNavRail": "88px",
+    "tabletSidePanel": "340px",
+    "planningScale": "48px pour 30 minutes"
+  },
+  "size": {
+    "touchMin": "44px",
+    "buttonPrimary": "56px",
+    "buttonSecondary": "52px",
+    "input": "52px",
+    "slot": "48px",
+    "iconStroke": "1.4px",
+    "iconGrid": "24px"
+  },
+  "radius": { "none": "0" },
+  "border": {
+    "hairline": "1px",
+    "focus": "2px solid #b8935a, offset 3px"
+  },
+  "breakpoint": { "sm": "640px", "md": "768px", "lg": "1024px", "xl": "1280px" },
+  "zIndex": { "header": 30, "bookingBar": 40, "overlay": 50, "sheet": 60, "toast": 70 },
+  "motion": {
+    "duration": {
+      "instant": "120ms",
+      "fast": "200ms",
+      "panel": "240ms",
+      "base": "280ms",
+      "reveal": "600ms",
+      "draw": "1000ms",
+      "signature": "1100ms",
+      "opening": "1400ms"
+    },
+    "easing": {
+      "out": "cubic-bezier(0.2, 0.7, 0.2, 1)",
+      "draw": "cubic-bezier(0.6, 0, 0.2, 1)",
+      "in": "cubic-bezier(0.4, 0, 1, 1)",
+      "trace": "cubic-bezier(0.55, 0, 0.25, 1)",
+      "shine": "cubic-bezier(0.5, 0, 0.3, 1)"
+    },
+    "stagger": { "reveal": "70ms", "menu": "60ms", "confirmation": "100ms", "loader": "120ms" },
+    "rules": [
+      "Rien ne bloque : l'ouverture s'arrête au premier geste.",
+      "300 ms maximum dans la réservation, le compte et la tablette.",
+      "prefers-reduced-motion: reduce → état final direct, sans tracé ni reflet."
+    ]
+  }
+}
