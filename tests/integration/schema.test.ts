@@ -21,6 +21,7 @@ describe("principe 5 : aucun accès direct depuis le navigateur", () => {
       "customer",
       "email_outbox",
       "opening_hours",
+      "rate_limit",
       "salon_settings",
       "service",
       "service_staff",

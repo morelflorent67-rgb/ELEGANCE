@@ -34,6 +34,22 @@ INSERT INTO service (id, name, price_cents, duration_min, performed_by, bookable
   ('00000000-0000-4000-8000-000000000b10', 'Lissage brésilien', 6000, 30, 'barber', false, 10)
 ON CONFLICT (id) DO NOTHING;
 
+-- Groupes d'affichage de la carte (maquette de réservation). Ne remplit que les catégories encore vides.
+UPDATE service SET category = v.category
+FROM (VALUES
+  ('00000000-0000-4000-8000-000000000b01'::uuid, 'Coupes'),
+  ('00000000-0000-4000-8000-000000000b02'::uuid, 'Coupes'),
+  ('00000000-0000-4000-8000-000000000b03'::uuid, 'Coupes'),
+  ('00000000-0000-4000-8000-000000000b04'::uuid, 'Coupes'),
+  ('00000000-0000-4000-8000-000000000b05'::uuid, 'Barbe et soin'),
+  ('00000000-0000-4000-8000-000000000b06'::uuid, 'Barbe et soin'),
+  ('00000000-0000-4000-8000-000000000b07'::uuid, 'Techniques'),
+  ('00000000-0000-4000-8000-000000000b08'::uuid, 'Techniques'),
+  ('00000000-0000-4000-8000-000000000b09'::uuid, 'Techniques'),
+  ('00000000-0000-4000-8000-000000000b10'::uuid, 'Techniques')
+) AS v(id, category)
+WHERE service.id = v.id AND service.category IS NULL;
+
 -- Habilitations (R-12, R-13) : les coiffeurs réalisent les prestations « Coiffeurs », les apprentis les
 -- prestations « tarif formation ». Seulement si aucune habilitation n'existe encore.
 INSERT INTO service_staff (service_id, staff_id)

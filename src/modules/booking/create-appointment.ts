@@ -3,6 +3,7 @@ import { DateTime } from "luxon";
 import type { Database } from "@/db/types";
 import { appointment, appointmentItem, customer, staff } from "@/db/schema";
 import { DomainError } from "@/lib/domain-error";
+import { enqueueEmail } from "@/modules/mail/outbox";
 import {
   checkSlot,
   eligibleStaff,
@@ -140,6 +141,7 @@ export async function createAppointment(
           source: input.source,
           customerNote: input.note ?? null,
           createdByStaffId: input.createdByStaffId ?? null,
+          createdAt: now, // même horloge que les délais : R-32 compare cette date à celle du RDV
         })
         .returning({ id: appointment.id });
 
@@ -153,6 +155,17 @@ export async function createAppointment(
           position,
         })),
       );
+
+      // R-60 : l'email de confirmation entre dans la file d'envoi avec le RDV, dans la même transaction.
+      // L'envoi lui-même se fait après la réponse : une panne d'email ne bloque jamais la réservation.
+      if (client.email) {
+        await enqueueEmail(tx, {
+          type: "confirmation",
+          toEmail: client.email,
+          appointmentId: created.id,
+          dedupeKey: `confirmation:${created.id}`,
+        });
+      }
 
       return {
         id: created.id,

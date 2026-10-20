@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { DateTime } from "luxon";
@@ -67,7 +68,7 @@ export async function createCustomer(
 ): Promise<string> {
   const [row] = await sql`
     insert into customer (first_name, last_name, phone, email, online_booking_blocked)
-    values (${overrides.name ?? "Test"}, 'Client', '0600000000', 'client@example.com', ${overrides.blocked ?? false})
+    values (${overrides.name ?? "Test"}, 'Client', '+33600000000', ${`client-${randomUUID()}@example.com`}, ${overrides.blocked ?? false})
     returning id`;
   return row.id as string;
 }

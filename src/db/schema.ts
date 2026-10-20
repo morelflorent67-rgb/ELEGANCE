@@ -15,6 +15,7 @@ import {
   time,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -110,6 +111,7 @@ export const service = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     name: text("name").notNull(),
+    category: text("category"), // groupe d'affichage dans la carte (« Coupes », « Barbe et soin »…)
     priceCents: integer("price_cents").notNull(), // R-10, R-15
     durationMin: integer("duration_min").notNull(), // R-10 : multiple de 15
     performedBy: staffRole("performed_by").notNull(), // R-12, R-18
@@ -137,17 +139,26 @@ export const serviceStaff = pgTable(
   (t) => [primaryKey({ columns: [t.serviceId, t.staffId] })],
 );
 
-export const customer = pgTable("customer", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  authUserId: uuid("auth_user_id").unique(), // compte Supabase ; vidé à l'anonymisation (R-75)
-  firstName: text("first_name"),
-  lastName: text("last_name"),
-  phone: text("phone"),
-  email: text("email"),
-  onlineBookingBlocked: boolean("online_booking_blocked").notNull().default(false), // R-52
-  anonymizedAt: instant("anonymized_at"),
-  createdAt: instant("created_at").notNull().defaultNow(),
-});
+export const customer = pgTable(
+  "customer",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    authUserId: uuid("auth_user_id").unique(), // compte Supabase ; vidé à l'anonymisation (R-75)
+    firstName: text("first_name"),
+    lastName: text("last_name"),
+    phone: text("phone"),
+    email: text("email"),
+    onlineBookingBlocked: boolean("online_booking_blocked").notNull().default(false), // R-52
+    anonymizedAt: instant("anonymized_at"),
+    createdAt: instant("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    // Un email = un compte (R-70), sans tenir compte de la casse ; les fiches anonymisées n'ont plus d'email.
+    uniqueIndex("customer_email_unique")
+      .on(sql`lower(${t.email})`)
+      .where(sql`${t.email} is not null`),
+  ],
+);
 
 export const appointment = pgTable(
   "appointment",
@@ -246,3 +257,10 @@ export const emailOutbox = pgTable(
   },
   (t) => [index("email_outbox_due_idx").on(t.status, t.nextAttemptAt)],
 );
+
+/** Compteurs de limitation d'essais (connexion, inscription, code gérant) : une ligne par clé, fenêtre glissante simple. */
+export const rateLimit = pgTable("rate_limit", {
+  key: text("key").primaryKey(),
+  count: integer("count").notNull(),
+  windowEndsAt: instant("window_ends_at").notNull(),
+});

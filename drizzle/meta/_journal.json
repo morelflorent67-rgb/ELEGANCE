@@ -22,6 +22,20 @@
       "when": 1792506086175,
       "tag": "0002_constraints_and_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792507232473,
+      "tag": "0003_customer_email_rate_limit",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792507591972,
+      "tag": "0004_service_category",
+      "breakpoints": true
     }
   ]
 }
