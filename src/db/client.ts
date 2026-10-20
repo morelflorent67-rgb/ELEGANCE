@@ -1,7 +1,7 @@
 import "server-only";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { serverEnv } from "@/lib/env";
+import { databaseEnv } from "@/lib/env";
 import * as schema from "./schema";
 
 // Seul point d'accès à la base : jamais importé par un composant client (server-only).
@@ -9,7 +9,7 @@ import * as schema from "./schema";
 const globalForDb = globalThis as unknown as { __sql?: ReturnType<typeof postgres> };
 
 function connection() {
-  globalForDb.__sql ??= postgres(serverEnv().DATABASE_URL, { prepare: false, max: 5 });
+  globalForDb.__sql ??= postgres(databaseEnv().DATABASE_URL, { prepare: false, max: 5 });
   return globalForDb.__sql;
 }
 

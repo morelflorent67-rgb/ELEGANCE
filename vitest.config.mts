@@ -17,6 +17,7 @@ export default defineConfig({
           name: "integration",
           include: ["tests/integration/**/*.test.ts"],
           environment: "node",
+          globalSetup: ["./tests/integration/global-setup.ts"],
           // Un seul fichier à la fois : les tests partagent une base Postgres réelle.
           fileParallelism: false,
           testTimeout: 20_000,

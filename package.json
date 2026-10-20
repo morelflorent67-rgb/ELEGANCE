@@ -13,10 +13,12 @@
     "test:integration": "vitest run --project integration",
     "test:e2e": "playwright test",
     "test:all": "pnpm lint && pnpm typecheck && vitest run && playwright test",
-    "db:start": "docker compose up -d --wait db && pnpm db:migrate",
-    "db:stop": "docker compose stop db",
+    "db:start": "node scripts/db-local.mjs start",
+    "db:stop": "node scripts/db-local.mjs stop",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "db:status": "node scripts/db-local.mjs status",
+    "db:reset": "node scripts/db-local.mjs reset"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -37,6 +39,7 @@
     "@types/react-dom": "^19",
     "dotenv": "^18.0.8",
     "drizzle-kit": "^0.31.11",
+    "embedded-postgres": "17.10.0-beta.17",
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
     "prettier": "^3.9.10",
