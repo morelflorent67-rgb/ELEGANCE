@@ -1,6 +1,7 @@
 # Elegance Strasbourg : site et réservation
 
 ## Sources de vérité
+- docs/reprise.md : où en est le projet, ce qui reste à faire, pièges connus, message de démarrage. À lire en premier dans une nouvelle conversation, et à mettre à jour à la fin de chaque lot.
 - docs/dossier-projet.md : règles métier R-xx et décisions D-xx. Elles font foi.
 - docs/transmission-code.md : stack, principes d'architecture, lots.
 - docs/design/ : passation design (README, design-tokens.json, theme.css, motion.ts). Maquettes : canevas Claude Design, lien dans le README.
