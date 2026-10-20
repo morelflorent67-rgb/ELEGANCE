@@ -65,3 +65,9 @@ export function joinFr(names: string[]): string {
   if (items.length <= 1) return items.join("");
   return `${items.slice(0, -1).join(", ")} et ${items[items.length - 1]}`;
 }
+
+/** « Orhan, Enes, Kaan et Taha » : des prénoms, la casse ne change pas. */
+export function joinNames(names: string[]): string {
+  if (names.length <= 1) return names.join("");
+  return `${names.slice(0, -1).join(", ")} et ${names[names.length - 1]}`;
+}

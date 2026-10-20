@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  formatClosure,
   formatHour,
   formatRanges,
   groupWeekHours,
   hoursSummary,
+  openingPhrase,
   schemaOpeningHours,
   weekRows,
   type WeekHours,
@@ -99,5 +101,25 @@ describe("hoursSummary", () => {
     expect(hoursSummary(standard)).toBe("Mardi – samedi · 10 h – 12 h, 13 h – 19 h");
     const closed: WeekHours = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] };
     expect(hoursSummary(closed)).toBe("Fermé");
+  });
+});
+
+describe("openingPhrase", () => {
+  it("dit « du mardi au samedi » pour des jours qui se suivent", () => {
+    expect(openingPhrase(standard)).toBe("du mardi au samedi");
+  });
+
+  it("reste général quand les jours ouverts ne se suivent pas ou sont trop peu", () => {
+    expect(openingPhrase({ ...standard, 4: [] })).toBeNull();
+    expect(openingPhrase({ 1: day, 2: day, 3: [], 4: [], 5: [], 6: [], 7: [] })).toBeNull();
+  });
+});
+
+describe("formatClosure : fermetures exceptionnelles (R-03)", () => {
+  it("un jour, une plage dans le mois, une plage à cheval sur deux mois", () => {
+    expect(formatClosure("2026-12-24", "2026-12-24")).toBe("le 24 décembre");
+    expect(formatClosure("2026-12-24", "2026-12-26")).toBe("du 24 au 26 décembre");
+    expect(formatClosure("2026-12-28", "2027-01-03")).toBe("du 28 décembre au 3 janvier");
+    expect(formatClosure("2026-08-01", "2026-08-15")).toBe("du 1er au 15 août");
   });
 });

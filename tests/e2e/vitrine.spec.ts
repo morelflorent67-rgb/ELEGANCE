@@ -160,3 +160,89 @@ test.describe("Prestations et tarifs", () => {
     );
   });
 });
+
+test.describe("Le salon", () => {
+  test("la page montre la galerie, l'équipe, les sept jours d'horaires et l'accès", async ({
+    page,
+  }) => {
+    await page.goto("/salon");
+    await expect(page.getByRole("heading", { level: 1, name: "Le salon" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Agrandir :/ })).toHaveCount(6);
+
+    const team = page.getByRole("heading", { name: "L'équipe" }).locator("xpath=../..");
+    await expect(team).toContainText("Orhan");
+    await expect(team).toContainText("Taha");
+    await expect(
+      team.getByText("Tarif formation : réalisé par Kaan ou Taha, nos apprentis."),
+    ).toBeVisible();
+
+    const hours = page.getByRole("heading", { name: "Horaires et accès" }).locator("xpath=../..");
+    for (const day of ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]) {
+      await expect(hours.getByText(day, { exact: true })).toBeVisible();
+    }
+    await expect(hours.getByText("Fermé")).toHaveCount(2);
+    await expect(hours.getByRole("link", { name: "Itinéraire" })).toBeVisible();
+    await noHorizontalScroll(page);
+  });
+
+  test("D-38 : la section Avis reste masquée jusqu'au lancement", async ({ page }) => {
+    await page.goto("/salon");
+    await expect(page.getByRole("heading", { name: "Avis" })).toHaveCount(0);
+    await expect(page.getByText(/avis vérifiés/)).toHaveCount(0);
+  });
+
+  test("la visionneuse : ouvrir, passer d'une photo à l'autre au clavier, fermer avec Échap", async ({
+    page,
+  }) => {
+    await page.goto("/salon");
+    const first = page.getByRole("button", { name: /^Agrandir : Les postes/ });
+    await first.click();
+    const viewer = page.getByRole("dialog");
+    await expect(viewer).toBeVisible();
+    await expect(viewer.getByText("1 / 6")).toBeVisible();
+    await page.keyboard.press("ArrowRight");
+    await expect(viewer.getByText("2 / 6")).toBeVisible();
+    await viewer.getByRole("button", { name: "Photo précédente" }).click();
+    await viewer.getByRole("button", { name: "Photo précédente" }).click();
+    await expect(viewer.getByText("6 / 6")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(viewer).toBeHidden();
+    await expect(first).toBeFocused();
+  });
+
+  test("la visionneuse se ferme avec le bouton Fermer", async ({ page }) => {
+    await page.goto("/salon");
+    await page.getByRole("button", { name: /^Agrandir : Le mur de l'entrée/ }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Fermer" }).click();
+    await expect(page.getByRole("dialog")).toBeHidden();
+  });
+});
+
+test("les pages publiques tiennent sans défilement horizontal, mobile comme grand écran", async ({
+  page,
+}) => {
+  for (const path of ["/", "/prestations", "/salon"]) {
+    await page.goto(path);
+    await noHorizontalScroll(page);
+  }
+});
+
+test("grand écran (1440 px) : en-tête avec liens, grilles à plusieurs colonnes, rien ne déborde", async ({
+  browser,
+}) => {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+  for (const path of ["/", "/prestations", "/salon"]) {
+    await page.goto(`http://127.0.0.1:3100${path}`);
+    await noHorizontalScroll(page);
+    await expect(
+      page.getByRole("banner").getByRole("link", { name: "Réserver", exact: true }),
+    ).toBeVisible();
+  }
+  await page.goto("http://127.0.0.1:3100/prestations");
+  const coupes = await page.locator("#coupes").boundingBox();
+  const barbe = await page.locator("#barbe-et-soin").boundingBox();
+  // Deux colonnes : « Barbe et soin » est à droite de « Coupes », pas dessous.
+  expect(barbe!.x).toBeGreaterThan(coupes!.x + coupes!.width / 2);
+  await context.close();
+});

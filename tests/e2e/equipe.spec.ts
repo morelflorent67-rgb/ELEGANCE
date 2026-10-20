@@ -403,8 +403,14 @@ test.describe("R-26, R-27 : réserver pour un client par téléphone ou au compt
     tabletOnly(page);
     await loginTablet(page);
     await page.goto("/equipe/reserver");
-    await page.getByLabel("Nom, prénom ou téléphone").fill("personne");
-    await expect(page.getByText(/Aucun client inscrit ne correspond/)).toBeVisible();
+    // La recherche ne réagit qu'une fois la page active : on retape jusqu'à obtenir la réponse.
+    await expect(async () => {
+      await page.getByLabel("Nom, prénom ou téléphone").fill("");
+      await page.getByLabel("Nom, prénom ou téléphone").fill("personne");
+      await expect(page.getByText(/Aucun client inscrit ne correspond/)).toBeVisible({
+        timeout: 1500,
+      });
+    }).toPass({ timeout: 10_000 });
   });
 
   test("la fiche client propose « Réserver pour ce client » avec le client déjà choisi", async ({

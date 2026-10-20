@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CatalogService } from "@/modules/catalog";
-import { callOnlyNames, groupCatalog, highlights, joinFr, performerNote } from "./catalog-view";
+import { callOnlyNames, groupCatalog, highlights, joinFr, joinNames, performerNote } from "./catalog-view";
 
 const svc = (over: Partial<CatalogService> & { name: string }): CatalogService => ({
   id: over.name,
@@ -93,5 +93,14 @@ describe("joinFr", () => {
     expect(joinFr(["Tribal", "Coloration", "Lissage brésilien"])).toBe(
       "Tribal, coloration et lissage brésilien",
     );
+  });
+});
+
+describe("joinNames", () => {
+  it("énumère des prénoms sans toucher à la casse", () => {
+    expect(joinNames(["Orhan", "Enes", "Kaan", "Taha"])).toBe("Orhan, Enes, Kaan et Taha");
+    expect(joinNames(["Orhan", "Enes"])).toBe("Orhan et Enes");
+    expect(joinNames(["Orhan"])).toBe("Orhan");
+    expect(joinNames([])).toBe("");
   });
 });

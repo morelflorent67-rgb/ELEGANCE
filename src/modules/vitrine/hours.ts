@@ -132,3 +132,44 @@ export function hoursSummary(week: WeekHours): string {
   if (open.length === 0) return "Fermé";
   return open.map((row) => `${row.label} · ${row.ranges.join(", ")}`).join(" — ");
 }
+
+/** « du mardi au samedi » quand les jours ouverts se suivent (3 jours ou plus) ; sinon null et l'appelant reste général. */
+export function openingPhrase(week: WeekHours): string | null {
+  const open = WEEKDAYS.filter((d) => (week[d] ?? []).length > 0);
+  if (open.length < 3) return null;
+  const consecutive = open.every((d, i) => i === 0 || d === open[i - 1] + 1);
+  if (!consecutive) return null;
+  return `du ${lower(DAY_NAMES[open[0]])} au ${lower(DAY_NAMES[open[open.length - 1]])}`;
+}
+
+const MONTHS = [
+  "janvier",
+  "février",
+  "mars",
+  "avril",
+  "mai",
+  "juin",
+  "juillet",
+  "août",
+  "septembre",
+  "octobre",
+  "novembre",
+  "décembre",
+];
+
+function dayMonth(iso: string): { day: number; month: number; year: number } {
+  const [year, month, day] = iso.split("-").map(Number);
+  return { day, month, year };
+}
+
+/** « le 24 décembre », « du 24 au 26 décembre », « du 28 décembre au 3 janvier » : une fermeture exceptionnelle (R-03). */
+export function formatClosure(startsOn: string, endsOn: string): string {
+  const a = dayMonth(startsOn);
+  const b = dayMonth(endsOn);
+  const label = (d: { day: number; month: number }) => `${d.day === 1 ? "1er" : d.day} ${MONTHS[d.month - 1]}`;
+  if (startsOn === endsOn) return `le ${label(a)}`;
+  if (a.month === b.month && a.year === b.year) {
+    return `du ${a.day === 1 ? "1er" : a.day} au ${label(b)}`;
+  }
+  return `du ${label(a)} au ${label(b)}`;
+}

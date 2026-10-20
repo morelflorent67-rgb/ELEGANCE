@@ -23,7 +23,11 @@ export async function resetData() {
   await sql.unsafe(seedSql);
   // Aucun code gérant tant qu'un test n'en pose pas un (R-73).
   await sql`update salon_settings set manager_pin_hash = null`;
-  // La vitrine garde la carte, l'équipe et les horaires en cache : la remise à zéro directe en base doit le vider.
+  await refreshVitrine();
+}
+
+/** La vitrine garde la carte, l'équipe et les horaires en cache : après un changement direct en base, on le vide. */
+export async function refreshVitrine() {
   await fetch("http://127.0.0.1:3100/api/e2e/revalidate", { method: "POST" });
 }
 
