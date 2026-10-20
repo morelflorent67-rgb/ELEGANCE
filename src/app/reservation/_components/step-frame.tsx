@@ -24,7 +24,8 @@ export function StepFrame({
   status: StepStatus;
   summaryLabel: string;
   summary: ReactNode;
-  onEdit: () => void;
+  /** Absent : l'étape validée ne se modifie pas (ex. les prestations d'un RDV qu'on déplace). */
+  onEdit?: () => void;
   editLabel?: string;
   children: ReactNode;
 }) {
@@ -73,13 +74,15 @@ export function StepFrame({
           <span className="text-label uppercase text-stone">{summaryLabel}</span>
           <div className="flex flex-col gap-0.5 text-[15px] leading-snug text-ivory">{summary}</div>
         </div>
-        <button
-          type="button"
-          onClick={onEdit}
-          className="min-h-11 shrink-0 text-body-sm text-ivory-soft underline underline-offset-4"
-        >
-          {editLabel}
-        </button>
+        {onEdit ? (
+          <button
+            type="button"
+            onClick={onEdit}
+            className="min-h-11 shrink-0 text-body-sm text-ivory-soft underline underline-offset-4"
+          >
+            {editLabel}
+          </button>
+        ) : null}
       </section>
     );
   }

@@ -13,9 +13,7 @@ import {
 test.beforeEach(async () => {
   await resetData();
 });
-test.afterAll(async () => {
-  await sql.end();
-});
+// La connexion à la base est partagée par tous les fichiers de test (helpers.ts) : Playwright la ferme avec le worker.
 
 const phoneLink = "tel:+33388977468";
 

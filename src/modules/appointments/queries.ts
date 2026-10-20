@@ -93,3 +93,25 @@ export async function listCustomerAppointments(
     .orderBy(desc(appointment.startsAt));
   return withItems(db, rows);
 }
+
+/**
+ * Ce qu'il faut pour « Reprendre le même RDV » : les prestations (dans l'ordre) et le coiffeur d'un RDV passé du client.
+ * Null si le RDV n'existe pas ou appartient à quelqu'un d'autre.
+ */
+export async function loadRepeatSource(
+  db: Database,
+  customerId: string,
+  appointmentId: string,
+): Promise<{ serviceIds: string[]; staffId: string } | null> {
+  const [row] = await db
+    .select({ staffId: appointment.staffId })
+    .from(appointment)
+    .where(and(eq(appointment.id, appointmentId), eq(appointment.customerId, customerId)));
+  if (!row) return null;
+  const items = await db
+    .select({ serviceId: appointmentItem.serviceId })
+    .from(appointmentItem)
+    .where(eq(appointmentItem.appointmentId, appointmentId))
+    .orderBy(asc(appointmentItem.position));
+  return { serviceIds: items.map((i) => i.serviceId), staffId: row.staffId };
+}

@@ -251,6 +251,8 @@ export const emailOutbox = pgTable(
     attempts: integer("attempts").notNull().default(0),
     nextAttemptAt: instant("next_attempt_at").notNull().defaultNow(),
     lastError: text("last_error"),
+    /** Données propres au message qui ne se relisent pas dans le RDV (ex. l'ancien créneau d'un déplacement). */
+    payload: jsonb("payload"),
     dedupeKey: text("dedupe_key").notNull().unique(), // un même message ne part pas deux fois
     createdAt: instant("created_at").notNull().defaultNow(),
     sentAt: instant("sent_at"),

@@ -36,6 +36,13 @@
       "when": 1792507591972,
       "tag": "0004_service_category",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792510472943,
+      "tag": "0005_email_outbox_payload",
+      "breakpoints": true
     }
   ]
 }

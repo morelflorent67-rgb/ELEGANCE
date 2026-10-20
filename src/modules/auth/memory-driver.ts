@@ -97,5 +97,22 @@ export function createMemoryDriver(store: SessionStore): AuthDriver {
         if (userId === id) memoryAuthState.sessions.delete(sessionId);
       }
     },
+    async verifyPassword(email, password) {
+      const user = memoryAuthState.users.get(email.toLowerCase());
+      return !!user && user.password === password;
+    },
+    async updateEmail(id, email) {
+      const key = email.toLowerCase();
+      const entry = [...memoryAuthState.users.entries()].find(([, user]) => user.id === id);
+      if (!entry) return { ok: false, reason: "failed" };
+      const [oldKey, user] = entry;
+      if (key !== oldKey && memoryAuthState.users.has(key)) {
+        return { ok: false, reason: "email_taken" };
+      }
+      memoryAuthState.users.delete(oldKey);
+      user.email = key;
+      memoryAuthState.users.set(key, user);
+      return { ok: true };
+    },
   };
 }

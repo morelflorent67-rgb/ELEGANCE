@@ -2,7 +2,7 @@ import { DateTime } from "luxon";
 import type { Database } from "@/db/types";
 import { slotsForDay } from "./engine";
 import { loadSettings, loadSnapshot } from "./load";
-import { eligibleStaff, resolveServices } from "./services";
+import { eligibleStaff, resolveServices, type ServiceRow } from "./services";
 import type { Audience, Slot } from "./types";
 
 export interface DaySlots {
@@ -18,14 +18,21 @@ interface RangeInput {
   staffId: string | "any";
   audience: Audience;
   now?: Date;
+  /**
+   * Déplacement d'un RDV existant : ses prestations et sa durée figées (R-16) remplacent celles de la carte,
+   * et il ne bloque pas son propre nouveau créneau.
+   */
+  moving?: { appointmentId: string; services: ServiceRow[]; durationMinutes: number };
 }
 
 /** Créneaux de plusieurs jours d'affilée, avec une seule lecture de la base. Jours fermés ou complets : liste vide. */
 export async function getSlotsForRange(db: Database, input: RangeInput): Promise<DaySlots[]> {
-  const { from, days, serviceIds, staffId, audience } = input;
+  const { from, days, serviceIds, staffId, audience, moving } = input;
   const now = input.now ?? new Date();
 
-  const services = await resolveServices(db, serviceIds, audience);
+  const services = moving
+    ? { rows: moving.services, durationMinutes: moving.durationMinutes }
+    : await resolveServices(db, serviceIds, audience);
   let candidates = await eligibleStaff(db, services.rows);
   if (staffId !== "any") candidates = candidates.filter((c) => c.id === staffId);
   const staffIds = candidates.map((c) => c.id);
@@ -42,6 +49,7 @@ export async function getSlotsForRange(db: Database, input: RangeInput): Promise
       .endOf("day")
       .toJSDate(),
     staffIds,
+    ...(moving ? { excludeAppointmentId: moving.appointmentId } : {}),
   });
 
   return dates.map((date) => ({

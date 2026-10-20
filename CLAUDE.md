@@ -38,9 +38,9 @@
 
 ## Modules métier
 - `src/modules/availability` : `engine.ts` (fonctions pures : créneaux, vérification d'un créneau, attribution « Sans préférence »), puis chargement en base et `getDaySlots`.
-- `src/modules/booking` : `createAppointment`, seul chemin d'écriture d'un RDV (transaction, verrous, revérification, R-13/14/16/17/18/20 à 25).
+- `src/modules/booking` : `createAppointment` (création), `rescheduleAppointment` et `cancelAppointment` (modification et annulation par le client, délai de 48 h revérifié, R-30 à R-32) : seuls chemins d'écriture d'un RDV (transaction, verrous, revérification, R-13/14/16/17/18/20 à 25).
 - Les modules reçoivent la base en paramètre (`Database`), jamais le client global : ils se testent sur une base de test.
 - Refus métier = `DomainError` avec un code stable (`src/lib/domain-error.ts`) ; l'interface le traduit en français.
 - `src/modules/mail` : file d'envoi (`email_outbox`), modèles d'emails en TypeScript (tableaux HTML), envoi Brevo, reprise. Un email s'écrit dans la file dans la même transaction que son RDV ; l'envoi se fait après la réponse (`after`) et le cron reprend les échecs.
-- `src/modules/auth` : interface d'authentification (Supabase en production, mémoire pour les tests, refusée sur Vercel). `src/modules/customers` : comptes clients, limitation d'essais, état de réservation.
+- `src/modules/auth` : interface d'authentification (Supabase en production, mémoire pour les tests, refusée sur Vercel). `src/modules/customers` : comptes clients, limitation d'essais, état de réservation, « Mes informations » et suppression de compte (`profile.ts`, anonymisation R-75). `src/modules/audit` : journal d'audit, à écrire dans la transaction de l'action.
 - Next 16 garde la page précédente cachée dans le DOM : dans les tests Playwright, filtrer les textes avec `.filter({ visible: true })`.

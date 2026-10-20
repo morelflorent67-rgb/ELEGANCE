@@ -16,21 +16,20 @@ const email = z
   .toLowerCase()
   .pipe(z.email("Cette adresse email ne semble pas valide."));
 
+const phone = z
+  .string()
+  .trim()
+  .min(1, "Indiquez votre téléphone.")
+  .refine((value) => normalizePhone(value) !== null, "Ce numéro de téléphone ne semble pas valide.")
+  .transform((value) => normalizePhone(value)!);
+
 const newPassword = z.string().min(8, "8 caractères minimum.").max(72, "72 caractères au maximum.");
 
 /** Création de compte : prénom, nom, téléphone, email, mot de passe et conditions acceptées (R-70, R-71). */
 export const signUpSchema = z.object({
   firstName: name("prénom"),
   lastName: name("nom"),
-  phone: z
-    .string()
-    .trim()
-    .min(1, "Indiquez votre téléphone.")
-    .refine(
-      (value) => normalizePhone(value) !== null,
-      "Ce numéro de téléphone ne semble pas valide.",
-    )
-    .transform((value) => normalizePhone(value)!),
+  phone,
   email,
   password: newPassword,
   acceptTerms: z.literal(true, { error: "Acceptez les conditions pour créer votre compte." }),
@@ -44,6 +43,26 @@ export const loginSchema = z.object({
 export const resetRequestSchema = z.object({ email });
 
 export const newPasswordSchema = z.object({ password: newPassword });
+
+/** « Mes informations » : coordonnées (R-70). Le mot de passe actuel n'est exigé que si l'email change. */
+export const profileSchema = z.object({
+  firstName: name("prénom"),
+  lastName: name("nom"),
+  phone,
+  email,
+  currentPassword: z.string().optional(),
+});
+
+/** Changement de mot de passe : l'ancien est exigé. */
+export const passwordChangeSchema = z.object({
+  currentPassword: z.string().min(1, "Indiquez votre mot de passe actuel."),
+  newPassword,
+});
+
+/** Suppression du compte : confirmée par le mot de passe. */
+export const deleteAccountSchema = z.object({
+  password: z.string().min(1, "Indiquez votre mot de passe pour confirmer."),
+});
 
 export type SignUpInput = z.infer<typeof signUpSchema>;
 

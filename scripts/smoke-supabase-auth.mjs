@@ -92,6 +92,43 @@ try {
     "le rôle « customer » est dans app_metadata",
     me.data.user?.app_metadata?.role === "customer",
   );
+
+  // Lot 3 : changement d'adresse par l'API d'administration (src/modules/auth/supabase-driver.ts, updateEmail).
+  const newEmail = `moved-${email}`;
+  const changed = await admin.auth.admin.updateUserById(userId, {
+    email: newEmail,
+    email_confirm: true,
+  });
+  check("changement d'email par l'administration", !changed.error, changed.error?.message);
+  const withNew = await anon.auth.signInWithPassword({ email: newEmail, password });
+  check(
+    "connexion avec la nouvelle adresse",
+    !withNew.error && !!withNew.data.session,
+    withNew.error?.message,
+  );
+  const withOld = await anon.auth.signInWithPassword({ email, password });
+  check(
+    "l'ancienne adresse ne marche plus",
+    withOld.error?.code === "invalid_credentials",
+    `code : ${withOld.error?.code}`,
+  );
+
+  const other = await admin.auth.admin.createUser({
+    email: `other-${email}`,
+    password,
+    email_confirm: true,
+  });
+  const clash = await admin.auth.admin.updateUserById(other.data.user.id, {
+    email: newEmail,
+    email_confirm: true,
+  });
+  check(
+    "prendre l'adresse d'un autre compte renvoie un code reconnu (email_exists)",
+    clash.error?.code === "email_exists" ||
+      /already|registered|exists/i.test(clash.error?.message ?? ""),
+    `code : ${clash.error?.code ?? "aucune erreur"}`,
+  );
+  if (other.data?.user) await admin.auth.admin.deleteUser(other.data.user.id);
 } finally {
   if (userId) {
     const removed = await admin.auth.admin.deleteUser(userId);

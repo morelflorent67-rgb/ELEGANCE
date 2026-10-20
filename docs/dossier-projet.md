@@ -247,7 +247,7 @@ Ces 52 règles fixent le comportement du moteur de réservation : toutes sont d�
 
 ## Journal des décisions
 
-Le 20 octobre 2026, 45 décisions ont fixé le cadre du projet ; on ne revient sur l'une d'elles qu'en l'écrivant ici.
+Le 20 octobre 2026, 49 décisions ont fixé le cadre du projet ; on ne revient sur l'une d'elles qu'en l'écrivant ici.
 
 | N° | Décision | Raison |
 | --- | --- | --- |
@@ -296,6 +296,10 @@ Le 20 octobre 2026, 45 décisions ont fixé le cadre du projet ; on ne revient s
 | D-43 | La suppression d'un compte efface le nom, le téléphone et l'email, et garde les RDV passés sans identité (précise R-75) | Le chiffre d'affaires et le journal restent justes |
 | D-44 | Le compte se crée à l'étape 4 du parcours (« Créer mon compte »), et non au clic sur « Confirmer » (précise R-71) | Parcours de la maquette ; un abandon laisse un compte sans RDV, sans conséquence |
 | D-45 | « Mot de passe oublié » fait partie de la V1 : lien par email, réponse identique que l'adresse ait un compte ou non | Sans lui, un client qui oublie son mot de passe est bloqué (D-42) |
+| D-46 | « Modifier » change le jour, l'heure et le coiffeur ; les prestations et leur prix restent ceux du RDV (précise R-30). Pour changer de prestation : annuler puis reprendre un RDV | Prix et durée figés (R-16) ; c'est le sens de l'email « Votre rendez-vous est déplacé » |
+| D-47 | Un client peut déplacer son RDV vers un créneau dans moins de 48 h ; le RDV n'est plus modifiable en ligne ensuite (précise R-30, R-32) | Même souplesse qu'à la réservation ; R-32 se déduit de R-30 : modifiable si on est à 48 h ou plus du début |
+| D-48 | Un client ne peut pas supprimer son compte tant qu'un RDV tombe dans les 48 h : « Contactez le salon ». Les RDV à plus de 48 h sont annulés avec la suppression (précise R-75) | On ne contourne pas la règle des 48 h en supprimant son compte |
+| D-49 | Changer son email, changer son mot de passe ou supprimer son compte demande le mot de passe actuel (précise R-76) | Une session laissée ouverte ne suffit pas à prendre le compte |
 
 ## Documents liés
 

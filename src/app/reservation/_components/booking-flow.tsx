@@ -2,13 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { PageHeader } from "@/components/ui";
+import { Alert, PageHeader } from "@/components/ui";
 import { formatPrice } from "@/lib/format";
 import { SALON } from "@/lib/salon";
 import { prefersReducedMotion } from "@/lib/motion";
 import type { CatalogService, StaffChoice } from "@/modules/catalog";
 import type { BookingState, CustomerProfile } from "@/modules/customers/accounts";
-import { confirmBooking, fetchStaffChoices } from "../actions";
+import { confirmBooking, fetchStaffChoices, rescheduleBooking } from "../actions";
 import { DateStep, type PickedSlot } from "./date-step";
 import { IdentityStep } from "./identity-step";
 import { RecapStep } from "./recap-step";
@@ -17,6 +17,24 @@ import { StaffStep } from "./staff-step";
 import { StepFrame, type StepStatus } from "./step-frame";
 
 type StepNo = 1 | 2 | 3 | 4 | 5;
+
+/** Un RDV que le client déplace : ses prestations sont figées (R-16), seuls le coiffeur et le créneau changent. */
+export interface EditingAppointment {
+  id: string;
+  staffId: string;
+  /** « Mardi 10 novembre · 10:00 » */
+  currentLabel: string;
+  items: { id: string; name: string; priceCents: number; durationMin: number }[];
+}
+
+/**
+ * Parcours ouvert déjà rempli :
+ * - « repeat » (Reprendre le même RDV) : prestations et coiffeur d'un RDV passé, on commence au choix du créneau ;
+ * - « edit » (Modifier) : un RDV à venir, on change le coiffeur et le créneau.
+ */
+export type Prefill =
+  | { kind: "repeat"; serviceIds: string[]; staffId: string; choices: StaffChoice[] }
+  | { kind: "edit"; appointment: EditingAppointment; choices: StaffChoice[] };
 
 /**
  * Le parcours de réservation sur une seule page (D-16) : chaque étape validée se replie en un résumé modifiable.
@@ -27,18 +45,30 @@ export function BookingFlow({
   customer: initialCustomer,
   booking: initialBooking,
   cutoffHours,
+  prefill,
+  notice: pageNotice,
 }: {
   catalog: CatalogService[];
   customer: CustomerProfile | null;
   booking: BookingState | null;
   cutoffHours: number;
+  prefill?: Prefill;
+  /** Message du serveur à afficher en tête (ex. une prestation qui n'est plus réservable en ligne). */
+  notice?: string;
 }) {
   const router = useRouter();
-  const [open, setOpen] = useState<StepNo>(1);
-  const [done, setDone] = useState<0 | StepNo>(0);
-  const [serviceIds, setServiceIds] = useState<string[]>([]);
-  const [staffId, setStaffId] = useState("any");
-  const [choices, setChoices] = useState<StaffChoice[] | null>(null);
+  const editing = prefill?.kind === "edit" ? prefill.appointment : null;
+  const steps: StepNo[] = editing ? [1, 2, 3, 5] : [1, 2, 3, 4, 5];
+
+  const [open, setOpen] = useState<StepNo>(prefill ? 3 : 1);
+  const [done, setDone] = useState<0 | StepNo>(prefill ? 2 : 0);
+  const [serviceIds, setServiceIds] = useState<string[]>(
+    prefill?.kind === "repeat" ? prefill.serviceIds : [],
+  );
+  const [staffId, setStaffId] = useState(
+    prefill?.kind === "repeat" ? prefill.staffId : (editing?.staffId ?? "any"),
+  );
+  const [choices, setChoices] = useState<StaffChoice[] | null>(prefill?.choices ?? null);
   const [choicesFailed, setChoicesFailed] = useState(false);
   const [slot, setSlot] = useState<PickedSlot | null>(null);
   // Instant où le créneau a été choisi, pour avertir si le RDV est à moins de 48 h (R-32, information seulement :
@@ -50,10 +80,18 @@ export function BookingFlow({
   const [booking, setBooking] = useState(initialBooking);
   const [submitting, setSubmitting] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+  const [locked, setLocked] = useState(false);
   const first = useRef(true);
   const servicesAtOpen = useRef<string[]>([]);
 
-  const { rows: services, priceCents, durationMin } = totals(catalog, serviceIds);
+  const picked = totals(catalog, serviceIds);
+  const services = editing ? editing.items : picked.rows;
+  const priceCents = editing
+    ? editing.items.reduce((sum, i) => sum + i.priceCents, 0)
+    : picked.priceCents;
+  const durationMin = editing
+    ? editing.items.reduce((sum, i) => sum + i.durationMin, 0)
+    : picked.durationMin;
 
   const statusOf = (n: StepNo): StepStatus => (n === open ? "open" : n <= done ? "done" : "todo");
 
@@ -63,10 +101,12 @@ export function BookingFlow({
       first.current = false;
       return;
     }
+    // En déplacement, le récapitulatif est la 4e étape affichée.
+    const shown = editing && open === 5 ? 4 : open;
     document
-      .getElementById(`step-${open}`)
+      .getElementById(`step-${shown}`)
       ?.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" });
-  }, [open]);
+  }, [open, editing]);
 
   // Étape 2 : coiffeurs habilités pour les prestations choisies (R-13).
   useEffect(() => {
@@ -128,14 +168,23 @@ export function BookingFlow({
     if (!slot) return;
     setSubmitting(true);
     setProblem(null);
-    const result = await confirmBooking({
-      serviceIds,
-      staffId,
-      startsAt: slot.iso,
-      note: note.trim() || undefined,
-    });
+    const result = editing
+      ? await rescheduleBooking({ appointmentId: editing.id, staffId, startsAt: slot.iso })
+      : await confirmBooking({
+          serviceIds,
+          staffId,
+          startsAt: slot.iso,
+          note: note.trim() || undefined,
+        });
     if (result.ok) {
-      router.push(`/reservation/confirmation?rdv=${result.appointmentId}`);
+      if ("changed" in result && !result.changed) {
+        setSubmitting(false);
+        setProblem("C'est déjà le créneau de votre rendez-vous. Choisissez-en un autre.");
+        return;
+      }
+      router.push(
+        `/reservation/confirmation?rdv=${result.appointmentId}${editing ? "&modifie=1" : ""}`,
+      );
       return; // on garde « Confirmation… » jusqu'au changement de page
     }
     setSubmitting(false);
@@ -167,6 +216,13 @@ export function BookingFlow({
         setCustomer(null);
         goTo(4, 3);
         break;
+      case "change_too_late":
+      case "not_modifiable":
+      case "appointment_not_found":
+        // R-31 : passé le délai, le client appelle le salon.
+        setLocked(true);
+        setProblem("Ce rendez-vous ne peut plus être modifié en ligne.");
+        break;
       case "rate_limited":
         setProblem("Trop d'essais. Réessayez dans quelques minutes.");
         break;
@@ -186,16 +242,19 @@ export function BookingFlow({
 
   return (
     <div className="min-h-dvh">
-      <PageHeader backHref="/" label="Réservation" />
+      <PageHeader
+        backHref={editing ? "/compte/rendez-vous" : "/"}
+        label={editing ? "Modifier le rendez-vous" : "Réservation"}
+      />
       <div
         role="progressbar"
         aria-label="Avancement de la réservation"
         aria-valuemin={1}
-        aria-valuemax={5}
-        aria-valuenow={open}
+        aria-valuemax={steps.length}
+        aria-valuenow={steps.indexOf(open) + 1}
         className="mx-auto flex w-full max-w-[640px] items-center gap-1.5 px-6 pb-4"
       >
-        {([1, 2, 3, 4, 5] as const).map((n) => {
+        {steps.map((n) => {
           const state = progressOf(n);
           return (
             <div
@@ -213,6 +272,7 @@ export function BookingFlow({
       </div>
 
       <main className="mx-auto flex w-full max-w-[640px] flex-col gap-2.5 px-4 pb-12">
+        {pageNotice ? <Alert kind="info" title={pageNotice} /> : null}
         <StepFrame
           n={1}
           title="Choisissez une prestation"
@@ -225,16 +285,18 @@ export function BookingFlow({
                   {s.name} · {formatPrice(s.priceCents)}
                 </span>
               ))}
-              <button
-                type="button"
-                onClick={() => edit(1)}
-                className="min-h-11 self-start py-2 text-left text-button-sm uppercase leading-snug text-ivory"
-              >
-                Ajouter une prestation à la suite
-              </button>
+              {editing ? null : (
+                <button
+                  type="button"
+                  onClick={() => edit(1)}
+                  className="min-h-11 self-start py-2 text-left text-button-sm uppercase leading-snug text-ivory"
+                >
+                  Ajouter une prestation à la suite
+                </button>
+              )}
             </>
           }
-          onEdit={() => edit(1)}
+          onEdit={editing ? undefined : () => edit(1)}
         >
           <ServiceStep
             catalog={catalog}
@@ -272,6 +334,7 @@ export function BookingFlow({
           {open === 3 ? (
             <DateStep
               serviceIds={serviceIds}
+              {...(editing ? { appointmentId: editing.id } : {})}
               staffId={staffId}
               staffName={staffName}
               selectedIso={slot?.iso ?? null}
@@ -280,7 +343,9 @@ export function BookingFlow({
                 setSlot(picked);
                 setPickedAt(Date.now());
                 setNotice(null);
-                goTo(4, 3);
+                // En déplacement, le client est déjà connu : on passe directement au récapitulatif.
+                if (editing) goTo(5, 4);
+                else goTo(4, 3);
               }}
               onTrySansPreference={() => {
                 setStaffId("any");
@@ -290,33 +355,35 @@ export function BookingFlow({
           ) : null}
         </StepFrame>
 
-        <StepFrame
-          n={4}
-          title="Vos coordonnées"
-          status={statusOf(4)}
-          summaryLabel="Coordonnées"
-          summary={customer ? <span>{`${customer.firstName} ${customer.lastName}`}</span> : null}
-          onEdit={() => edit(4)}
-        >
-          <IdentityStep
-            customer={customer}
-            booking={booking}
-            note={note}
-            onNote={setNote}
-            onAuthenticated={(c, b) => {
-              setCustomer(c);
-              setBooking(b);
-            }}
-            onLoggedOut={() => {
-              setCustomer(null);
-              setBooking(null);
-            }}
-            onContinue={() => goTo(5, 4)}
-          />
-        </StepFrame>
+        {editing ? null : (
+          <StepFrame
+            n={4}
+            title="Vos coordonnées"
+            status={statusOf(4)}
+            summaryLabel="Coordonnées"
+            summary={customer ? <span>{`${customer.firstName} ${customer.lastName}`}</span> : null}
+            onEdit={() => edit(4)}
+          >
+            <IdentityStep
+              customer={customer}
+              booking={booking}
+              note={note}
+              onNote={setNote}
+              onAuthenticated={(c, b) => {
+                setCustomer(c);
+                setBooking(b);
+              }}
+              onLoggedOut={() => {
+                setCustomer(null);
+                setBooking(null);
+              }}
+              onContinue={() => goTo(5, 4)}
+            />
+          </StepFrame>
+        )}
 
         <StepFrame
-          n={5}
+          n={editing ? 4 : 5}
           title="Récapitulatif"
           status={statusOf(5)}
           summaryLabel="Confirmation"
@@ -330,12 +397,16 @@ export function BookingFlow({
               durationMin={durationMin}
               slot={slot}
               staffLabel={staffLabel}
-              note={note}
+              note={editing ? "" : note}
               cutoffHours={cutoffHours}
               changeableOnline={changeableOnline}
               submitting={submitting}
               problem={problem}
+              callSalon={locked}
               onConfirm={confirm}
+              {...(editing
+                ? { previousLabel: editing.currentLabel, confirmLabel: "Confirmer la modification" }
+                : {})}
             />
           ) : null}
         </StepFrame>

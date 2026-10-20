@@ -29,6 +29,7 @@ const merge = (current: DayView[], incoming: DayView[]) => {
  */
 export function DateStep({
   serviceIds,
+  appointmentId,
   staffId,
   staffName,
   selectedIso,
@@ -37,6 +38,8 @@ export function DateStep({
   onTrySansPreference,
 }: {
   serviceIds: string[];
+  /** Déplacement d'un RDV : le serveur calcule les créneaux d'après ce RDV (durée figée, sans se bloquer lui-même). */
+  appointmentId?: string;
   staffId: string;
   staffName: string | null;
   selectedIso: string | null;
@@ -61,11 +64,17 @@ export function DateStep({
 
   const load = useCallback(
     async (from: string, count: number) => {
-      const result = await fetchDays({ serviceIds, staffId, from, days: count });
+      const result = await fetchDays({
+        serviceIds,
+        staffId,
+        from,
+        days: count,
+        ...(appointmentId ? { appointmentId } : {}),
+      });
       if (!result.ok) throw new Error(result.error);
       return result.days;
     },
-    [serviceIds, staffId],
+    [serviceIds, staffId, appointmentId],
   );
 
   // Première lecture : la semaine qui vient ; sinon on cherche la prochaine disponibilité.

@@ -37,7 +37,8 @@ async function Confirmation({
   searchParams: PageProps<"/reservation/confirmation">["searchParams"];
 }) {
   await connection();
-  const { rdv } = await searchParams;
+  const { rdv, modifie } = await searchParams;
+  const moved = modifie === "1";
   const id = z.uuid().safeParse(typeof rdv === "string" ? rdv : "");
   if (!id.success) notFound();
 
@@ -50,11 +51,12 @@ async function Confirmation({
   if (!appointment) notFound();
   const settings = await loadSettings(database);
 
-  // R-30, R-32 : modifiable en ligne jusqu'à 48 h avant, sauf si le RDV a été pris moins de 48 h avant.
+  // R-30, R-32 : modifiable en ligne jusqu'à 48 h avant son début. Un RDV pris (ou déplacé) à moins de 48 h
+  // ne l'est donc plus dès maintenant.
   const deadline = new Date(
     appointment.startsAt.getTime() - settings.changeCutoffHours * 3_600_000,
   );
-  const changeableOnline = appointment.createdAt.getTime() <= deadline.getTime();
+  const changeableOnline = new Date().getTime() <= deadline.getTime();
 
   const calendarUrl = `/api/agenda/${appointment.id}?t=${signToken(appSecret(), calendarSubject(appointment.id))}`;
 
@@ -91,9 +93,13 @@ async function Confirmation({
       </div>
 
       <div className="flex flex-col gap-2.5">
-        <h1 className="gold-shine text-title-page">Rendez-vous confirmé</h1>
+        <h1 className="gold-shine text-title-page">
+          {moved ? "Rendez-vous modifié" : "Rendez-vous confirmé"}
+        </h1>
         <p className="animate-reveal text-body text-ivory-soft [animation-delay:1000ms]">
-          À bientôt au salon. Un email de confirmation vient de vous être envoyé.
+          {moved
+            ? "Votre rendez-vous a été déplacé. Un email de confirmation vient de vous être envoyé."
+            : "À bientôt au salon. Un email de confirmation vient de vous être envoyé."}
         </p>
       </div>
 
@@ -130,7 +136,7 @@ async function Confirmation({
       <div className="flex w-full animate-reveal flex-col gap-2.5 [animation-delay:1300ms]">
         <a href={calendarUrl} className={btnSecondary}>
           <CalendarIcon />
-          Ajouter à mon agenda
+          {moved ? "Mettre à jour mon agenda" : "Ajouter à mon agenda"}
         </a>
         <Link href="/compte/rendez-vous" className={btnSecondary}>
           Voir mes rendez-vous

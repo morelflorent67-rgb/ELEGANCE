@@ -9,7 +9,10 @@ import {
   staff,
 } from "@/db/schema";
 import { calendarSubject, signToken } from "@/modules/security/token";
+import { z } from "zod";
+import { renderCancellationEmail } from "./templates/cancellation";
 import { renderConfirmationEmail } from "./templates/confirmation";
+import { renderModificationEmail } from "./templates/modification";
 import type { RenderedEmail } from "./layout";
 import { EmailSendError, type EmailMessage, type EmailTransport } from "./transport";
 
@@ -43,11 +46,21 @@ class Skip extends Error {}
 
 const minutes = (n: number) => n * 60_000;
 
-async function renderConfirmation(
-  db: Database,
-  row: Row,
-  options: ProcessOptions,
-): Promise<{ message: EmailMessage; rendered: RenderedEmail }> {
+interface EmailAppointment {
+  id: string;
+  startsAt: Date;
+  endsAt: Date;
+  createdAt: Date;
+  status: (typeof appointment.$inferSelect)["status"];
+  staffFirstName: string;
+  customerFirstName: string | null;
+  items: { name: string; durationMin: number; priceCents: number }[];
+  totalPriceCents: number;
+  durationMinutes: number;
+  cutoffHours: number;
+}
+
+async function loadEmailAppointment(db: Database, row: Row): Promise<EmailAppointment> {
   if (!row.appointmentId) throw new Skip("email sans rendez-vous");
   const [appt] = await db
     .select({
@@ -64,9 +77,8 @@ async function renderConfirmation(
     .innerJoin(customer, eq(customer.id, appointment.customerId))
     .where(eq(appointment.id, row.appointmentId));
   if (!appt) throw new Skip("rendez-vous introuvable");
-  if (appt.status === "cancelled_by_customer" || appt.status === "cancelled_by_salon") {
-    throw new Skip("rendez-vous annulé avant l'envoi");
-  }
+  // Fiche supprimée (R-75) : l'adresse a été effacée, il n'y a plus personne à qui écrire.
+  if (!row.toEmail) throw new Skip("destinataire effacé");
 
   const items = await db
     .select({
@@ -78,45 +90,143 @@ async function renderConfirmation(
     .where(eq(appointmentItem.appointmentId, appt.id))
     .orderBy(asc(appointmentItem.position));
   const [settings] = await db.select().from(salonSettings).limit(1);
-  const cutoffHours = settings?.changeCutoffHours ?? 48;
-
-  const changeDeadline = new Date(appt.startsAt.getTime() - cutoffHours * 3_600_000);
-  const rendered = renderConfirmationEmail({
-    firstName: appt.customerFirstName,
-    startsAt: appt.startsAt,
-    endsAt: appt.endsAt,
+  return {
+    ...appt,
     items,
     totalPriceCents: items.reduce((sum, i) => sum + i.priceCents, 0),
     durationMinutes: items.reduce((sum, i) => sum + i.durationMin, 0),
-    staffFirstName: appt.staffFirstName,
-    changeDeadline,
-    // R-32 : un RDV pris moins de 48 h avant ne se modifie pas en ligne.
-    changeableOnline: appt.createdAt.getTime() <= changeDeadline.getTime(),
-    manageUrl: `${options.baseUrl}/compte/rendez-vous`,
-    calendarUrl: `${options.baseUrl}/api/agenda/${appt.id}?t=${signToken(options.secret, calendarSubject(appt.id))}`,
-    logoUrl: `${options.baseUrl}/email/logo.png`,
-  });
-
-  return {
-    rendered,
-    message: {
-      to: {
-        email: row.toEmail,
-        ...(appt.customerFirstName ? { name: appt.customerFirstName } : {}),
-      },
-      subject: rendered.subject,
-      html: rendered.html,
-      text: rendered.text,
-    },
+    cutoffHours: settings?.changeCutoffHours ?? 48,
   };
+}
+
+const isCancelled = (appt: EmailAppointment) =>
+  appt.status === "cancelled_by_customer" || appt.status === "cancelled_by_salon";
+
+const calendarUrl = (appt: EmailAppointment, options: ProcessOptions) =>
+  `${options.baseUrl}/api/agenda/${appt.id}?t=${signToken(options.secret, calendarSubject(appt.id))}`;
+
+function message(row: Row, appt: EmailAppointment, rendered: RenderedEmail): EmailMessage {
+  return {
+    to: {
+      email: row.toEmail,
+      ...(appt.customerFirstName ? { name: appt.customerFirstName } : {}),
+    },
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+  };
+}
+
+async function renderConfirmation(
+  db: Database,
+  row: Row,
+  options: ProcessOptions,
+): Promise<EmailMessage> {
+  const appt = await loadEmailAppointment(db, row);
+  if (isCancelled(appt)) throw new Skip("rendez-vous annulé avant l'envoi");
+
+  const changeDeadline = new Date(appt.startsAt.getTime() - appt.cutoffHours * 3_600_000);
+  return message(
+    row,
+    appt,
+    renderConfirmationEmail({
+      firstName: appt.customerFirstName,
+      startsAt: appt.startsAt,
+      endsAt: appt.endsAt,
+      items: appt.items,
+      totalPriceCents: appt.totalPriceCents,
+      durationMinutes: appt.durationMinutes,
+      staffFirstName: appt.staffFirstName,
+      changeDeadline,
+      // R-32 : un RDV pris moins de 48 h avant ne se modifie pas en ligne.
+      changeableOnline: appt.createdAt.getTime() <= changeDeadline.getTime(),
+      manageUrl: `${options.baseUrl}/compte/rendez-vous`,
+      calendarUrl: calendarUrl(appt, options),
+      logoUrl: `${options.baseUrl}/email/logo.png`,
+    }),
+  );
+}
+
+const modificationPayload = z.object({
+  previousStartsAt: z.iso.datetime(),
+  previousStaffFirstName: z.string().nullable(),
+  startsAt: z.iso.datetime(),
+  staffFirstName: z.string().nullable(),
+  changedAt: z.iso.datetime(),
+});
+
+async function renderModification(
+  db: Database,
+  row: Row,
+  options: ProcessOptions,
+): Promise<EmailMessage> {
+  const appt = await loadEmailAppointment(db, row);
+  if (isCancelled(appt)) throw new Skip("rendez-vous annulé avant l'envoi");
+  const payload = modificationPayload.safeParse(row.payload);
+  if (!payload.success) throw new Skip("ancien créneau absent de l'email");
+
+  // Le créneau annoncé est celui de ce déplacement, pas forcément le créneau actuel du RDV.
+  const startsAt = new Date(payload.data.startsAt);
+  const staffFirstName = payload.data.staffFirstName ?? appt.staffFirstName;
+  const changeDeadline = new Date(startsAt.getTime() - appt.cutoffHours * 3_600_000);
+  return message(
+    row,
+    appt,
+    renderModificationEmail({
+      firstName: appt.customerFirstName,
+      startsAt,
+      items: appt.items,
+      totalPriceCents: appt.totalPriceCents,
+      durationMinutes: appt.durationMinutes,
+      staffFirstName,
+      previousStartsAt: new Date(payload.data.previousStartsAt),
+      // Le coiffeur précédent n'est affiché que s'il a changé.
+      previousStaffFirstName:
+        payload.data.previousStaffFirstName &&
+        payload.data.previousStaffFirstName !== staffFirstName
+          ? payload.data.previousStaffFirstName
+          : null,
+      changeDeadline,
+      // R-30, R-32 : le nouveau créneau reste modifiable s'il est à plus de 48 h du moment du déplacement.
+      changeableOnline: new Date(payload.data.changedAt).getTime() <= changeDeadline.getTime(),
+      manageUrl: `${options.baseUrl}/compte/rendez-vous`,
+      calendarUrl: calendarUrl(appt, options),
+      logoUrl: `${options.baseUrl}/email/logo.png`,
+    }),
+  );
+}
+
+async function renderCancellation(
+  db: Database,
+  row: Row,
+  options: ProcessOptions,
+): Promise<EmailMessage> {
+  const appt = await loadEmailAppointment(db, row);
+  if (!isCancelled(appt)) throw new Skip("rendez-vous rétabli avant l'envoi");
+  return message(
+    row,
+    appt,
+    renderCancellationEmail({
+      firstName: appt.customerFirstName,
+      startsAt: appt.startsAt,
+      items: appt.items,
+      staffFirstName: appt.staffFirstName,
+      bookUrl: `${options.baseUrl}/reservation`,
+      logoUrl: `${options.baseUrl}/email/logo.png`,
+    }),
+  );
 }
 
 async function render(db: Database, row: Row, options: ProcessOptions): Promise<EmailMessage> {
   switch (row.type) {
     case "confirmation":
-      return (await renderConfirmation(db, row, options)).message;
+      return renderConfirmation(db, row, options);
+    case "modification":
+      return renderModification(db, row, options);
+    case "cancellation":
+      return renderCancellation(db, row, options);
     default:
-      // Rappel, modification, annulation, avis : lot 7.
+      // Rappel, avis : lot 7.
       throw new EmailSendError(`Type d'email non géré : ${row.type}`, true);
   }
 }

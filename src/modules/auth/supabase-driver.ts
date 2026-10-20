@@ -108,5 +108,27 @@ export function createSupabaseDriver(): AuthDriver {
     async deleteUser(id) {
       await adminClient().auth.admin.deleteUser(id);
     },
+
+    async verifyPassword(email, password) {
+      // Client sans cookies ni session : la connexion en cours n'est pas touchée.
+      const env = supabaseEnv();
+      const probe = createClient(env.SUPABASE_URL, env.SUPABASE_PUBLISHABLE_KEY, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+      const { data, error } = await probe.auth.signInWithPassword({ email, password });
+      return !error && !!data.user;
+    },
+
+    async updateEmail(id, email) {
+      const { error } = await adminClient().auth.admin.updateUserById(id, {
+        email,
+        email_confirm: true,
+      });
+      if (!error) return { ok: true };
+      if (error.code === "email_exists" || /already|registered|exists/i.test(error.message)) {
+        return { ok: false, reason: "email_taken" };
+      }
+      return { ok: false, reason: "failed" };
+    },
   };
 }

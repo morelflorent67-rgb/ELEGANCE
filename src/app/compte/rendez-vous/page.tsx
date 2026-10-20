@@ -3,12 +3,17 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { CallButton, Eyebrow, LedLine, PageHeader, btnPrimary } from "@/components/ui";
+import { AccountNav } from "@/components/account-nav";
+import { CallButton, Eyebrow, PageHeader, btnPrimary } from "@/components/ui";
 import { db } from "@/db/client";
-import { capitalize, formatDay, formatDuration, formatPrice, formatTime } from "@/lib/format";
+import { appSecret } from "@/lib/env";
+import { pastView, splitAppointments, upcomingView } from "@/modules/appointments/account-view";
 import { listCustomerAppointments } from "@/modules/appointments/queries";
 import { getAuthDriver } from "@/modules/auth";
-import { currentCustomer } from "@/modules/customers/accounts";
+import { loadSettings } from "@/modules/availability";
+import { currentCustomer, customerBookingState } from "@/modules/customers/accounts";
+import { calendarSubject, signToken } from "@/modules/security/token";
+import { AppointmentsView } from "./appointments-view";
 
 export const metadata: Metadata = { title: "Mes rendez-vous" };
 
@@ -16,87 +21,69 @@ export default function MesRendezVousPage() {
   return (
     <div className="min-h-dvh">
       <PageHeader backHref="/" />
-      <main className="mx-auto flex w-full max-w-[640px] flex-col gap-7 px-6 pb-12 pt-8">
-        <div className="flex flex-col gap-3">
-          <Eyebrow>Mon compte</Eyebrow>
-          <h1 className="text-title-1">Mes rendez-vous</h1>
-        </div>
-        <LedLine />
-        <Suspense
-          fallback={
-            <p role="status" className="text-body-sm text-stone">
-              Chargement…
-            </p>
-          }
-        >
-          <Appointments />
-        </Suspense>
-      </main>
+      <Suspense
+        fallback={
+          <p role="status" className="px-6 py-10 text-center text-body-sm text-stone">
+            Chargement…
+          </p>
+        }
+      >
+        <Appointments />
+      </Suspense>
     </div>
   );
 }
 
-const STATUS_LABEL = {
-  confirmed: "Confirmé",
-  honored: "Honoré",
-  no_show: "Non venu",
-  cancelled_by_customer: "Annulé",
-  cancelled_by_salon: "Annulé par le salon",
-} as const;
-
-// Version provisoire du lot 2 : lecture seule. Modifier, annuler et « Reprendre le même RDV » arrivent au lot 3.
+// R-76 : les rendez-vous du client. Le délai de modification (R-30) est calculé ici, côté serveur, et refait à
+// chaque action : la page ne fait qu'afficher.
 async function Appointments() {
   await connection();
   const database = db();
   const customer = await currentCustomer(database, getAuthDriver());
   if (!customer) redirect("/connexion?next=/compte/rendez-vous");
-  const list = await listCustomerAppointments(database, customer.id);
 
-  if (list.length === 0) {
-    return (
-      <div className="flex flex-col gap-5">
-        <p className="text-body text-ivory-soft">Vous n&rsquo;avez pas encore de rendez-vous.</p>
-        <Link href="/reservation" className={btnPrimary}>
-          Réserver
-        </Link>
-      </div>
-    );
-  }
+  const now = new Date();
+  const [list, settings, booking] = await Promise.all([
+    listCustomerAppointments(database, customer.id),
+    loadSettings(database),
+    customerBookingState(database, customer.id, now),
+  ]);
+  const { upcoming, past } = splitAppointments(list, now);
 
   return (
-    <div className="flex flex-col gap-5">
-      <ul className="flex flex-col gap-3">
-        {list.map((a) => (
-          <li key={a.id} className="flex flex-col gap-2 bg-graphite p-4">
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="text-label uppercase text-gold">
-                {capitalize(formatDay(a.startsAt))}
-              </span>
-              <span className="text-label uppercase text-stone">{STATUS_LABEL[a.status]}</span>
-            </div>
-            <span className="text-[24px] font-light tabular-nums">{formatTime(a.startsAt)}</span>
-            {a.items.map((item) => (
-              <span
-                key={item.name}
-                className="flex justify-between gap-3 text-body-sm text-ivory-soft"
-              >
-                <span>
-                  {item.name} · {formatDuration(item.durationMin)}
-                </span>
-                <span>{formatPrice(item.priceCents)}</span>
-              </span>
-            ))}
-            <span className="text-body-sm text-stone">avec {a.staffFirstName}</span>
-          </li>
-        ))}
-      </ul>
-      <p className="text-body-sm text-stone">
-        Pour modifier ou annuler un rendez-vous, appelez le salon.
-      </p>
-      <CallButton />
-      <Link href="/reservation" className={btnPrimary}>
-        Réserver
-      </Link>
-    </div>
+    <>
+      <main className="mx-auto flex w-full max-w-[640px] flex-col gap-6 px-6 pb-36 pt-6">
+        <div className="flex flex-col gap-3">
+          <Eyebrow>Bonjour {customer.firstName}</Eyebrow>
+          <h1 className="text-title-1">Mes rendez-vous</h1>
+        </div>
+        <AccountNav current="rendez-vous" />
+        <AppointmentsView
+          upcoming={upcoming.map((a) => ({
+            ...upcomingView(a, now, settings.changeCutoffHours),
+            calendarUrl: `/api/agenda/${a.id}?t=${signToken(appSecret(), calendarSubject(a.id))}`,
+          }))}
+          past={past.map((a) => {
+            const view = pastView(a);
+            return { ...view, canRepeat: !view.cancelled };
+          })}
+          cutoffHours={settings.changeCutoffHours}
+          maxUpcoming={settings.maxUpcomingPerCustomer}
+          blocked={booking.blocked}
+        />
+      </main>
+
+      <div className="fixed inset-x-0 bottom-0 border-t border-line-subtle bg-ink/95 px-4 pb-5 pt-4">
+        <div className="mx-auto w-full max-w-[640px]">
+          {booking.blocked ? (
+            <CallButton kind="primary" />
+          ) : (
+            <Link href="/reservation" className={btnPrimary}>
+              Prendre rendez-vous
+            </Link>
+          )}
+        </div>
+      </div>
+    </>
   );
 }

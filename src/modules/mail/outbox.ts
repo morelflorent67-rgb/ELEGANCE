@@ -16,6 +16,8 @@ export async function enqueueEmail(
     appointmentId: string | null;
     dedupeKey: string;
     runAt?: Date;
+    /** Données propres au message (ex. l'ancien créneau d'un déplacement). Rien de plus que ce que l'email affiche. */
+    payload?: Record<string, unknown>;
   },
 ): Promise<void> {
   await db
@@ -25,6 +27,7 @@ export async function enqueueEmail(
       toEmail: input.toEmail,
       appointmentId: input.appointmentId,
       dedupeKey: input.dedupeKey,
+      ...(input.payload ? { payload: input.payload } : {}),
       ...(input.runAt ? { nextAttemptAt: input.runAt } : {}),
     })
     .onConflictDoNothing({ target: emailOutbox.dedupeKey });

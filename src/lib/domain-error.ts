@@ -18,7 +18,14 @@ export type DomainErrorCode =
   // Client (R-25, R-52)
   | "unknown_customer"
   | "too_many_upcoming"
-  | "customer_blocked";
+  | "customer_blocked"
+  // Modification, annulation, compte (R-30 à R-32, R-75)
+  | "appointment_not_found"
+  | "not_modifiable"
+  | "change_too_late"
+  | "imminent_appointment"
+  | "wrong_password"
+  | "email_taken";
 
 export class DomainError extends Error {
   readonly code: DomainErrorCode;

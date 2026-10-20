@@ -46,9 +46,17 @@ export async function loadStaffChoices(
   audience: Audience,
 ): Promise<StaffChoice[]> {
   const services = await resolveServices(db, serviceIds, audience);
-  const eligible = await eligibleStaff(db, services.rows);
+  return loadStaffChoicesFor(db, services.rows);
+}
+
+/** Les mêmes coiffeurs pour des prestations déjà résolues (ex. celles d'un RDV qu'on déplace, R-16). */
+export async function loadStaffChoicesFor(
+  db: Database,
+  rows: Parameters<typeof eligibleStaff>[1],
+): Promise<StaffChoice[]> {
+  const eligible = await eligibleStaff(db, rows);
   if (eligible.length === 0) return [];
-  const rows = await db
+  const members = await db
     .select({ id: staff.id, firstName: staff.firstName, role: staff.role })
     .from(staff)
     .where(
@@ -61,5 +69,5 @@ export async function loadStaffChoices(
       ),
     );
   const order = new Map(eligible.map((e, index) => [e.id, index]));
-  return rows.sort((a, b) => order.get(a.id)! - order.get(b.id)!);
+  return members.sort((a, b) => order.get(a.id)! - order.get(b.id)!);
 }

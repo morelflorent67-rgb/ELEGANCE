@@ -58,3 +58,12 @@ describe("liens signés sans connexion", () => {
     expect(verifyToken("autre-secret", calendarSubject("abc"), token)).toBe(false);
   });
 });
+
+describe("R-30 : un déplacement met à jour l'événement déjà ajouté à l'agenda", () => {
+  it("garde le même identifiant et augmente le numéro de version", () => {
+    expect(buildIcs(event)).toContain("SEQUENCE:0");
+    const moved = buildIcs({ ...event, sequence: 2 });
+    expect(moved).toContain("SEQUENCE:2");
+    expect(moved).toContain("UID:appointment-123@elegance-strasbourg");
+  });
+});

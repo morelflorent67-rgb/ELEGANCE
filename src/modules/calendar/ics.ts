@@ -9,6 +9,8 @@ export interface IcsEvent {
   location?: string;
   /** Instant de création du fichier ; paramétrable pour des tests déterministes. */
   stamp?: Date;
+  /** Numéro de version (0 au départ, +1 à chaque déplacement) : un agenda remplace l'ancien événement au lieu d'en ajouter un. */
+  sequence?: number;
 }
 
 const utc = (date: Date) =>
@@ -47,6 +49,7 @@ export function buildIcs(event: IcsEvent): string {
     "METHOD:PUBLISH",
     "BEGIN:VEVENT",
     `UID:${event.uid}`,
+    `SEQUENCE:${event.sequence ?? 0}`,
     `DTSTAMP:${utc(event.stamp ?? new Date())}`,
     `DTSTART:${utc(event.startsAt)}`,
     `DTEND:${utc(event.endsAt)}`,

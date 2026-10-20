@@ -9,8 +9,12 @@ import { capitalize, formatDay, formatTime, parisDate } from "@/lib/format";
 import { callerIp } from "@/lib/request-ip";
 import { getAuthDriver } from "@/modules/auth";
 import { getSlotsForRange, loadSettings } from "@/modules/availability";
-import { createAppointment } from "@/modules/booking";
-import { loadStaffChoices, type StaffChoice } from "@/modules/catalog";
+import {
+  createAppointment,
+  loadChangeableAppointment,
+  rescheduleAppointment,
+} from "@/modules/booking";
+import { loadStaffChoices, loadStaffChoicesFor, type StaffChoice } from "@/modules/catalog";
 import { currentCustomer } from "@/modules/customers/accounts";
 import { sendEmailsForAppointment } from "@/modules/mail/send-now";
 import { hitRateLimit } from "@/modules/security/rate-limit";
@@ -55,13 +59,31 @@ const dayView = (date: string, slots: { startsAt: Date }[]): DayView => ({
   slots: slots.map((s) => ({ iso: s.startsAt.toISOString(), time: formatTime(s.startsAt) })),
 });
 
+/**
+ * Pour déplacer un RDV : le RDV du client connecté, à condition qu'il soit encore modifiable (R-30 à R-32).
+ * Ses prestations et sa durée viennent du RDV (figées, R-16), jamais du navigateur.
+ */
+async function appointmentToMove(appointmentId: string) {
+  const customer = await currentCustomer(db(), getAuthDriver());
+  if (!customer) throw new DomainError("unknown_customer");
+  return { customer, moving: await loadChangeableAppointment(db(), customer.id, appointmentId) };
+}
+
 export async function fetchStaffChoices(
   input: unknown,
 ): Promise<{ ok: true; choices: StaffChoice[] } | Failure> {
-  const parsed = z.object({ serviceIds }).safeParse(input);
-  if (!parsed.success) return { ok: false, error: "invalid" };
+  const parsed = z
+    .object({ serviceIds: serviceIds.optional(), appointmentId: z.uuid().optional() })
+    .safeParse(input);
+  if (!parsed.success || (!parsed.data.serviceIds && !parsed.data.appointmentId)) {
+    return { ok: false, error: "invalid" };
+  }
   try {
-    return { ok: true, choices: await loadStaffChoices(db(), parsed.data.serviceIds, "online") };
+    if (parsed.data.appointmentId) {
+      const { moving } = await appointmentToMove(parsed.data.appointmentId);
+      return { ok: true, choices: await loadStaffChoicesFor(db(), moving.services) };
+    }
+    return { ok: true, choices: await loadStaffChoices(db(), parsed.data.serviceIds!, "online") };
   } catch (error) {
     return toFailure(error);
   }
@@ -70,19 +92,41 @@ export async function fetchStaffChoices(
 /** Créneaux de plusieurs jours. Seuls les jours avec au moins un créneau sont renvoyés. */
 export async function fetchDays(input: unknown): Promise<{ ok: true; days: DayView[] } | Failure> {
   const parsed = z
-    .object({ serviceIds, staffId, from: isoDate, days: z.number().int().min(1).max(14) })
+    .object({
+      serviceIds: z.array(z.uuid()).max(8),
+      staffId,
+      from: isoDate,
+      days: z.number().int().min(1).max(14),
+      appointmentId: z.uuid().optional(),
+    })
     .safeParse(input);
-  if (!parsed.success) return { ok: false, error: "invalid" };
+  if (!parsed.success || (!parsed.data.appointmentId && parsed.data.serviceIds.length === 0)) {
+    return { ok: false, error: "invalid" };
+  }
   try {
     const limit = await hitRateLimit(db(), `slots:ip:${await callerIp()}`, {
       limit: 300,
       windowSeconds: 600,
     });
     if (!limit.allowed) return { ok: false, error: "rate_limited" };
-    const range = await getSlotsForRange(db(), { ...parsed.data, audience: "online" });
+    const { appointmentId, ...range } = parsed.data;
+    const moving = appointmentId ? (await appointmentToMove(appointmentId)).moving : undefined;
+    const days = await getSlotsForRange(db(), {
+      ...range,
+      audience: "online",
+      ...(moving
+        ? {
+            moving: {
+              appointmentId: moving.id,
+              services: moving.services,
+              durationMinutes: moving.durationMinutes,
+            },
+          }
+        : {}),
+    });
     return {
       ok: true,
-      days: range.filter((d) => d.slots.length > 0).map((d) => dayView(d.date, d.slots)),
+      days: days.filter((d) => d.slots.length > 0).map((d) => dayView(d.date, d.slots)),
     };
   } catch (error) {
     return toFailure(error);
@@ -137,6 +181,39 @@ export async function confirmBooking(
     // R-60 : l'email part après la réponse. En cas d'échec, il reste dans la file et le cron le reprend.
     after(() => sendEmailsForAppointment(db(), created.id));
     return { ok: true, appointmentId: created.id };
+  } catch (error) {
+    return toFailure(error);
+  }
+}
+
+/** Déplace le RDV du client connecté (R-30) : même créneau et même coiffeur = rien à faire. */
+export async function rescheduleBooking(
+  input: unknown,
+): Promise<{ ok: true; appointmentId: string; changed: boolean } | Failure> {
+  const parsed = z
+    .object({ appointmentId: z.uuid(), staffId, startsAt: z.iso.datetime() })
+    .safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+
+  try {
+    const customer = await currentCustomer(db(), getAuthDriver());
+    if (!customer) return { ok: false, error: "not_signed_in" };
+
+    const limit = await hitRateLimit(db(), `change:customer:${customer.id}`, {
+      limit: 20,
+      windowSeconds: 900,
+    });
+    if (!limit.allowed) return { ok: false, error: "rate_limited" };
+
+    const moved = await rescheduleAppointment(db(), {
+      customerId: customer.id,
+      appointmentId: parsed.data.appointmentId,
+      staffId: parsed.data.staffId,
+      startsAt: new Date(parsed.data.startsAt),
+    });
+    // L'email part après la réponse ; en cas d'échec il reste dans la file et le cron le reprend.
+    if (moved.changed) after(() => sendEmailsForAppointment(db(), parsed.data.appointmentId));
+    return { ok: true, appointmentId: parsed.data.appointmentId, changed: moved.changed };
   } catch (error) {
     return toFailure(error);
   }

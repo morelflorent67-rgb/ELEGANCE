@@ -1,4 +1,4 @@
-import { and, gt, gte, inArray, lt, lte } from "drizzle-orm";
+import { and, gt, gte, inArray, lt, lte, ne } from "drizzle-orm";
 import { DateTime } from "luxon";
 import type { Database } from "@/db/types";
 import { absence, appointment, closure, openingHours, salonSettings } from "@/db/schema";
@@ -18,12 +18,13 @@ export async function loadSettings(db: Database): Promise<SalonSettingsRow> {
 /**
  * Charge ce qu'il faut pour calculer les créneaux sur la fenêtre [from, to] (instants) :
  * réglages, horaires, fermetures, RDV occupants et absences des coiffeurs demandés.
+ * `excludeAppointmentId` : un RDV qu'on déplace ne doit pas bloquer son propre nouveau créneau.
  */
 export async function loadSnapshot(
   db: Database,
-  input: { from: Date; to: Date; staffIds: string[] },
+  input: { from: Date; to: Date; staffIds: string[]; excludeAppointmentId?: string },
 ): Promise<{ snapshot: Snapshot; settings: SalonSettingsRow }> {
-  const { from, to, staffIds } = input;
+  const { from, to, staffIds, excludeAppointmentId } = input;
   const settings = await loadSettings(db);
   const zone = settings.timezone;
   const firstDay = DateTime.fromJSDate(from, { zone }).toISODate()!;
@@ -50,6 +51,7 @@ export async function loadSnapshot(
               inArray(appointment.status, [...OCCUPYING_STATUSES]),
               lt(appointment.startsAt, to),
               gt(appointment.endsAt, from),
+              ...(excludeAppointmentId ? [ne(appointment.id, excludeAppointmentId)] : []),
             ),
           ),
     staffIds.length === 0

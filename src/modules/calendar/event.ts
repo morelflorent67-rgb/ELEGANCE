@@ -1,6 +1,6 @@
-import { asc, eq } from "drizzle-orm";
+import { and, asc, count, eq } from "drizzle-orm";
 import type { Database } from "@/db/types";
-import { appointment, appointmentItem, staff } from "@/db/schema";
+import { appointment, appointmentItem, auditLog, staff } from "@/db/schema";
 import { SALON, salonAddressLine } from "@/lib/salon";
 import type { IcsEvent } from "./ics";
 
@@ -29,8 +29,21 @@ export async function loadCalendarEvent(
     .where(eq(appointmentItem.appointmentId, appointmentId))
     .orderBy(asc(appointmentItem.position));
 
+  // Chaque déplacement augmente le numéro de version : l'agenda met à jour l'événement déjà ajouté (même UID).
+  const [{ moves }] = await db
+    .select({ moves: count() })
+    .from(auditLog)
+    .where(
+      and(
+        eq(auditLog.entity, "appointment"),
+        eq(auditLog.entityId, row.id),
+        eq(auditLog.action, "appointment.rescheduled"),
+      ),
+    );
+
   return {
     uid: `appointment-${row.id}@elegance-strasbourg`,
+    sequence: moves,
     startsAt: row.startsAt,
     endsAt: row.endsAt,
     summary: `${items.map((i) => i.name).join(" + ")} chez ${SALON.name}`,

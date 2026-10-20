@@ -27,6 +27,16 @@ export interface AuthDriver {
   updatePassword(
     password: string,
   ): Promise<{ ok: true } | { ok: false; reason: "weak_password" | "failed" }>;
-  /** Supprime un compte (annulation d'une inscription qui a échoué à moitié). */
+  /** Supprime un compte (annulation d'une inscription qui a échoué à moitié, suppression par le client : R-75). */
   deleteUser(id: string): Promise<void>;
+  /**
+   * Vérifie un mot de passe sans toucher à la session en cours : demandé avant de changer l'email ou le mot de passe,
+   * ou de supprimer le compte.
+   */
+  verifyPassword(email: string, password: string): Promise<boolean>;
+  /** Change l'adresse de connexion d'un compte (email marqué confirmé : D-42). */
+  updateEmail(
+    id: string,
+    email: string,
+  ): Promise<{ ok: true } | { ok: false; reason: "email_taken" | "failed" }>;
 }

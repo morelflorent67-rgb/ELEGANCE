@@ -1,9 +1,8 @@
 "use client";
 
-import { Alert, btnPrimary } from "@/components/ui";
+import { Alert, CallButton, btnPrimary } from "@/components/ui";
 import { capitalize, formatDuration, formatPrice } from "@/lib/format";
 import { SALON, salonAddressLine } from "@/lib/salon";
-import type { CatalogService } from "@/modules/catalog";
 import type { PickedSlot } from "./date-step";
 
 /**
@@ -22,8 +21,11 @@ export function RecapStep({
   submitting,
   problem,
   onConfirm,
+  previousLabel,
+  confirmLabel = "Confirmer",
+  callSalon = false,
 }: {
-  services: CatalogService[];
+  services: { id: string; name: string; priceCents: number }[];
   priceCents: number;
   durationMin: number;
   slot: PickedSlot;
@@ -34,9 +36,20 @@ export function RecapStep({
   submitting: boolean;
   problem: string | null;
   onConfirm: () => void;
+  /** Déplacement d'un RDV : le créneau actuel, rappelé au-dessus du nouveau. */
+  previousLabel?: string;
+  confirmLabel?: string;
+  /** Le RDV n'est plus modifiable en ligne : au lieu de confirmer, on propose d'appeler le salon (R-31). */
+  callSalon?: boolean;
 }) {
   return (
     <>
+      {previousLabel ? (
+        <div className="flex flex-col gap-1">
+          <span className="text-label uppercase text-stone">Avant</span>
+          <span className="text-[15px] text-stone line-through">{previousLabel}</span>
+        </div>
+      ) : null}
       <div className="flex flex-col gap-1">
         <span className="text-label uppercase text-gold">{capitalize(slot.dayLabel)}</span>
         <span className="text-[32px] font-light tabular-nums">{slot.time}</span>
@@ -103,9 +116,13 @@ export function RecapStep({
 
       {problem ? <Alert kind="error" title={problem} /> : null}
 
-      <button type="button" disabled={submitting} onClick={onConfirm} className={btnPrimary}>
-        {submitting ? "Confirmation…" : "Confirmer"}
-      </button>
+      {callSalon ? (
+        <CallButton kind="primary" />
+      ) : (
+        <button type="button" disabled={submitting} onClick={onConfirm} className={btnPrimary}>
+          {submitting ? "Confirmation…" : confirmLabel}
+        </button>
+      )}
     </>
   );
 }
