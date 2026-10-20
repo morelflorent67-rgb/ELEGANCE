@@ -32,5 +32,6 @@ export const config = {
     "/connexion",
     "/inscription",
     "/mot-de-passe/:path*",
+    "/equipe/:path*",
   ],
 };

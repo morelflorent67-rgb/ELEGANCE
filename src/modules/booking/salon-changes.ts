@@ -5,8 +5,10 @@ import { DomainError } from "@/lib/domain-error";
 import { recordAudit } from "@/modules/audit/record";
 import { enqueueEmail } from "@/modules/mail/outbox";
 import { assertActiveAuthor } from "@/modules/staff/team";
+import type { ServiceRow } from "@/modules/availability";
 import {
   applyReschedule,
+  loadItems,
   pgCode,
   type AppointmentRow,
   type RescheduledAppointment,
@@ -31,6 +33,28 @@ async function loadLocked(db: Database, appointmentId: string): Promise<Appointm
 function assertSalonChangeable(row: AppointmentRow, now: Date): void {
   if (row.status !== "confirmed") throw new DomainError("not_modifiable");
   if (row.endsAt.getTime() <= now.getTime()) throw new DomainError("appointment_over");
+}
+
+/** Un RDV que le salon peut encore déplacer, avec ce qu'il faut pour chercher un autre créneau (prestations figées, R-16). */
+export interface MovableAppointment {
+  id: string;
+  staffId: string;
+  startsAt: Date;
+  services: ServiceRow[];
+  durationMinutes: number;
+}
+
+/** Refus : `appointment_not_found`, `not_modifiable` (annulé ou signalé), `appointment_over` (terminé). */
+export async function loadSalonMovable(
+  db: Database,
+  appointmentId: string,
+  now: Date = new Date(),
+): Promise<MovableAppointment> {
+  const [row] = await db.select().from(appointment).where(eq(appointment.id, appointmentId));
+  if (!row) throw new DomainError("appointment_not_found");
+  assertSalonChangeable(row, now);
+  const { services, durationMinutes } = await loadItems(db, row);
+  return { id: row.id, staffId: row.staffId, startsAt: row.startsAt, services, durationMinutes };
 }
 
 export interface SalonCancelInput {

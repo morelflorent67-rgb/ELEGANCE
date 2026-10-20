@@ -3,6 +3,7 @@ import { DomainError, type DomainErrorCode } from "../../src/lib/domain-error";
 import {
   cancelAppointment,
   createAppointment,
+  loadSalonMovable,
   markNoShow,
   rescheduleAppointment,
   salonCancelAppointment,
@@ -464,3 +465,27 @@ describe("R-51 : un RDV passé est honoré par défaut ; l'équipe signale seule
     );
   });
 });
+
+describe("RDV que le salon peut encore déplacer", () => {
+  it("rend les prestations figées et la durée, à moins de 48 h comme à plus", async () => {
+    const created = await book();
+    const movable = await loadSalonMovable(t.db, created.id, NOW);
+    expect(movable).toMatchObject({ id: created.id, staffId: ORHAN, durationMinutes: 30 });
+    expect(movable.services.map((s) => s.id)).toEqual([COUPE]);
+  });
+
+  it("refuse un RDV inconnu, annulé ou terminé", async () => {
+    const created = await book();
+    await expectRefused(
+      loadSalonMovable(t.db, "00000000-0000-4000-8000-0000000000ff", NOW),
+      "appointment_not_found",
+    );
+    await expectRefused(
+      loadSalonMovable(t.db, created.id, paris(TUESDAY, "10:30")),
+      "appointment_over",
+    );
+    await salonCancelAppointment(t.db, { appointmentId: created.id, authorStaffId: ENES }, NOW);
+    await expectRefused(loadSalonMovable(t.db, created.id, NOW), "not_modifiable");
+  });
+});
+

@@ -1,0 +1,409 @@
+"use server";
+
+import { redirect } from "next/navigation";
+import { after } from "next/server";
+import { DateTime } from "luxon";
+import { z } from "zod";
+import { db } from "@/db/client";
+import type { FormState } from "@/app/_actions/form-state";
+import { DomainError } from "@/lib/domain-error";
+import { capitalize, formatDay, formatTime } from "@/lib/format";
+import { callerIp } from "@/lib/request-ip";
+import { getAuthDriver } from "@/modules/auth";
+import type { AuthUser } from "@/modules/auth/types";
+import { getSlotsForRange, loadSettings } from "@/modules/availability";
+import {
+  createAppointment,
+  loadSalonMovable,
+  markNoShow,
+  salonCancelAppointment,
+  salonRescheduleAppointment,
+  undoNoShow,
+} from "@/modules/booking";
+import { loadStaffChoices, loadStaffChoicesFor, type StaffChoice } from "@/modules/catalog";
+import {
+  deleteCustomerAsManager,
+  searchCustomers,
+  setOnlineBookingBlocked,
+} from "@/modules/customers/staff-view";
+import { sendEmailsForAppointment } from "@/modules/mail/send-now";
+import { hitRateLimit } from "@/modules/security/rate-limit";
+import { loginStaff, currentStaffUser } from "@/modules/staff";
+import { unlockManager } from "@/modules/staff/manager";
+import {
+  grantManagerUnlock,
+  managerUnlocked,
+  revokeManagerUnlock,
+  staffOrNull,
+} from "./_lib/session";
+import type { TeamResult } from "./_lib/messages";
+
+// Actions de la tablette. Toute la logique et tous les contrôles sont dans les modules : ici on vérifie que la tablette
+// est connectée en mode équipe (R-72), que le code gérant a été saisi pour ce qui le demande (R-73), puis on traduit
+// les refus en codes que l'interface affiche en français.
+
+const uuid = z.uuid();
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const isoInstant = z.iso.datetime();
+const serviceIds = z.array(uuid).min(1).max(8);
+const staffId = z.union([uuid, z.literal("any")]);
+
+function fail(error: unknown): { ok: false; error: Extract<TeamResult, { ok: false }>["error"] } {
+  if (error instanceof DomainError) return { ok: false, error: error.code };
+  console.error("Erreur inattendue dans une action de la tablette :", error);
+  return { ok: false, error: "failed" };
+}
+
+/** Exécute une action réservée à l'équipe. Sans session équipe : `not_signed_in`, rien n'est lu ni écrit. */
+async function asStaff<T>(run: (user: AuthUser) => Promise<TeamResult<T>>): Promise<TeamResult<T>> {
+  try {
+    const user = await staffOrNull();
+    if (!user) return { ok: false, error: "not_signed_in" };
+    return await run(user);
+  } catch (error) {
+    return fail(error);
+  }
+}
+
+/** Idem pour une fonction gérant (R-73) : le code doit avoir été saisi il y a moins de 5 minutes. */
+async function asManager<T>(
+  run: (user: AuthUser) => Promise<TeamResult<T>>,
+): Promise<TeamResult<T>> {
+  return asStaff(async (user) => {
+    if (!(await managerUnlocked(user))) return { ok: false, error: "manager_locked" };
+    const result = await run(user);
+    // « 5 minutes après la dernière action » : une action réussie prolonge le déverrouillage.
+    if (result.ok) await grantManagerUnlock(user);
+    return result;
+  });
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Connexion de la tablette (R-72)
+
+const wait = (seconds: number) =>
+  seconds >= 120 ? `${Math.ceil(seconds / 60)} minutes` : `${seconds} secondes`;
+
+export async function loginStaffAction(
+  _previous: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const values = { email: String(formData.get("email") ?? "") };
+  const result = await loginStaff(
+    db(),
+    getAuthDriver(),
+    { ...values, password: String(formData.get("password") ?? "") },
+    { ip: await callerIp() },
+  );
+  if (result.ok) redirect("/equipe");
+  if (result.error === "invalid") {
+    return { status: "error", fieldErrors: result.fieldErrors, values };
+  }
+  if (result.error === "rate_limited") {
+    return {
+      status: "error",
+      values,
+      message: `Trop d'essais. Réessayez dans ${wait(result.retryAfterSeconds)}.`,
+    };
+  }
+  return {
+    status: "error",
+    values,
+    message:
+      result.error === "invalid_credentials"
+        ? "Email ou mot de passe incorrect."
+        : "Une erreur est survenue. Réessayez.",
+  };
+}
+
+export async function logoutStaffAction(): Promise<void> {
+  await getAuthDriver().signOut();
+  await revokeManagerUnlock();
+  redirect("/equipe/connexion");
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Recherche d'un client (R-26)
+
+export interface CustomerHitView {
+  id: string;
+  name: string;
+  maskedPhone: string;
+  /** « 10 oct. », ou null. */
+  lastVisitLabel: string | null;
+  upcoming: number;
+}
+
+const shortDate = new Intl.DateTimeFormat("fr-FR", {
+  timeZone: "Europe/Paris",
+  day: "numeric",
+  month: "short",
+});
+
+export async function searchCustomersAction(
+  query: string,
+): Promise<TeamResult<{ hits: CustomerHitView[] }>> {
+  return asStaff<{ hits: CustomerHitView[] }>(async () => {
+    const parsed = z.string().max(80).safeParse(query);
+    if (!parsed.success) return { ok: false, error: "invalid" };
+    const hits = await searchCustomers(db(), parsed.data);
+    return {
+      ok: true,
+      hits: hits.map((h) => ({
+        id: h.id,
+        name: h.name,
+        maskedPhone: h.maskedPhone,
+        lastVisitLabel: h.lastVisit ? shortDate.format(h.lastVisit) : null,
+        upcoming: h.upcoming,
+      })),
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Créneaux au salon (R-04 : pas de 15 minutes ; R-27 : pas de délai de réservation)
+
+export interface SalonDayView {
+  /** « AAAA-MM-JJ » */
+  date: string;
+  /** « mar. » */
+  weekday: string;
+  /** 3 */
+  day: number;
+  /** « Mardi 3 novembre » */
+  label: string;
+  closed: boolean;
+  slots: { iso: string; time: string }[];
+}
+
+export async function fetchSalonStaffChoices(
+  input: unknown,
+): Promise<TeamResult<{ choices: StaffChoice[] }>> {
+  const parsed = z
+    .object({ serviceIds: serviceIds.optional(), appointmentId: uuid.optional() })
+    .safeParse(input);
+  if (!parsed.success || (!parsed.data.serviceIds && !parsed.data.appointmentId)) {
+    return { ok: false, error: "invalid" };
+  }
+  return asStaff(async () => {
+    if (parsed.data.appointmentId) {
+      const moving = await loadSalonMovable(db(), parsed.data.appointmentId);
+      return { ok: true, choices: await loadStaffChoicesFor(db(), moving.services) };
+    }
+    return { ok: true, choices: await loadStaffChoices(db(), parsed.data.serviceIds!, "salon") };
+  });
+}
+
+/** Les jours demandés, fermés compris (« Fermé » et non « Complet »), avec les créneaux du salon. */
+export async function fetchSalonDays(
+  input: unknown,
+): Promise<TeamResult<{ days: SalonDayView[] }>> {
+  const parsed = z
+    .object({
+      serviceIds: z.array(uuid).max(8),
+      staffId,
+      from: isoDate,
+      days: z.number().int().min(1).max(14),
+      appointmentId: uuid.optional(),
+    })
+    .safeParse(input);
+  if (!parsed.success || (!parsed.data.appointmentId && parsed.data.serviceIds.length === 0)) {
+    return { ok: false, error: "invalid" };
+  }
+  return asStaff(async () => {
+    const { appointmentId, ...range } = parsed.data;
+    const moving = appointmentId ? await loadSalonMovable(db(), appointmentId) : undefined;
+    const days = await getSlotsForRange(db(), {
+      ...range,
+      audience: "salon",
+      ...(moving
+        ? {
+            moving: {
+              appointmentId: moving.id,
+              services: moving.services,
+              durationMinutes: moving.durationMinutes,
+            },
+          }
+        : {}),
+    });
+    return {
+      ok: true,
+      days: days.map((d) => {
+        const noon = DateTime.fromISO(d.date, { zone: "Europe/Paris" }).set({ hour: 12 });
+        return {
+          date: d.date,
+          weekday: noon.setLocale("fr").toFormat("ccc"),
+          day: noon.day,
+          label: capitalize(formatDay(noon.toJSDate())),
+          closed: d.closed,
+          slots: d.slots.map((s) => ({
+            iso: s.startsAt.toISOString(),
+            time: formatTime(s.startsAt),
+          })),
+        };
+      }),
+    };
+  });
+}
+
+/** Aujourd'hui, à l'heure de Paris, pour démarrer le sélecteur de créneaux. */
+export async function fetchSalonToday(): Promise<{ today: string }> {
+  const { timezone } = await loadSettings(db());
+  return { today: DateTime.now().setZone(timezone).toISODate()! };
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Réservation, modification, annulation, lapins (R-26, R-27, R-33, R-51, R-74)
+
+export async function createSalonAppointment(
+  input: unknown,
+): Promise<TeamResult<{ appointmentId: string; startsAtIso: string }>> {
+  const parsed = z
+    .object({
+      customerId: uuid,
+      serviceIds,
+      staffId,
+      startsAt: isoInstant,
+      authorId: z.string(),
+    })
+    .safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asStaff(async () => {
+    const created = await createAppointment(db(), {
+      customerId: parsed.data.customerId,
+      serviceIds: parsed.data.serviceIds,
+      staffId: parsed.data.staffId,
+      startsAt: new Date(parsed.data.startsAt),
+      source: "salon",
+      createdByStaffId: parsed.data.authorId,
+    });
+    after(() => sendEmailsForAppointment(db(), created.id));
+    return { ok: true, appointmentId: created.id, startsAtIso: created.startsAt.toISOString() };
+  });
+}
+
+export async function rescheduleAppointmentAsSalon(
+  input: unknown,
+): Promise<TeamResult<{ changed: boolean }>> {
+  const parsed = z
+    .object({ appointmentId: uuid, staffId, startsAt: isoInstant, authorId: z.string() })
+    .safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asStaff(async () => {
+    const result = await salonRescheduleAppointment(db(), {
+      appointmentId: parsed.data.appointmentId,
+      staffId: parsed.data.staffId,
+      startsAt: new Date(parsed.data.startsAt),
+      authorStaffId: parsed.data.authorId,
+    });
+    if (result.changed) after(() => sendEmailsForAppointment(db(), parsed.data.appointmentId));
+    return { ok: true, changed: result.changed };
+  });
+}
+
+export async function cancelAppointmentAsSalon(input: unknown): Promise<TeamResult> {
+  const parsed = z.object({ appointmentId: uuid, authorId: z.string() }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asStaff(async () => {
+    const result = await salonCancelAppointment(db(), {
+      appointmentId: parsed.data.appointmentId,
+      authorStaffId: parsed.data.authorId,
+    });
+    if (!result.alreadyCancelled) {
+      after(() => sendEmailsForAppointment(db(), parsed.data.appointmentId));
+    }
+    return { ok: true };
+  });
+}
+
+export async function markNoShowAction(
+  input: unknown,
+): Promise<TeamResult<{ noShowCount: number }>> {
+  const parsed = z.object({ appointmentId: uuid, authorId: z.string() }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asStaff(async () => {
+    const result = await markNoShow(db(), {
+      appointmentId: parsed.data.appointmentId,
+      authorStaffId: parsed.data.authorId,
+    });
+    return { ok: true, noShowCount: result.noShowCount };
+  });
+}
+
+export async function undoNoShowAction(
+  input: unknown,
+): Promise<TeamResult<{ noShowCount: number }>> {
+  const parsed = z.object({ appointmentId: uuid, authorId: z.string() }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asStaff(async () => {
+    const result = await undoNoShow(db(), {
+      appointmentId: parsed.data.appointmentId,
+      authorStaffId: parsed.data.authorId,
+    });
+    return { ok: true, noShowCount: result.noShowCount };
+  });
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Espace gérant (R-73, R-52, R-75)
+
+export async function unlockManagerAction(
+  _previous: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const user = await currentStaffUser(getAuthDriver());
+  if (!user) return { status: "error", message: "Votre session a expiré. Reconnectez-vous." };
+  const result = await unlockManager(db(), {
+    code: String(formData.get("code") ?? "").trim(),
+    staffUserId: user.id,
+  });
+  if (result.ok) {
+    await grantManagerUnlock(user);
+    return { status: "ok" };
+  }
+  switch (result.error) {
+    case "wrong_code":
+      return { status: "error", message: "Ce code n'est pas le bon." };
+    case "not_configured":
+      return {
+        status: "error",
+        message:
+          "Aucun code gérant n'est encore défini. Il se définit avec la commande « pnpm manager:set-code ».",
+      };
+    default:
+      return {
+        status: "error",
+        message: `Trop d'essais. Réessayez dans ${wait(result.retryAfterSeconds)}.`,
+      };
+  }
+}
+
+export async function setCustomerBlockedAction(input: unknown): Promise<TeamResult> {
+  const parsed = z.object({ customerId: uuid, blocked: z.boolean() }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asManager(async (user) => {
+    await setOnlineBookingBlocked(db(), {
+      customerId: parsed.data.customerId,
+      blocked: parsed.data.blocked,
+      actorId: user.id,
+    });
+    return { ok: true };
+  });
+}
+
+export async function deleteCustomerAction(
+  input: unknown,
+): Promise<TeamResult<{ cancelled: number }>> {
+  const parsed = z.object({ customerId: uuid }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asManager<{ cancelled: number }>(async (user) => {
+    // Plafond des essais : une suppression ne se fait pas à la chaîne.
+    const limit = await hitRateLimit(db(), "manager-delete", { limit: 30, windowSeconds: 3600 });
+    if (!limit.allowed) return { ok: false, error: "rate_limited" };
+    const result = await deleteCustomerAsManager(db(), getAuthDriver(), {
+      customerId: parsed.data.customerId,
+      actorId: user.id,
+    });
+    return { ok: true, cancelled: result.cancelledAppointmentIds.length };
+  });
+}

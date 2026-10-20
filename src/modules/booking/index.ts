@@ -10,11 +10,13 @@ export {
 } from "./change-appointment";
 export {
   countNoShows,
+  loadSalonMovable,
   markNoShow,
   salonCancelAppointment,
   salonRescheduleAppointment,
   undoNoShow,
   type AttendanceInput,
+  type MovableAppointment,
   type SalonCancelInput,
   type SalonRescheduleInput,
 } from "./salon-changes";

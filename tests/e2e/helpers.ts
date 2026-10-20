@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { expect, type Page } from "@playwright/test";
 import { DateTime } from "luxon";
 import postgres from "postgres";
+import { hashManagerCode } from "../../src/modules/staff/manager-code";
 
 // Base du serveur de test (scripts/e2e-server.mjs). Les tests s'en servent pour remettre à zéro et pour provoquer des cas
 // que l'interface seule ne peut pas produire (créneau pris entre-temps, client bloqué).
@@ -14,6 +15,8 @@ export async function resetData() {
   await sql.unsafe(
     "truncate appointment_item, appointment, absence, closure, email_outbox, audit_log, customer, rate_limit restart identity cascade",
   );
+  // Aucun code gérant tant qu'un test n'en pose pas un (R-73).
+  await sql`update salon_settings set manager_pin_hash = null`;
 }
 
 export const newClient = () => ({
@@ -110,4 +113,49 @@ export async function addAppointment(
     insert into appointment_item (appointment_id, service_id, name_snapshot, price_cents, duration_min, position)
     values (${row.id}, ${item.id}, ${item.name}, ${item.price_cents}, ${item.duration_min}, 0)`;
   return row.id as string;
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Tablette du salon (lot 4)
+
+/** Le compte « équipe » du serveur de test (scripts/e2e-server.mjs). */
+export const STAFF_LOGIN = { email: "equipe@elegance.test", password: "mot-de-passe-equipe" };
+
+/** Ouvre la tablette : une seule connexion, la session reste ouverte (R-72). */
+export async function loginTablet(page: Page) {
+  await page.goto("/equipe/connexion");
+  await page.getByLabel("Email").fill(STAFF_LOGIN.email);
+  await page.getByLabel("Mot de passe").fill(STAFF_LOGIN.password);
+  await page.getByRole("button", { name: "Ouvrir la tablette" }).click();
+  await expect(page).toHaveURL(/\/equipe$/);
+}
+
+/** Pose le code gérant (R-73) dans la base de test. */
+export async function setManagerCode(code: string) {
+  await sql`update salon_settings set manager_pin_hash = ${hashManagerCode(code)}`;
+}
+
+/** Un client inscrit, sans passer par l'interface : rend son id et son email. */
+export async function addCustomer(
+  first: string,
+  last: string,
+  phone = "+33612345678",
+): Promise<{ id: string; email: string }> {
+  const email = `${first}.${last}.${randomUUID().slice(0, 6)}@exemple.fr`.toLowerCase();
+  const [row] = await sql`
+    insert into customer (first_name, last_name, phone, email)
+    values (${first}, ${last}, ${phone}, ${email}) returning id`;
+  return { id: row.id as string, email };
+}
+
+/** Dernier jour d'ouverture (mardi à samedi) au moins `minDays` jours avant aujourd'hui, « AAAA-MM-JJ ». */
+export function pastOpenDay(minDays: number): string {
+  let day = DateTime.now().setZone("Europe/Paris").minus({ days: minDays });
+  while (day.weekday < 2 || day.weekday > 6) day = day.minus({ days: 1 });
+  return day.toISODate()!;
+}
+
+/** Choisit un nom dans « Qui fait la modification ? » (R-74). */
+export async function chooseAuthor(page: Page, name: string, group = "Qui fait la modification ?") {
+  await page.getByRole("group", { name: group }).getByRole("button", { name, exact: true }).click();
 }

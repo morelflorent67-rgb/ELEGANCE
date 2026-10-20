@@ -15,6 +15,7 @@ import { listActiveStaff, type TeamMember } from "@/modules/staff/team";
 export interface PlanningAppointment {
   id: string;
   staffId: string;
+  staffFirstName: string;
   startsAt: Date;
   endsAt: Date;
   /** Minutes depuis minuit, heure de Paris : la position dans la colonne. */
@@ -37,13 +38,12 @@ export interface PlanningAppointment {
   noShowCount: number;
   /** R-52 : réservation en ligne bloquée par le gérant. */
   blocked: boolean;
-}
-
-export interface AppointmentCard extends PlanningAppointment {
-  staffFirstName: string;
   /** Qui a réservé au salon (R-74), null pour une réservation en ligne. */
   bookedBy: string | null;
 }
+
+/** La fiche d'un RDV : les mêmes informations que dans le planning. */
+export type AppointmentCard = PlanningAppointment;
 
 export interface DayColumn {
   staff: TeamMember;

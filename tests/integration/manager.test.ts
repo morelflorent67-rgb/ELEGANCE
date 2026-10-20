@@ -10,6 +10,7 @@ import { createAppointment } from "../../src/modules/booking";
 import { registerCustomer } from "../../src/modules/customers/accounts";
 import {
   deleteCustomerAsManager,
+  listFlaggedCustomers,
   loadCustomerFile,
   searchCustomers,
   setOnlineBookingBlocked,
@@ -424,3 +425,42 @@ describe("R-75 : le gérant supprime une fiche client", () => {
     );
   });
 });
+
+describe("R-52 : clients à surveiller dans l'espace gérant", () => {
+  const noShow = (customerId: string, day: string) =>
+    insertAppointment(t.sql, {
+      customerId,
+      staffId: ORHAN,
+      startsAt: paris(day, "10:00"),
+      endsAt: paris(day, "10:30"),
+      status: "no_show",
+    });
+
+  it("liste les clients au seuil de lapins, le plus de lapins d'abord, et les clients bloqués", async () => {
+    const one = await createCustomer(t.sql, { name: "Un" });
+    const two = await createCustomer(t.sql, { name: "Deux" });
+    const three = await createCustomer(t.sql, { name: "Trois" });
+    const blocked = await createCustomer(t.sql, { name: "Bloque", blocked: true });
+    await createCustomer(t.sql, { name: "Sage" });
+    await noShow(one, "2026-10-06");
+    await noShow(two, "2026-10-07");
+    await noShow(two, "2026-10-14");
+    for (const day of ["2026-10-08", "2026-10-15", "2026-10-21"]) await noShow(three, day);
+
+    const flagged = await listFlaggedCustomers(t.db);
+    expect(flagged.map((c) => [c.id, c.noShowCount, c.blocked])).toEqual([
+      [three, 3, false],
+      [two, 2, false],
+      [blocked, 0, true],
+    ]);
+  });
+
+  it("n'inclut pas une fiche supprimée", async () => {
+    const id = await createCustomer(t.sql);
+    await noShow(id, "2026-10-06");
+    await noShow(id, "2026-10-13");
+    await t.sql`update customer set first_name = null, last_name = null, email = null, anonymized_at = now() where id = ${id}`;
+    expect(await listFlaggedCustomers(t.db)).toEqual([]);
+  });
+});
+

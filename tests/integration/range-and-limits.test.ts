@@ -136,3 +136,12 @@ describe("limitation d'essais", () => {
     expect(results.filter((r) => r.allowed)).toHaveLength(3);
   });
 });
+
+describe("jour fermé ou complet (tablette : « Fermé » et non « Complet »)", () => {
+  it("distingue un jour de repos ou une fermeture d'un jour sans créneau libre", async () => {
+    await t.sql`insert into closure (starts_on, ends_on) values ('2026-11-04', '2026-11-04')`;
+    const days = await range({ days: 4 });
+    expect(days.map((d) => d.closed)).toEqual([true, false, true, false]); // lundi, mardi, mercredi fermé, jeudi
+  });
+});
+

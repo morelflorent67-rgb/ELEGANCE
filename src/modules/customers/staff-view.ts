@@ -112,6 +112,39 @@ export async function searchCustomers(
   });
 }
 
+export interface FlaggedCustomer {
+  id: string;
+  name: string;
+  noShowCount: number;
+  blocked: boolean;
+}
+
+/** Les clients à surveiller : ceux qui ont atteint le seuil de lapins, ou que le gérant a déjà bloqués (R-52). */
+export async function listFlaggedCustomers(db: Database): Promise<FlaggedCustomer[]> {
+  const { noShowBlockThreshold } = await loadSettings(db);
+  const count = sql<number>`count(${appointment.id}) filter (where ${appointment.status} = 'no_show')::int`;
+  const rows = await db
+    .select({
+      id: customer.id,
+      firstName: customer.firstName,
+      lastName: customer.lastName,
+      blocked: customer.onlineBookingBlocked,
+      noShowCount: count,
+    })
+    .from(customer)
+    .leftJoin(appointment, eq(appointment.customerId, customer.id))
+    .where(isNull(customer.anonymizedAt))
+    .groupBy(customer.id)
+    .having(sql`${count} >= ${noShowBlockThreshold} or ${customer.onlineBookingBlocked}`)
+    .orderBy(sql`${count} desc`, asc(customer.lastName), asc(customer.firstName));
+  return rows.map((r) => ({
+    id: r.id,
+    name: `${r.firstName ?? ""} ${r.lastName ?? ""}`.trim(),
+    noShowCount: r.noShowCount,
+    blocked: r.blocked,
+  }));
+}
+
 export interface CustomerFile {
   id: string;
   firstName: string;

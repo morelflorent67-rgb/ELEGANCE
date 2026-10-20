@@ -49,6 +49,7 @@ const env = {
   ...process.env,
   DATABASE_URL: databaseUrl,
   AUTH_DRIVER: "memory", // refusé sur Vercel, voir src/modules/auth/index.ts
+  AUTH_MEMORY_STAFF: "equipe@elegance.test:mot-de-passe-equipe", // compte de la tablette, en mémoire seulement
   APP_SECRET: "secret-des-tests-de-bout-en-bout",
   EMAIL_TRANSPORT: "log", // aucun email ne part
   SITE_URL: `http://127.0.0.1:${SITE_PORT}`,

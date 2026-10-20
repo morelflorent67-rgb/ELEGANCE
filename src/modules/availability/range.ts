@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import type { Database } from "@/db/types";
-import { slotsForDay } from "./engine";
+import { openRangesOn, slotsForDay } from "./engine";
 import { loadSettings, loadSnapshot } from "./load";
 import { eligibleStaff, resolveServices, type ServiceRow } from "./services";
 import type { Audience, Slot } from "./types";
@@ -8,6 +8,8 @@ import type { Audience, Slot } from "./types";
 export interface DaySlots {
   date: string;
   slots: Slot[];
+  /** Le salon est fermé ce jour-là (jour de repos ou fermeture, R-01, R-03) : « Fermé » et non « Complet ». */
+  closed: boolean;
 }
 
 interface RangeInput {
@@ -40,7 +42,7 @@ export async function getSlotsForRange(db: Database, input: RangeInput): Promise
   const { timezone } = await loadSettings(db);
   const first = DateTime.fromISO(from, { zone: timezone });
   const dates = Array.from({ length: days }, (_, i) => first.plus({ days: i }).toISODate()!);
-  if (staffIds.length === 0) return dates.map((date) => ({ date, slots: [] }));
+  if (staffIds.length === 0) return dates.map((date) => ({ date, slots: [], closed: false }));
 
   const { snapshot } = await loadSnapshot(db, {
     from: first.startOf("day").toJSDate(),
@@ -61,6 +63,7 @@ export async function getSlotsForRange(db: Database, input: RangeInput): Promise
       audience,
       now,
     }),
+    closed: openRangesOn(snapshot, date).length === 0,
   }));
 }
 
