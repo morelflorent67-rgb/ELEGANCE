@@ -326,8 +326,11 @@ test.describe("Mes informations (R-70, R-76)", () => {
     await signUpClient(page, client);
     await page.goto("/compte/informations");
     const nextEmail = `nouveau.${Date.now()}@exemple.fr`;
-    await page.getByLabel("Email", { exact: true }).fill(nextEmail);
-    await expect(page.locator("#info-currentPassword")).toBeVisible();
+    // Une saisie faite avant que la page soit active est perdue : on recommence jusqu'à ce que le champ suive.
+    await expect(async () => {
+      await page.getByLabel("Email", { exact: true }).fill(nextEmail);
+      await expect(page.locator("#info-currentPassword")).toBeVisible({ timeout: 1_000 });
+    }).toPass();
 
     await page.locator("#info-currentPassword").fill("mauvais-mot-de-passe");
     await page.getByRole("button", { name: "Enregistrer" }).click();

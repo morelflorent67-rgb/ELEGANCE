@@ -3,6 +3,7 @@ import {
   chooseService,
   fillSignUp,
   newClient,
+  openDay,
   reachIdentityStep,
   resetData,
   signUpAndReachRecap,
@@ -116,13 +117,9 @@ test.describe("délai de modification (R-30, R-32)", () => {
   test("un RDV pris longtemps à l'avance annonce qu'il est modifiable jusqu'à 48 h avant", async ({
     page,
   }) => {
-    // Un jour ouvré (mardi à samedi) dans 8 à 14 jours : plus de 48 h, et dans les 6 semaines.
-    const target = new Date();
-    for (let i = 8; i <= 14; i++) {
-      target.setTime(Date.now() + i * 86_400_000);
-      if (target.getDay() >= 2 && target.getDay() <= 6) break;
-    }
-    const date = target.toISOString().slice(0, 10);
+    // Un jour ouvré (mardi à samedi) dans 8 jours ou plus, compté en heure de Paris : plus de 48 h, et dans les
+    // 6 semaines. (Avant : jour de la semaine en heure locale mais date en UTC, faux entre minuit et 2 h à Paris.)
+    const date = openDay(8);
 
     await page.goto("/reservation");
     await chooseService(page, "Coupe homme");

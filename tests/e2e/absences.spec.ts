@@ -271,7 +271,8 @@ test.describe("D-57 : fermeture ou départ, même circuit", () => {
 
     // Le rappel s'affiche aussi sur la page d'accueil de l'espace gérant.
     await page.getByRole("link", { name: "Retour à l’espace gérant" }).click();
-    await expect(page.getByText(/2 rendez-vous sont à traiter/)).toBeVisible();
+    // La page précédente (Horaires, Équipe) reste cachée dans le DOM avec le même rappel.
+    await expect(page.getByText(/2 rendez-vous sont à traiter/).filter({ visible: true })).toBeVisible();
     await page.getByRole("link", { name: "Voir les rendez-vous à traiter" }).click();
 
     await expect(cards(page)).toHaveCount(2);
@@ -300,7 +301,8 @@ test.describe("D-57 : fermeture ou départ, même circuit", () => {
     await page.getByRole("button", { name: "Retirer Kaan de l’équipe" }).click();
     await page.getByRole("button", { name: "Retirer", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Retirés de l’équipe" })).toBeVisible();
-    await expect(page.getByText(/1 rendez-vous est à traiter/)).toBeVisible();
+    // La page précédente (Horaires, Équipe) reste cachée dans le DOM avec le même rappel.
+    await expect(page.getByText(/1 rendez-vous est à traiter/).filter({ visible: true })).toBeVisible();
 
     await page.getByRole("link", { name: "Voir les rendez-vous à traiter" }).click();
     await expect(cards(page)).toHaveCount(1);
