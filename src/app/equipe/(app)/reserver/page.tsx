@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { z } from "zod";
 import { db } from "@/db/client";
 import { parisDate } from "@/lib/format";
+import { loadRepeatSource } from "@/modules/appointments/queries";
 import { loadSettings } from "@/modules/availability";
 import { loadCatalog } from "@/modules/catalog";
 import { loadCustomerFile } from "@/modules/customers/staff-view";
@@ -67,8 +68,10 @@ async function Reserve({
         name: `${file.firstName} ${file.lastName}`.trim(),
         phone: file.phone,
         lastVisitLabel: past ? shortDate.format(past.startsAt) : null,
-        upcoming: file.appointments.filter((a) => a.status === "confirmed" && a.startsAt > now)
-          .length,
+        // R-25 : les RDV répétés ne comptent pas dans la limite (D-87).
+        upcoming: file.appointments.filter(
+          (a) => a.status === "confirmed" && a.startsAt > now && !a.seriesId,
+        ).length,
         blocked: file.blocked,
         hasAccount: file.hasAccount,
         hasEmail: file.email !== "",
@@ -76,15 +79,25 @@ async function Reserve({
     }
   }
 
+  // « Réserver à une autre heure » depuis une date sautée d'une série (D-84) : mêmes prestations et coiffeur, ce jour-là.
+  const from = z.uuid().safeParse(query.depuis);
+  const day = z.iso.date().safeParse(query.jour);
+  const source =
+    client && from.success ? await loadRepeatSource(database, client.id, from.data) : null;
+  const active = new Set(catalog.map((s) => s.id));
+
   return (
     <ReserveFlow
       // Une fiche choisie par lien (« Choisir cette fiche ») repart d'un parcours neuf.
-      key={client?.id ?? "nouveau"}
+      key={`${client?.id ?? "nouveau"}:${source ? from.data : ""}:${day.success ? day.data : ""}`}
       catalog={catalog}
       team={team.map((m) => ({ id: m.id, firstName: m.firstName }))}
       today={parisDate(now)}
       maxUpcoming={settings.maxUpcomingPerCustomer}
       initialClient={client}
+      initialServiceIds={source?.serviceIds.filter((id) => active.has(id)) ?? []}
+      initialStaffId={source?.staffId ?? "any"}
+      initialDate={day.success ? day.data : undefined}
     />
   );
 }

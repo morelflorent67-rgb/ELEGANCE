@@ -254,7 +254,10 @@ test.describe("cas particuliers de la maquette", () => {
   });
 
   test("aucun créneau : message, prochaine disponibilité et bouton d'appel", async ({ page }) => {
-    await sql`insert into closure (starts_on, ends_on, reason) values (current_date, current_date + 6, 'test')`;
+    // La semaine affichée est celle de Paris : entre minuit et 2 h, la date UTC de la base a un jour de retard.
+    await sql`
+      insert into closure (starts_on, ends_on, reason)
+      values ((now() at time zone 'Europe/Paris')::date, (now() at time zone 'Europe/Paris')::date + 6, 'test')`;
     await page.goto("/reservation");
     await chooseService(page, "Coupe homme");
     await page.getByRole("button", { name: /^Continuer/ }).click();

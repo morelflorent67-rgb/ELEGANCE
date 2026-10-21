@@ -49,6 +49,8 @@ export interface PlanningAppointment {
   blocked: boolean;
   /** Qui a réservé au salon (R-74), null pour une réservation en ligne. */
   bookedBy: string | null;
+  /** RDV répété : sa série (D-71), ou null. Le planning le marque d'un ↻ (D-92). */
+  seriesId: string | null;
 }
 
 /** La fiche d'un RDV : les mêmes informations que dans le planning. */
@@ -99,6 +101,7 @@ const columns = {
   phone: customer.phone,
   blocked: customer.onlineBookingBlocked,
   bookedBy: bookedByStaff.firstName,
+  seriesId: appointment.seriesId,
 };
 
 async function hydrate(
@@ -176,6 +179,7 @@ async function hydrate(
       noShowCount: noShowCount.get(row.customerId) ?? 0,
       blocked: row.blocked,
       bookedBy: row.bookedBy,
+      seriesId: row.seriesId,
     };
   });
 }

@@ -27,6 +27,8 @@ export interface AccountAppointment {
   changeable: boolean;
   /** « vendredi 6 novembre, 10:00 », quand le RDV est encore modifiable. */
   deadlineLabel: string | null;
+  /** RDV répété posé par le salon (D-92) : il se modifie et s'annule seul, comme les autres (D-88). */
+  repeated: boolean;
 }
 
 export interface PastAccountAppointment {
@@ -81,6 +83,7 @@ export function upcomingView(
       : `avec ${a.staffFirstName}`,
     changeable,
     deadlineLabel: changeable ? `${formatDay(deadline)}, ${formatTime(deadline)}` : null,
+    repeated: a.seriesId !== null,
   };
 }
 

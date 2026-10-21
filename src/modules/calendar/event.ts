@@ -1,4 +1,4 @@
-import { and, asc, count, eq } from "drizzle-orm";
+import { and, asc, count, eq, gt } from "drizzle-orm";
 import type { Database } from "@/db/types";
 import { appointment, appointmentItem, auditLog, staff } from "@/db/schema";
 import { SALON, salonAddressLine } from "@/lib/salon";
@@ -50,4 +50,25 @@ export async function loadCalendarEvent(
     description: `Avec ${row.staffFirstName}, paiement sur place. Pour un changement : ${SALON.phoneDisplay}.`,
     location: salonAddressLine,
   };
+}
+
+/** Les RDV à venir d'une série, pour « Ajouter à l'agenda » de son email (D-91). Vide si plus rien n'est à venir. */
+export async function loadSeriesCalendarEvents(
+  db: Database,
+  seriesId: string,
+  now: Date = new Date(),
+): Promise<IcsEvent[]> {
+  const rows = await db
+    .select({ id: appointment.id })
+    .from(appointment)
+    .where(
+      and(
+        eq(appointment.seriesId, seriesId),
+        eq(appointment.status, "confirmed"),
+        gt(appointment.endsAt, now),
+      ),
+    )
+    .orderBy(asc(appointment.startsAt));
+  const events = await Promise.all(rows.map((r) => loadCalendarEvent(db, r.id)));
+  return events.filter((e): e is IcsEvent => e !== null);
 }

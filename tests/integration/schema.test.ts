@@ -16,6 +16,7 @@ describe("principe 5 : aucun accès direct depuis le navigateur", () => {
       "absence",
       "appointment",
       "appointment_item",
+      "appointment_series",
       "audit_log",
       "closure",
       "customer",

@@ -24,6 +24,11 @@ const MESSAGES: Partial<Record<TeamError, string>> = {
   customers_both_have_accounts:
     "Ces deux fiches ont chacune un compte : elles ne se fusionnent pas. Supprimez celle qui ne sert plus.",
   invalid_for_name: "« Pour qui ? » : un prénom de 40 caractères au plus.",
+  invalid_series:
+    "Vérifiez la répétition : au moins 2 rendez-vous en tout, et une date de fin après ce rendez-vous.",
+  already_in_series: "Ce rendez-vous fait déjà partie d'une série : prolongez-la plutôt.",
+  not_in_series: "Ce rendez-vous ne fait pas partie d'une série.",
+  series_empty: "Aucune de ces dates n'est libre : rien n'a été réservé.",
   appointment_not_found: "Ce rendez-vous n'existe plus.",
   appointment_over: "Ce rendez-vous est terminé : il ne se modifie plus.",
   not_modifiable: "Ce rendez-vous est déjà annulé ou signalé : il ne se modifie plus.",

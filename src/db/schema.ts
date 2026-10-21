@@ -43,6 +43,15 @@ export const emailType = pgEnum("email_type", [
   "modification",
   "cancellation",
   "review_invitation",
+  "series_confirmation",
+]);
+/** RDV répétés (D-71) : toutes les 1 à 4 semaines, ou chaque mois. */
+export const seriesFrequency = pgEnum("series_frequency", ["weekly", "monthly"]);
+/** « Chaque mois » : le même quantième, le même rang de jour (« 2e mardi ») ou le dernier tel jour du mois (D-85). */
+export const seriesMonthlyMode = pgEnum("series_monthly_mode", [
+  "day_of_month",
+  "weekday_rank",
+  "last_weekday",
 ]);
 export const emailStatus = pgEnum("email_status", ["pending", "sent", "failed"]);
 
@@ -176,6 +185,41 @@ export const customer = pgTable(
   ],
 );
 
+/**
+ * Série de RDV répétés (D-71, D-83 à D-92) : la règle seulement. Chaque date est un RDV ordinaire qui pointe vers sa
+ * série ; rien d'autre n'est stocké ici (les dates sautées se recalculent, l'annulation se lit dans les RDV).
+ */
+export const appointmentSeries = pgTable(
+  "appointment_series",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    frequency: seriesFrequency("frequency").notNull(),
+    /** « Toutes les N semaines », de 1 à 4 ; vide pour « chaque mois ». */
+    intervalWeeks: smallint("interval_weeks"),
+    monthlyMode: seriesMonthlyMode("monthly_mode"),
+    /** Jour (heure de Paris) du premier RDV : point de départ de la règle. */
+    anchorOn: date("anchor_on", { mode: "string" }).notNull(),
+    /** Heure de début, heure de Paris, la même pour chaque date. */
+    startTime: time("start_time").notNull(),
+    /** Coiffeur demandé, ou vide pour « Sans préférence » (D-84). */
+    staffId: uuid("staff_id").references(() => staff.id),
+    /** Dernière date de la règle déjà examinée (posée ou sautée) : la prolongation reprend après (D-90). */
+    lastPlannedOn: date("last_planned_on", { mode: "string" }).notNull(),
+    createdByStaffId: uuid("created_by_staff_id")
+      .notNull()
+      .references(() => staff.id),
+    createdAt: instant("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    check(
+      "appointment_series_rule",
+      sql`(${t.frequency} = 'weekly' and ${t.intervalWeeks} between 1 and 4 and ${t.monthlyMode} is null)
+       or (${t.frequency} = 'monthly' and ${t.intervalWeeks} is null and ${t.monthlyMode} is not null)`,
+    ),
+    check("appointment_series_planned", sql`${t.lastPlannedOn} >= ${t.anchorOn}`),
+  ],
+);
+
 export const appointment = pgTable(
   "appointment",
   {
@@ -194,6 +238,8 @@ export const appointment = pgTable(
     forName: text("for_name"), // R-28 : « Pour qui ? », le prénom du proche ; le RDV reste au nom du titulaire
     createdByStaffId: uuid("created_by_staff_id").references(() => staff.id), // R-74
     adjustedAmountCents: integer("adjusted_amount_cents"), // R-53, R-54
+    /** RDV répété : la série dont il fait partie (D-71) ; hors limite de R-25 (D-87). */
+    seriesId: uuid("series_id").references(() => appointmentSeries.id),
     createdAt: instant("created_at").notNull().defaultNow(),
   },
   (t) => [
@@ -202,6 +248,7 @@ export const appointment = pgTable(
     check("appointment_for_name_length", sql`char_length(${t.forName}) between 1 and 40`),
     index("appointment_customer_idx").on(t.customerId, t.startsAt),
     index("appointment_staff_idx").on(t.staffId, t.startsAt),
+    index("appointment_series_idx").on(t.seriesId, t.startsAt),
   ],
 );
 

@@ -25,3 +25,19 @@ export {
   type SalonCancelInput,
   type SalonRescheduleInput,
 } from "./salon-changes";
+export {
+  extendSeries,
+  loadSeriesView,
+  previewExtend,
+  previewRepeat,
+  repeatAppointment,
+  salonCancelSeries,
+  seriesCancellable,
+  SERIES_MAX_TOTAL,
+  type ExtendInput,
+  type RepeatInput,
+  type SeriesCancelScope,
+  type SeriesPlan,
+  type SeriesView,
+  type SeriesWritten,
+} from "./series";

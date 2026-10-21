@@ -40,24 +40,29 @@ function fold(line: string): string {
   return parts.join("\r\n ");
 }
 
-export function buildIcs(event: IcsEvent): string {
+const eventLines = (event: IcsEvent) => [
+  "BEGIN:VEVENT",
+  `UID:${event.uid}`,
+  `SEQUENCE:${event.sequence ?? 0}`,
+  `DTSTAMP:${utc(event.stamp ?? new Date())}`,
+  `DTSTART:${utc(event.startsAt)}`,
+  `DTEND:${utc(event.endsAt)}`,
+  `SUMMARY:${escapeText(event.summary)}`,
+  ...(event.description ? [`DESCRIPTION:${escapeText(event.description)}`] : []),
+  ...(event.location ? [`LOCATION:${escapeText(event.location)}`] : []),
+  "STATUS:CONFIRMED",
+  "END:VEVENT",
+];
+
+/** Un fichier pour un ou plusieurs RDV : une série s'ajoute à l'agenda en une fois (D-91). */
+export function buildIcs(events: IcsEvent | IcsEvent[]): string {
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
     "PRODID:-//Elegance Strasbourg//Reservation//FR",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
-    "BEGIN:VEVENT",
-    `UID:${event.uid}`,
-    `SEQUENCE:${event.sequence ?? 0}`,
-    `DTSTAMP:${utc(event.stamp ?? new Date())}`,
-    `DTSTART:${utc(event.startsAt)}`,
-    `DTEND:${utc(event.endsAt)}`,
-    `SUMMARY:${escapeText(event.summary)}`,
-    ...(event.description ? [`DESCRIPTION:${escapeText(event.description)}`] : []),
-    ...(event.location ? [`LOCATION:${escapeText(event.location)}`] : []),
-    "STATUS:CONFIRMED",
-    "END:VEVENT",
+    ...(Array.isArray(events) ? events : [events]).flatMap(eventLines),
     "END:VCALENDAR",
   ];
   return lines.map(fold).join("\r\n") + "\r\n";

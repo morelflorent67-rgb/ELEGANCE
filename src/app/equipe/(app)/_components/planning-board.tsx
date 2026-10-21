@@ -372,7 +372,7 @@ export function PlanningBoard({
                         type="button"
                         onClick={() => setSelectedId(on ? null : appt.id)}
                         aria-pressed={on}
-                        aria-label={`${formatTime(appt.startsAt)}, ${appt.forName ? `${appt.forName}, au nom de ` : ""}${appt.customerName}, ${appt.summary}, avec ${col.staff.firstName}, ${SOURCE_WORD[appt.source].toLowerCase()}${tag ? `, ${tag.word}` : ""}`}
+                        aria-label={`${formatTime(appt.startsAt)}, ${appt.forName ? `${appt.forName}, au nom de ` : ""}${appt.customerName}, ${appt.summary}, avec ${col.staff.firstName}, ${SOURCE_WORD[appt.source].toLowerCase()}${appt.seriesId ? ", RDV répété" : ""}${tag ? `, ${tag.word}` : ""}`}
                         data-source={appt.source}
                         className={`absolute inset-x-1 flex flex-col justify-center gap-0.5 overflow-hidden border px-2.5 text-left ${tone.block} ${
                           on ? "outline outline-2 outline-offset-2 outline-ivory" : ""
@@ -381,6 +381,16 @@ export function PlanningBoard({
                       >
                         <span className="flex items-center gap-2 whitespace-nowrap text-[13px]">
                           <span className="min-w-0 flex-1 truncate">
+                            {/* D-92 : un RDV répété porte le ↻, comme sur Planity. */}
+                            {appt.seriesId ? (
+                              <span
+                                data-repeated
+                                aria-hidden="true"
+                                className={`mr-1 ${tone.muted}`}
+                              >
+                                ↻
+                              </span>
+                            ) : null}
                             <span className={`tabular-nums ${tone.muted}`}>
                               {formatTime(appt.startsAt)}
                             </span>{" "}

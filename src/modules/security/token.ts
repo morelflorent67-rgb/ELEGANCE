@@ -15,5 +15,8 @@ export function verifyToken(secret: string, subject: string, token: string): boo
 
 export const calendarSubject = (appointmentId: string) => `agenda:${appointmentId}`;
 
+/** « Ajouter à l'agenda » de l'email d'une série (D-91) : toutes ses dates à venir. */
+export const seriesCalendarSubject = (seriesId: string) => `agenda-serie:${seriesId}`;
+
 /** Lien « Ne plus recevoir ces invitations » de l'email d'avis (R-64). */
 export const reviewOptOutSubject = (customerId: string) => `avis-desinscription:${customerId}`;

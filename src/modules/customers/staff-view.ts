@@ -49,7 +49,7 @@ export interface CustomerHit {
   maskedPhone: string;
   /** Dernier RDV commencé (hors annulés), ou null. */
   lastVisit: Date | null;
-  /** RDV confirmés à venir. */
+  /** RDV confirmés à venir, hors RDV répétés : ceux qui comptent pour la limite (R-25, D-87). */
   upcoming: number;
   /** Faux pour une fiche créée au salon ou importée, tant que la personne ne s'est pas inscrite (D-70). */
   hasAccount: boolean;
@@ -100,7 +100,7 @@ export async function searchCustomers(
     .select({
       customerId: appointment.customerId,
       last: sql<Date | null>`max(${appointment.startsAt}) filter (where ${appointment.startsAt} <= ${now.toISOString()}::timestamptz)`,
-      upcoming: sql<number>`count(*) filter (where ${appointment.status} = 'confirmed' and ${appointment.startsAt} > ${now.toISOString()}::timestamptz)::int`,
+      upcoming: sql<number>`count(*) filter (where ${appointment.status} = 'confirmed' and ${appointment.startsAt} > ${now.toISOString()}::timestamptz and ${appointment.seriesId} is null)::int`,
     })
     .from(appointment)
     .where(

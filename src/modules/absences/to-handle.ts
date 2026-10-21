@@ -183,6 +183,29 @@ export async function needsHold(
   return (await listAppointmentsToHandle(db, now)).some((a) => a.id === appointmentId);
 }
 
+/** Idem pour plusieurs rendez-vous (annulation groupée d'une série, D-88) : vrai si l'un d'eux doit attendre le gérant. */
+export async function needsHoldAny(
+  db: Database,
+  appointmentIds: string[],
+  now: Date = new Date(),
+): Promise<boolean> {
+  if (appointmentIds.length === 0) return false;
+  const [alreadyHeld] = await db
+    .select({ id: emailOutbox.id })
+    .from(emailOutbox)
+    .where(
+      and(
+        inArray(emailOutbox.appointmentId, appointmentIds),
+        eq(emailOutbox.heldForManager, true),
+        eq(emailOutbox.status, "pending"),
+      ),
+    )
+    .limit(1);
+  if (alreadyHeld) return true;
+  const ids = new Set(appointmentIds);
+  return (await listAppointmentsToHandle(db, now)).some((a) => ids.has(a.id));
+}
+
 export interface FreeColleague {
   id: string;
   firstName: string;

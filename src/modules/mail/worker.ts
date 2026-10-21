@@ -4,6 +4,7 @@ import type { Database } from "@/db/types";
 import {
   appointment,
   appointmentItem,
+  appointmentSeries,
   customer,
   emailOutbox,
   salonSettings,
@@ -11,13 +12,20 @@ import {
 } from "@/db/schema";
 import { listAppointmentsToHandle } from "@/modules/absences/to-handle";
 import { isHonored } from "@/modules/appointments/status";
-import { calendarSubject, reviewOptOutSubject, signToken } from "@/modules/security/token";
+import { ruleLabel, type RepeatRule } from "@/modules/availability/recurrence";
+import {
+  calendarSubject,
+  reviewOptOutSubject,
+  seriesCalendarSubject,
+  signToken,
+} from "@/modules/security/token";
 import { z } from "zod";
 import { renderCancellationEmail } from "./templates/cancellation";
 import { renderConfirmationEmail } from "./templates/confirmation";
 import { renderModificationEmail } from "./templates/modification";
 import { renderReminderEmail } from "./templates/reminder";
 import { renderReviewInvitationEmail } from "./templates/review-invitation";
+import { renderSeriesConfirmationEmail } from "./templates/series-confirmation";
 import type { RenderedEmail } from "./layout";
 import { EmailSendError, type EmailMessage, type EmailTransport } from "./transport";
 
@@ -222,8 +230,27 @@ const modificationPayload = z.object({
   by: z.literal("salon").optional(),
 });
 
-/** Annulation : seul le salon laisse une trace dans la charge utile (D-52). */
-const cancellationPayload = z.object({ by: z.literal("salon").optional() });
+/** Annulation : seul le salon laisse une trace dans la charge utile (D-52) ; une annulation groupée liste ses RDV (D-91). */
+const cancellationPayload = z.object({
+  by: z.literal("salon").optional(),
+  appointmentIds: z.array(z.uuid()).optional(),
+});
+
+/** Date et coiffeur de chaque RDV demandé, dans l'ordre, avec leur statut. */
+async function loadDates(db: Database, ids: string[]) {
+  if (ids.length === 0) return [];
+  return db
+    .select({
+      id: appointment.id,
+      startsAt: appointment.startsAt,
+      status: appointment.status,
+      staffFirstName: staff.firstName,
+    })
+    .from(appointment)
+    .innerJoin(staff, eq(staff.id, appointment.staffId))
+    .where(inArray(appointment.id, ids))
+    .orderBy(asc(appointment.startsAt));
+}
 
 async function renderModification(
   db: Database,
@@ -277,6 +304,11 @@ async function renderCancellation(
   const appt = await loadEmailAppointment(db, row);
   if (!isCancelled(appt)) throw new Skip("rendez-vous rétabli avant l'envoi");
   const payload = cancellationPayload.safeParse(row.payload ?? {});
+  // Annulation groupée (D-88) : seulement les RDV toujours annulés au moment de l'envoi.
+  const group = payload.success && payload.data.appointmentIds ? payload.data.appointmentIds : [];
+  const dates = (await loadDates(db, group)).filter(
+    (d) => d.status === "cancelled_by_customer" || d.status === "cancelled_by_salon",
+  );
   return message(
     row,
     appt,
@@ -289,6 +321,57 @@ async function renderCancellation(
       bookUrl: `${options.baseUrl}/reservation`,
       logoUrl: `${options.baseUrl}/email/logo.png`,
       cancelledBy: payload.success && payload.data.by === "salon" ? "salon" : "customer",
+      ...(dates.length > 1 ? { dates } : {}),
+    }),
+  );
+}
+
+const seriesPayload = z.object({
+  seriesId: z.uuid(),
+  appointmentIds: z.array(z.uuid()).min(1),
+  extended: z.boolean().optional(),
+});
+
+/** Email unique d'une série (D-91) : les RDV posés qui tiennent encore à l'envoi. */
+async function renderSeriesConfirmation(
+  db: Database,
+  row: Row,
+  options: ProcessOptions,
+  now: Date,
+): Promise<EmailMessage> {
+  const appt = await loadEmailAppointment(db, row);
+  const payload = seriesPayload.safeParse(row.payload);
+  if (!payload.success) throw new Skip("dates absentes de l'email de série");
+  const dates = (await loadDates(db, payload.data.appointmentIds)).filter(
+    (d) => d.status === "confirmed" && d.startsAt.getTime() > now.getTime(),
+  );
+  if (dates.length === 0) throw new Skip("plus aucun rendez-vous de la série à annoncer");
+  const [series] = await db
+    .select()
+    .from(appointmentSeries)
+    .where(eq(appointmentSeries.id, payload.data.seriesId));
+  if (!series) throw new Skip("série introuvable");
+  const rule: RepeatRule =
+    series.frequency === "weekly"
+      ? { frequency: "weekly", intervalWeeks: series.intervalWeeks as 1 | 2 | 3 | 4 }
+      : { frequency: "monthly", monthlyMode: series.monthlyMode! };
+  return message(
+    row,
+    appt,
+    renderSeriesConfirmationEmail({
+      ...recipient(appt, options),
+      forName: appt.forName,
+      firstName: appt.customerFirstName,
+      ruleLabel: ruleLabel(series.anchorOn, rule),
+      dates,
+      items: appt.items,
+      totalPriceCents: appt.totalPriceCents,
+      durationMinutes: appt.durationMinutes,
+      cutoffHours: appt.cutoffHours,
+      extended: payload.data.extended === true,
+      manageUrl: `${options.baseUrl}/compte/rendez-vous`,
+      calendarUrl: `${options.baseUrl}/api/agenda/serie/${series.id}?t=${signToken(options.secret, seriesCalendarSubject(series.id))}`,
+      logoUrl: `${options.baseUrl}/email/logo.png`,
     }),
   );
 }
@@ -395,6 +478,8 @@ async function render(
       return renderReminder(db, row, options, now, isHeld);
     case "review_invitation":
       return renderReviewInvitation(db, row, options, now);
+    case "series_confirmation":
+      return renderSeriesConfirmation(db, row, options, now);
     default:
       throw new EmailSendError(`Type d'email non géré : ${row.type}`, true);
   }

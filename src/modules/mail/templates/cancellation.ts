@@ -28,6 +28,8 @@ export interface CancellationData extends Recipient {
   bookUrl: string;
   /** Qui a annulé : le client lui-même (défaut), ou le salon, qui a appelé le client avant (R-63, D-52). */
   cancelledBy?: "customer" | "salon";
+  /** Annulation groupée d'une série par le salon (D-88, D-91) : toutes les dates annulées, la première comprise. */
+  dates?: { startsAt: Date; staffFirstName: string }[];
   logoUrl: string;
 }
 
@@ -36,14 +38,18 @@ export interface CancellationData extends Recipient {
  * quand le salon annule (R-33, R-63), confirme l'échange téléphonique et présente des excuses (D-52).
  */
 export function renderCancellationEmail(data: CancellationData): RenderedEmail {
-  const subject = `Votre rendez-vous du ${formatDay(data.startsAt)} est annulé`;
+  const group = data.dates && data.dates.length > 1 ? data.dates : null;
+  const subject = group
+    ? `Vos ${group.length} rendez-vous à partir du ${formatDay(group[0].startsAt)} sont annulés`
+    : `Votre rendez-vous du ${formatDay(data.startsAt)} est annulé`;
   const preheader = "Envie d'un autre créneau ? Réservez en quelques secondes.";
   const when = `${capitalize(formatDayWithYear(data.startsAt))} · ${formatTime(data.startsAt)}`;
   const total = data.items.reduce((sum, i) => sum + i.priceCents, 0);
   const summary = `${data.items.map((i) => i.name).join(" + ")} · ${formatPrice(total)} · avec ${data.staffFirstName}`;
   const bySalon = data.cancelledBy === "salon";
+  const them = group ? "vos rendez-vous" : "votre rendez-vous";
   const intro = bySalon
-    ? `${data.firstName ? `${data.firstName}, s` : "S"}uite à notre échange, nous avons annulé votre rendez-vous. Toutes nos excuses pour la gêne occasionnée.`
+    ? `${data.firstName ? `${data.firstName}, s` : "S"}uite à notre échange, nous avons annulé ${them}. Toutes nos excuses pour la gêne occasionnée.`
     : data.firstName
       ? `Merci de nous avoir prévenus, ${data.firstName} : le créneau est libéré pour un autre client.`
       : "Merci de nous avoir prévenus : le créneau est libéré pour un autre client.";
@@ -51,15 +57,21 @@ export function renderCancellationEmail(data: CancellationData): RenderedEmail {
     ? `Une question sur cette annulation ? Appelez-nous au ${SALON.phoneDisplay}.`
     : `Vous n'êtes pas à l'origine de cette annulation ? Appelez-nous au ${SALON.phoneDisplay}.`;
   const duration = formatDuration(data.items.reduce((sum, i) => sum + i.durationMin, 0));
+  const groupLine = (d: { startsAt: Date; staffFirstName: string }) =>
+    `${capitalize(formatDay(d.startsAt))} · ${formatTime(d.startsAt)} · avec ${d.staffFirstName}`;
+  const card = group
+    ? `<div style="font-size:16px;line-height:1.5;color:${COLORS.stone};">${escapeHtml(`${data.items.map((i) => i.name).join(" + ")} · ${formatPrice(total)}`)}</div>
+${group.map((d) => `<div style="padding-top:10px;font-family:${FONT};font-size:16px;line-height:1.5;color:${COLORS.stone};text-decoration:line-through;">${escapeHtml(groupLine(d))}</div>`).join("\n")}`
+    : `<div style="font-size:12px;letter-spacing:0.26em;text-transform:uppercase;color:${COLORS.stone};">${escapeHtml(when)}</div>
+<div style="padding-top:10px;font-family:${FONT};font-size:16px;line-height:1.5;color:${COLORS.stone};text-decoration:line-through;">${escapeHtml(summary)}</div>`;
 
   const bodyHtml = `
-<div style="font-size:11px;letter-spacing:0.32em;text-transform:uppercase;color:${COLORS.stone};">Rendez-vous annulé</div>
-<h1 style="margin:14px 0 0;font-size:30px;line-height:1.15;font-weight:300;letter-spacing:-0.01em;color:${COLORS.ivory};">Votre rendez-vous est annulé.</h1>
+<div style="font-size:11px;letter-spacing:0.32em;text-transform:uppercase;color:${COLORS.stone};">${group ? "Rendez-vous annulés" : "Rendez-vous annulé"}</div>
+<h1 style="margin:14px 0 0;font-size:30px;line-height:1.15;font-weight:300;letter-spacing:-0.01em;color:${COLORS.ivory};">${group ? "Vos rendez-vous sont annulés." : "Votre rendez-vous est annulé."}</h1>
 <p style="margin:14px 0 0;font-size:16px;line-height:1.6;font-weight:300;color:${COLORS.ivorySoft};">${escapeHtml(intro)}</p>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:28px;border:1px solid ${COLORS.line};"><tr><td style="padding:24px 28px;">
-<div style="font-size:12px;letter-spacing:0.26em;text-transform:uppercase;color:${COLORS.stone};">${escapeHtml(when)}</div>
-<div style="padding-top:10px;font-family:${FONT};font-size:16px;line-height:1.5;color:${COLORS.stone};text-decoration:line-through;">${escapeHtml(summary)}</div>
+${card}
 </td></tr></table>
 
 <div style="margin-top:24px;">${button("Reprendre rendez-vous", data.bookUrl, "primary")}</div>
@@ -75,12 +87,16 @@ export function renderCancellationEmail(data: CancellationData): RenderedEmail {
   });
 
   const text = [
-    "Votre rendez-vous est annulé.",
+    group ? "Vos rendez-vous sont annulés." : "Votre rendez-vous est annulé.",
     "",
     intro,
     "",
-    `${when}`,
-    `${summary} (${duration})`,
+    ...(group
+      ? [
+          `${data.items.map((i) => i.name).join(" + ")} (${duration})`,
+          ...group.map((d) => `- ${groupLine(d)}`),
+        ]
+      : [`${when}`, `${summary} (${duration})`]),
     "",
     `Reprendre rendez-vous : ${data.bookUrl}`,
     "",

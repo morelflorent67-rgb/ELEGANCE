@@ -38,6 +38,11 @@ export type DomainErrorCode =
   | "customer_has_account"
   | "customers_both_have_accounts"
   | "invalid_for_name"
+  // RDV répétés (D-71, D-83 à D-92)
+  | "invalid_series"
+  | "already_in_series"
+  | "not_in_series"
+  | "series_empty"
   // Correction du montant à la clôture (R-53, R-54)
   | "invalid_amount"
   // Gestion de la carte et de l'équipe par le gérant (R-10 à R-13)

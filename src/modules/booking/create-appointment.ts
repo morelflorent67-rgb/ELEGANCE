@@ -1,4 +1,4 @@
-import { and, count, eq, gt, inArray } from "drizzle-orm";
+import { and, count, eq, gt, inArray, isNull } from "drizzle-orm";
 import { DateTime } from "luxon";
 import type { Database } from "@/db/types";
 import { appointment, appointmentItem, customer, staff } from "@/db/schema";
@@ -108,7 +108,7 @@ export async function createAppointment(
         staffIds: candidateIds,
       });
 
-      // R-25 : au plus N RDV à venir, salon compris.
+      // R-25 : au plus N RDV à venir, salon compris ; les RDV répétés n'y comptent pas (D-87).
       const [{ upcoming }] = await tx
         .select({ upcoming: count() })
         .from(appointment)
@@ -117,6 +117,7 @@ export async function createAppointment(
             eq(appointment.customerId, input.customerId),
             eq(appointment.status, "confirmed"),
             gt(appointment.startsAt, now),
+            isNull(appointment.seriesId),
           ),
         );
       if (upcoming >= settings.maxUpcomingPerCustomer) throw new DomainError("too_many_upcoming");

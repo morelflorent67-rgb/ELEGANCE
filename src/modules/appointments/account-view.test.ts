@@ -11,6 +11,7 @@ const appointment = (overrides: Partial<AppointmentView> = {}): AppointmentView 
   staffFirstName: "Orhan",
   note: null,
   forName: null,
+  seriesId: null,
   items: [{ name: "Coupe & taille de barbe", priceCents: 2800, durationMin: 30 }],
   totalPriceCents: 2800,
   durationMinutes: 30,

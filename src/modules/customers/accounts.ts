@@ -242,6 +242,7 @@ export async function customerBookingState(
         eq(appointment.customerId, customerId),
         eq(appointment.status, "confirmed"),
         gt(appointment.startsAt, now),
+        isNull(appointment.seriesId), // D-87 : hors RDV répétés
       ),
     );
   return {

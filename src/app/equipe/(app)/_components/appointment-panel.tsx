@@ -11,17 +11,25 @@ import { teamMessage, type TeamResult } from "../../_lib/messages";
 import {
   adjustAmountAction,
   cancelAppointmentAsSalon,
+  cancelSeriesAction,
   fetchSalonDays,
   fetchSalonStaffChoices,
+  fetchSeriesAction,
   markNoShowAction,
   rescheduleAppointmentAsSalon,
   undoNoShowAction,
   type SalonDayView,
+  type SeriesCardView,
 } from "../../actions";
 import { AuthorPicker, type TeamMemberView } from "./author-picker";
+import { SeriesForm } from "./series-form";
 import { SlotPicker, type PickedSalonSlot } from "./slot-picker";
 
-type Mode = "idle" | "cancel" | "noshow" | "undo" | "move" | "amount" | "amount-reset";
+type Mode =
+  "idle" | "cancel" | "noshow" | "undo" | "move" | "amount" | "amount-reset" | "repeat" | "extend";
+
+/** D-88 : ce RDV seul, celui-ci et les suivants, ou tous les RDV à venir de la série. */
+type CancelScope = "one" | "following" | "all";
 
 const STATUS_LABEL: Record<PlanningAppointment["status"], string> = {
   upcoming: "À venir",
@@ -82,6 +90,26 @@ export function AppointmentPanel({
   // Montant encaissé (R-53, R-54), saisi en euros.
   const [amountText, setAmountText] = useState("");
 
+  // Série du RDV (D-92), relue à chaque fiche ouverte ou changée ; « Annuler » choisit sa portée (D-88).
+  const [loaded, setLoaded] = useState<{ key: string; series: SeriesCardView | null } | null>(null);
+  const [cancelScope, setCancelScope] = useState<CancelScope>("one");
+  const seriesKey = appointment?.seriesId
+    ? `${appointment.id}:${appointment.seriesId}:${appointment.status}:${toast ?? ""}`
+    : null;
+  useEffect(() => {
+    if (!seriesKey || !appointment) return;
+    let cancelled = false;
+    fetchSeriesAction({ appointmentId: appointment.id }).then((result) => {
+      if (!cancelled && result.ok) setLoaded({ key: seriesKey, series: result.series });
+    });
+    return () => {
+      cancelled = true;
+    };
+    // La clé résume le RDV, sa série, son statut et la dernière action.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seriesKey]);
+  const series = seriesKey && loaded?.key === seriesKey ? loaded.series : null;
+
   useEffect(() => {
     onBusy(mode !== "idle");
     return () => onBusy(false);
@@ -111,6 +139,7 @@ export function AppointmentPanel({
     setError(null);
     setAuthorId(null);
     setSlot(null);
+    setCancelScope("one");
     setMode(next);
     if (next === "amount" && appointment) {
       setAmountText(
@@ -138,7 +167,21 @@ export function AppointmentPanel({
     startTransition(async () => {
       let message = "";
       let result: TeamResult<object>;
-      if (mode === "cancel") {
+      if (mode === "cancel" && cancelScope !== "one") {
+        const cancelled = await cancelSeriesAction({
+          appointmentId: appointment.id,
+          scope: cancelScope,
+          authorId,
+        });
+        result = cancelled;
+        message = cancelled.ok
+          ? `${cancelled.cancelled} rendez-vous de ${firstName(appointment.customerName)} annulés · ${
+              appointment.hasEmail
+                ? "le client reçoit un seul email qui liste les dates."
+                : NO_EMAIL
+            }`
+          : "";
+      } else if (mode === "cancel") {
         result = await cancelAppointmentAsSalon({ appointmentId: appointment.id, authorId });
         message = `Rendez-vous de ${firstName(appointment.customerName)} annulé · ${
           appointment.hasEmail ? "le client reçoit un email d’annulation." : NO_EMAIL
@@ -322,7 +365,9 @@ export function AppointmentPanel({
     <>
       <aside
         aria-label={`Fiche du rendez-vous de ${a.customerName}`}
-        className="fixed inset-x-0 bottom-0 z-30 flex max-h-[88dvh] flex-col overflow-y-auto border-t border-line bg-charcoal px-6 pb-6 pt-5 animate-panel-in lg:static lg:max-h-none lg:w-[340px] lg:shrink-0 lg:border-l lg:border-t-0"
+        className={`fixed inset-x-0 bottom-0 z-30 flex max-h-[88dvh] flex-col overflow-y-auto border-t border-line bg-charcoal px-6 pb-6 pt-5 animate-panel-in lg:static lg:max-h-none lg:shrink-0 lg:border-l lg:border-t-0 ${
+          mode === "repeat" || mode === "extend" ? "lg:w-[400px]" : "lg:w-[340px]"
+        }`}
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 flex-col gap-1">
@@ -406,6 +451,41 @@ export function AppointmentPanel({
           {a.hasAccount ? null : <span className={chip}>Sans compte</span>}
         </div>
 
+        {series ? (
+          <section
+            aria-label="Série de rendez-vous"
+            className="mt-4 flex flex-col gap-2 border border-line px-4 py-3.5"
+          >
+            <span className="text-label uppercase tracking-[0.24em] text-gold">↻ RDV répété</span>
+            <span className="text-[14px] leading-normal text-ivory">
+              {series.ruleLabel}
+              {series.position
+                ? ` · ${series.position === 1 ? "1er" : `${series.position}e`} sur ${series.total}`
+                : ""}
+            </span>
+            {series.isLast ? (
+              <span className="text-[13px] text-ivory-soft">Dernier RDV de la série</span>
+            ) : null}
+            {series.upcoming.length > 0 ? (
+              <ul
+                className="flex flex-col text-[13px] text-stone"
+                aria-label="Dates à venir de la série"
+              >
+                {series.upcoming.slice(0, 6).map((u) => (
+                  <li key={u.id} className={u.id === a.id ? "text-ivory" : ""}>
+                    {u.label} · {u.staffFirstName}
+                  </li>
+                ))}
+                {series.upcoming.length > 6 ? (
+                  <li>
+                    et {series.upcoming.length - 6} autre{series.upcoming.length - 6 > 1 ? "s" : ""}
+                  </li>
+                ) : null}
+              </ul>
+            ) : null}
+          </section>
+        ) : null}
+
         {a.note ? (
           <div className="mt-4 flex flex-col gap-1.5 bg-ink px-4 py-3.5">
             <span className="text-label uppercase tracking-[0.24em] text-stone">
@@ -430,6 +510,17 @@ export function AppointmentPanel({
                   Annuler
                 </button>
               </div>
+            ) : null}
+            {/* D-83, D-90 : la série se crée et se prolonge depuis la fiche. */}
+            {canChange && !a.seriesId ? (
+              <button type="button" onClick={() => open("repeat")} className={ghostButton}>
+                ↻ Répéter ce RDV
+              </button>
+            ) : null}
+            {a.seriesId && series ? (
+              <button type="button" onClick={() => open("extend")} className={ghostButton}>
+                ↻ Prolonger la série
+              </button>
             ) : null}
             {canAdjust ? (
               <button
@@ -466,11 +557,31 @@ export function AppointmentPanel({
               </p>
             ) : null}
           </div>
+        ) : mode === "repeat" || mode === "extend" ? (
+          <div className="mt-6 flex flex-col gap-4 border border-ivory p-4.5 animate-panel-in">
+            <span className="text-[16px]">
+              {mode === "repeat" ? "Répéter ce rendez-vous" : "Prolonger la série"}
+            </span>
+            <SeriesForm
+              mode={mode}
+              appointmentId={a.id}
+              customerId={a.customerId}
+              series={series}
+              team={team}
+              hasEmail={a.hasEmail}
+              onCancel={close}
+              onDone={(message) => {
+                onToast(message);
+                close();
+                router.refresh();
+              }}
+            />
+          </div>
         ) : (
           <div className="mt-6 flex flex-col gap-4 border border-ivory p-4.5 animate-panel-in lg:mt-auto">
             <span className="text-[16px]">
               {mode === "cancel"
-                ? `Annuler le rendez-vous de ${firstName(a.customerName)} ?`
+                ? `Annuler ${cancelScope === "one" ? "le rendez-vous" : "les rendez-vous"} de ${firstName(a.customerName)} ?`
                 : mode === "noshow"
                   ? `Signaler un lapin pour ${firstName(a.customerName)} ?`
                   : mode === "undo"
@@ -481,6 +592,52 @@ export function AppointmentPanel({
                         ? `Rétablir le prix de la carte (${formatPrice(a.totalPriceCents)}) ?`
                         : "Déplacer le rendez-vous"}
             </span>
+            {mode === "cancel" &&
+            series &&
+            (series.followingCount > 1 || series.upcomingBefore > 0) ? (
+              <div
+                role="radiogroup"
+                aria-label="Quels rendez-vous ?"
+                className="flex flex-col gap-2"
+              >
+                {(
+                  [
+                    { scope: "one", label: "Ce RDV" },
+                    ...(series.followingCount > 1
+                      ? [
+                          {
+                            scope: "following",
+                            label: `Celui-ci et les suivants (${series.followingCount})`,
+                          },
+                        ]
+                      : []),
+                    ...(series.upcomingBefore > 0
+                      ? [
+                          {
+                            scope: "all",
+                            label: `Tous les RDV à venir de la série (${series.upcomingBefore + series.followingCount})`,
+                          },
+                        ]
+                      : []),
+                  ] as { scope: CancelScope; label: string }[]
+                ).map((option) => (
+                  <button
+                    key={option.scope}
+                    type="button"
+                    role="radio"
+                    aria-checked={cancelScope === option.scope}
+                    onClick={() => setCancelScope(option.scope)}
+                    className={`min-h-12 border px-3 text-left text-[14px] transition-colors duration-200 ${
+                      cancelScope === option.scope
+                        ? "border-ivory bg-ivory text-ink"
+                        : "border-line-strong hover:bg-graphite-light"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
             {mode === "cancel" ? (
               <p className="text-[13px] leading-normal text-stone">
                 Appelez d’abord le client. Un email d’annulation lui est ensuite envoyé ; pour un

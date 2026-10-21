@@ -147,11 +147,19 @@ export function AppointmentsView({
                     <span className="text-label uppercase text-gold">{a.dayLabel}</span>
                     <span className="text-[34px] font-light tabular-nums">{a.time}</span>
                   </div>
-                  {a.relative ? (
-                    <span className="shrink-0 whitespace-nowrap pt-1 text-body-sm text-stone">
-                      {a.relative}
-                    </span>
-                  ) : null}
+                  <div className="flex shrink-0 flex-col items-end gap-2 pt-1">
+                    {a.relative ? (
+                      <span className="whitespace-nowrap text-body-sm text-stone">
+                        {a.relative}
+                      </span>
+                    ) : null}
+                    {/* D-92 : un RDV répété par le salon se reconnaît. */}
+                    {a.repeated ? (
+                      <span className="border border-line-strong px-2 py-1 text-[11px] uppercase tracking-[0.16em] text-stone">
+                        RDV répété
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
                 <div className="h-px bg-line" />
                 <div className="flex flex-col gap-1.5 text-[15px]">

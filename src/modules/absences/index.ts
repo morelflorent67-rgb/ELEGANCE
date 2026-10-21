@@ -10,6 +10,7 @@ export {
   listAppointmentsToHandle,
   listFreeColleagues,
   needsHold,
+  needsHoldAny,
   type AppointmentToHandle,
   type FreeColleague,
   type HandleReason,

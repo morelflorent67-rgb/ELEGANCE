@@ -8,25 +8,43 @@ import { z } from "zod";
 import { db } from "@/db/client";
 import type { FormState } from "@/app/_actions/form-state";
 import { DomainError } from "@/lib/domain-error";
-import { capitalize, formatDay, formatTime } from "@/lib/format";
+import { capitalize, formatDay, formatDayShort, formatTime, parisDate } from "@/lib/format";
 import { callerIp } from "@/lib/request-ip";
 import { getAuthDriver } from "@/modules/auth";
 import type { AuthUser } from "@/modules/auth/types";
-import { getSlotsForRange, loadSettings } from "@/modules/availability";
+import {
+  getSlotsForRange,
+  loadSettings,
+  monthlyModesFor,
+  ruleLabel,
+  seriesLimit,
+  type MonthlyMode,
+  type SkipReason,
+} from "@/modules/availability";
 import {
   adjustAppointmentAmount,
   createAppointment,
+  extendSeries,
   loadSalonMovable,
+  loadSeriesView,
   markNoShow,
+  previewExtend,
+  previewRepeat,
+  repeatAppointment,
   salonCancelAppointment,
+  salonCancelSeries,
   salonRescheduleAppointment,
+  seriesCancellable,
+  SERIES_MAX_TOTAL,
   undoNoShow,
+  type SeriesPlan,
 } from "@/modules/booking";
 import {
   declareAbsence,
   deleteAbsence,
   listAppointmentsToHandle,
   needsHold,
+  needsHoldAny,
   releaseHeldEmails,
 } from "@/modules/absences";
 import { loadStaffChoices, loadStaffChoicesFor, type StaffChoice } from "@/modules/catalog";
@@ -62,7 +80,7 @@ import {
 import { sendEmailsForAppointment } from "@/modules/mail/send-now";
 import { hitRateLimit } from "@/modules/security/rate-limit";
 import { VITRINE_TAG } from "@/modules/vitrine/tag";
-import { loginStaff, currentStaffUser } from "@/modules/staff";
+import { loginStaff, currentStaffUser, listActiveStaff } from "@/modules/staff";
 import { unlockManager } from "@/modules/staff/manager";
 import {
   grantManagerUnlock,
@@ -257,9 +275,7 @@ export async function updateSalonCustomerAction(
   });
 }
 
-function formResult(
-  result: Awaited<ReturnType<typeof createSalonCustomer>>,
-): CustomerFormResult {
+function formResult(result: Awaited<ReturnType<typeof createSalonCustomer>>): CustomerFormResult {
   if (result.ok) return result;
   if (result.error === "invalid") {
     return { ok: false, error: "fields", fieldErrors: result.fieldErrors };
@@ -507,6 +523,279 @@ export async function undoNoShowAction(
 }
 
 // ---------------------------------------------------------------------------------------------------------------
+// RDV répétés (D-71, D-83 à D-92) : tout se fait depuis la fiche du RDV, dans le panneau de droite du planning
+
+const repeatRule = z.discriminatedUnion("frequency", [
+  z.object({
+    frequency: z.literal("weekly"),
+    intervalWeeks: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
+  }),
+  z.object({
+    frequency: z.literal("monthly"),
+    monthlyMode: z.enum(["day_of_month", "weekday_rank", "last_weekday"]),
+  }),
+]);
+const seriesEnd = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("count"), total: z.number().int().min(1).max(SERIES_MAX_TOTAL) }),
+  z.object({ kind: z.literal("until"), date: isoDate }),
+]);
+
+/** Une date de la série telle que la tablette l'affiche : retenue (avec son coiffeur) ou sautée (avec sa raison). */
+export interface SeriesDateView {
+  key: string;
+  /** « Mardi 10 novembre · 10:00 », ou « Novembre » pour un mois sans ce jour. */
+  label: string;
+  /** « AAAA-MM-JJ », pour « Réserver à une autre heure » ; vide pour un mois sans ce jour. */
+  date: string | null;
+  ok: boolean;
+  /** Coiffeur retenu, ou raison du saut. */
+  detail: string;
+}
+
+export interface SeriesPlanView {
+  ruleLabel: string;
+  dates: SeriesDateView[];
+  okCount: number;
+}
+
+const SKIP_LABEL: Record<SkipReason, string> = {
+  no_such_day: "Ce jour n'existe pas ce mois-ci",
+  closed: "Salon fermé",
+  outside_hours: "Hors des horaires",
+  off_grid: "Hors de la grille",
+  busy: "Pas de coiffeur libre",
+  in_past: "Déjà passé",
+  too_soon: "Trop tôt",
+  too_far: "Trop loin",
+};
+
+async function planView(plan: SeriesPlan, staffChoice: string | "any"): Promise<SeriesPlanView> {
+  const team = new Map((await listActiveStaff(db())).map((m) => [m.id, m.firstName]));
+  const month = (iso: string) =>
+    capitalize(DateTime.fromISO(`${iso}-01`).setLocale("fr").toFormat("LLLL yyyy"));
+  const dates = plan.dates.map((d): SeriesDateView => {
+    if (d.ok) {
+      return {
+        key: d.date,
+        label: `${capitalize(formatDay(d.startsAt))} · ${formatTime(d.startsAt)}`,
+        date: d.date,
+        ok: true,
+        detail: `avec ${team.get(d.staffId) ?? ""}`,
+      };
+    }
+    const busyLabel =
+      staffChoice === "any"
+        ? SKIP_LABEL.busy
+        : `${team.get(staffChoice) ?? "Coiffeur"} pris ou absent`;
+    return {
+      key: d.date ?? d.month,
+      label: d.date
+        ? capitalize(
+            formatDay(
+              DateTime.fromISO(d.date, { zone: "Europe/Paris" }).set({ hour: 12 }).toJSDate(),
+            ),
+          )
+        : month(d.month),
+      date: d.date,
+      ok: false,
+      detail: d.reason === "busy" ? busyLabel : SKIP_LABEL[d.reason],
+    };
+  });
+  return { ruleLabel: plan.ruleLabel, dates, okCount: dates.filter((d) => d.ok).length };
+}
+
+export interface RepeatOptionsView {
+  /** « Mardi 10 novembre · 10:00 » */
+  startLabel: string;
+  /** Façons de répéter chaque mois possibles depuis ce RDV (D-85). */
+  monthly: { mode: MonthlyMode; label: string }[];
+  /** Coiffeurs habilités (R-13) et celui du RDV, proposé par défaut (D-84). */
+  choices: StaffChoice[];
+  staffId: string;
+  /** Dernier jour possible (D-86), « AAAA-MM-JJ », et le premier jour après le RDV. */
+  limit: string;
+  firstDay: string;
+}
+
+/** Ce que propose « Répéter ce RDV » pour ce RDV : refus si le RDV ne se répète pas (annulé, terminé, déjà en série). */
+export async function fetchRepeatOptions(
+  input: unknown,
+): Promise<TeamResult<{ options: RepeatOptionsView }>> {
+  const parsed = z.object({ appointmentId: uuid }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asStaff<{ options: RepeatOptionsView }>(async () => {
+    const database = db();
+    const moving = await loadSalonMovable(database, parsed.data.appointmentId);
+    const view = await loadSeriesView(database, moving.id);
+    if (view) return { ok: false, error: "already_in_series" };
+    const { timezone } = await loadSettings(database);
+    const anchor = DateTime.fromJSDate(moving.startsAt, { zone: timezone }).toISODate()!;
+    return {
+      ok: true,
+      options: {
+        startLabel: `${capitalize(formatDay(moving.startsAt))} · ${formatTime(moving.startsAt)}`,
+        monthly: monthlyModesFor(anchor).map((mode) => ({
+          mode,
+          label: ruleLabel(anchor, { frequency: "monthly", monthlyMode: mode }).replace(
+            "Chaque mois, ",
+            "",
+          ),
+        })),
+        choices: await loadStaffChoicesFor(database, moving.services),
+        staffId: moving.staffId,
+        limit: seriesLimit(anchor),
+        firstDay: DateTime.fromISO(anchor).plus({ days: 1 }).toISODate()!,
+      },
+    };
+  });
+}
+
+const repeatInput = z.object({ appointmentId: uuid, rule: repeatRule, staffId, end: seriesEnd });
+
+export async function previewRepeatAction(
+  input: unknown,
+): Promise<TeamResult<{ plan: SeriesPlanView }>> {
+  const parsed = repeatInput.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asStaff(async () => ({
+    ok: true,
+    plan: await planView(await previewRepeat(db(), parsed.data), parsed.data.staffId),
+  }));
+}
+
+/** « Répéter ce RDV » (D-83) : un seul email part au client, qui liste les dates (D-91). */
+export async function repeatAppointmentAction(
+  input: unknown,
+): Promise<TeamResult<{ plan: SeriesPlanView; created: number }>> {
+  const parsed = repeatInput.extend({ authorId: z.string() }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asStaff(async () => {
+    const { authorId, ...rest } = parsed.data;
+    const written = await repeatAppointment(db(), { ...rest, authorStaffId: authorId });
+    after(() => sendEmailsForAppointment(db(), written.created[0].id));
+    return {
+      ok: true,
+      plan: await planView(written, rest.staffId),
+      created: written.created.length,
+    };
+  });
+}
+
+/** Ce que la fiche RDV montre de sa série (D-92), ou null. */
+export interface SeriesCardView {
+  ruleLabel: string;
+  position: number | null;
+  total: number;
+  isLast: boolean;
+  upcoming: { id: string; label: string; staffFirstName: string; date: string }[];
+  upcomingBefore: number;
+  followingCount: number;
+  /** Coiffeur demandé à la création, pour l'aperçu de la prolongation. */
+  staffChoice: string | "any";
+  /** Dernier jour possible d'une prolongation (D-86, D-90) et premier jour après la dernière date prévue. */
+  extendLimit: string;
+  extendFirstDay: string;
+}
+
+export async function fetchSeriesAction(
+  input: unknown,
+): Promise<TeamResult<{ series: SeriesCardView | null }>> {
+  const parsed = z.object({ appointmentId: uuid }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asStaff<{ series: SeriesCardView | null }>(async () => {
+    const view = await loadSeriesView(db(), parsed.data.appointmentId);
+    if (!view) return { ok: true, series: null };
+    return {
+      ok: true,
+      series: {
+        ruleLabel: view.ruleLabel,
+        position: view.position,
+        total: view.total,
+        isLast: view.isLast,
+        upcoming: view.upcoming.map((a) => ({
+          id: a.id,
+          label: `${capitalize(formatDayShort(a.startsAt))} · ${formatTime(a.startsAt)}`,
+          staffFirstName: a.staffFirstName,
+          date: parisDate(a.startsAt),
+        })),
+        upcomingBefore: view.upcomingBefore,
+        followingCount: view.followingCount,
+        staffChoice: view.staffChoice,
+        extendLimit: view.extendLimit,
+        extendFirstDay: view.extendFirstDay,
+      },
+    };
+  });
+}
+
+const extendInput = z.object({ appointmentId: uuid, end: seriesEnd });
+
+export async function previewExtendAction(
+  input: unknown,
+): Promise<TeamResult<{ plan: SeriesPlanView }>> {
+  const parsed = extendInput.extend({ staffChoice: staffId }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asStaff(async () => ({
+    ok: true,
+    plan: await planView(await previewExtend(db(), parsed.data), parsed.data.staffChoice),
+  }));
+}
+
+/** « Prolonger la série » (D-90). */
+export async function extendSeriesAction(
+  input: unknown,
+): Promise<TeamResult<{ plan: SeriesPlanView; created: number }>> {
+  const parsed = extendInput
+    .extend({ authorId: z.string(), staffChoice: staffId })
+    .safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asStaff(async () => {
+    const written = await extendSeries(db(), {
+      appointmentId: parsed.data.appointmentId,
+      end: parsed.data.end,
+      authorStaffId: parsed.data.authorId,
+    });
+    after(() => sendEmailsForAppointment(db(), written.created[0].id));
+    return {
+      ok: true,
+      plan: await planView(written, parsed.data.staffChoice),
+      created: written.created.length,
+    };
+  });
+}
+
+/**
+ * Annulation groupée (D-88) : « celui-ci et les suivants » ou tous les RDV à venir de la série. Un seul email ; retenu
+ * pour le gérant si l'un des RDV était à traiter (R-43, D-56).
+ */
+export async function cancelSeriesAction(
+  input: unknown,
+): Promise<TeamResult<{ cancelled: number; held: boolean }>> {
+  const parsed = z
+    .object({ appointmentId: uuid, scope: z.enum(["following", "all"]), authorId: z.string() })
+    .safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asStaff(async () => {
+    const database = db();
+    const touched = await seriesCancellable(database, parsed.data);
+    const hold = await needsHoldAny(
+      database,
+      touched.map((a) => a.id),
+    );
+    const { cancelled } = await salonCancelSeries(database, {
+      appointmentId: parsed.data.appointmentId,
+      scope: parsed.data.scope,
+      authorStaffId: parsed.data.authorId,
+      holdEmails: hold,
+    });
+    if (cancelled.length > 0 && !hold) {
+      after(() => sendEmailsForAppointment(db(), cancelled[0]));
+    }
+    return { ok: true, cancelled: cancelled.length, held: hold && cancelled.length > 0 };
+  });
+}
+
+// ---------------------------------------------------------------------------------------------------------------
 // Espace gérant (R-73, R-52, R-75)
 
 export async function unlockManagerAction(
@@ -620,9 +909,7 @@ export async function setServiceActiveAction(input: unknown): Promise<TeamResult
 }
 
 export async function moveServiceAction(input: unknown): Promise<TeamResult> {
-  const parsed = z
-    .object({ serviceId: uuid, direction: z.enum(["up", "down"]) })
-    .safeParse(input);
+  const parsed = z.object({ serviceId: uuid, direction: z.enum(["up", "down"]) }).safeParse(input);
   if (!parsed.success) return { ok: false, error: "invalid" };
   return asManager(async (user) => {
     await moveService(db(), parsed.data.serviceId, parsed.data.direction, user.id);

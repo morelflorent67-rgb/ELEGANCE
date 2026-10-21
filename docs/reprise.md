@@ -1,7 +1,7 @@
 # Reprise du projet : où on en est
 
 Ce document permet de reprendre le travail dans une **nouvelle conversation**, sans rien perdre. Il se met à jour à la fin de chaque lot.
-À jour au **21 octobre 2026** (nuit). Les lots 0 à 7 sont validés. Le lot 8 (recette et bascule) est **en pause** : le salon a demandé des changements (lots 9 à 14, section « Demandes du salon »), et Florent ne retourne le voir, et ne met en ligne, qu'une fois tout terminé. **Lots 9 et 10 faits** (en attente de validation par Florent ; ses retours sur le lot 9 sont intégrés au lot 10).
+À jour au **22 octobre 2026** (nuit). Les lots 0 à 7 sont validés. Le lot 8 (recette et bascule) est **en pause** : le salon a demandé des changements (lots 9 à 14, section « Demandes du salon »), et Florent ne retourne le voir, et ne met en ligne, qu'une fois tout terminé. **Lots 9 et 10 validés par Florent** (22 octobre). **Lot 11 fait**, à valider par Florent ; **migration 0010 pas encore appliquée sur Supabase** (son accord d'abord), donc code du lot 11 pas encore poussé.
 
 ## Avancement
 
@@ -17,13 +17,15 @@ Ce document permet de reprendre le travail dans une **nouvelle conversation**, s
 | 7 | Emails (rappel, invitation à un avis) et tableau de bord, correction du montant encaissé | Validé (emails réels reçus) |
 | 8 | Recette et bascule | En pause jusqu'à la fin du lot 14. Fait : lenteur de la tablette corrigée (pooler en mode session), clignotement de la vitrine corrigé, surveillance des emails dans `/api/health`, visuels de lancement faits ; le reste du plan attend les réponses de Florent (voir « Lot 8 ») |
 | 9 | Réglages et petites demandes du salon : délai 1 h, rappel 24 h, créneaux à l'heure et à la demie partout, 5 RDV à venir, lien d'avis Google, couleurs en ligne/salon, résumé du planning repliable, icône E et application installable | Fait ; retours de Florent (case pleine couleur, languette) faits au lot 10 |
-| 10 | Clients sans compte : fiches créées à la tablette, « Pour qui ? », rattachement par l'email, fusion par le gérant, emails des fiches sans compte, import du fichier clients (Treatwell) | Fait, à valider par Florent ; migration 0009 appliquée sur Supabase et code poussé (22 octobre 2026) |
-| 11 | RDV répétés depuis la tablette | À faire |
+| 10 | Clients sans compte : fiches créées à la tablette, « Pour qui ? », rattachement par l'email, fusion par le gérant, emails des fiches sans compte, import du fichier clients (Treatwell) | Validé par Florent (22 octobre 2026 : planning, fiches sans compte, « Pour qui ? », fusion) ; migration 0009 appliquée sur Supabase et code poussé |
+| 11 | RDV répétés depuis la fiche du planning : répéter, prolonger, annuler la suite, un email qui liste les dates | Fait le 22 octobre 2026, à valider par Florent. Migration 0010 **à appliquer sur Supabase** (avec son accord) avant de pousser |
 | 12 | Nouvelle interface client : une seule page de réservation, motion design poussé | À faire : Florent fait les maquettes dans Claude Design (prompt complet et méthode dans `docs/design/brief-lot12-claude-design.md`) |
 | 13 | Liste d'attente, email « Nous serions ravis de vous revoir » | À faire |
 | 14 | Encaissement SumUp Solo depuis la fiche RDV | À faire |
 
-Tests au 21 octobre 2026 (fin du lot 10) : **771 Vitest** (236 unitaires et 535 d'intégration sur Postgres réel) et **300 parcours Playwright** (236 exécutés ; 64 réservés à la tablette ou au mobile sont sautés selon le profil), plus `pnpm smoke:auth` et `pnpm smoke:db`. Aucun ne doit casser. Lint, typecheck et build verts. Vérification visuelle du lot 10 par captures à 1194 × 834 et 390 × 844 (planning plein et replié, fiche RDV « Pour qui ? », fiche client importée, nouvelle fiche et même numéro), pas sur appareil réel.
+Tests au 22 octobre 2026 (fin du lot 11) : **814 Vitest** (254 unitaires et 560 d'intégration sur Postgres réel) et **312 parcours Playwright** (242 exécutés ; 70 réservés à la tablette ou au mobile sont sautés selon le profil), plus `pnpm smoke:auth` et `pnpm smoke:db`. Au passage, le parcours « aucun créneau » ferme maintenant la semaine de Paris (il échouait entre minuit et 2 h : la date de la base est en UTC). Aucun ne doit casser. Lint, typecheck et build verts. Vérification visuelle du lot 11 par captures à 1194 × 834 (répéter, fiche de série, annuler la suite) et 390 × 844 (répéter sur téléphone, Mes rendez-vous), pas sur appareil réel ; `pnpm smoke:db` non relancé (client de base inchangé).
+
+Pour mémoire, fin du lot 10 : **771 Vitest** (236 unitaires et 535 d'intégration sur Postgres réel) et **300 parcours Playwright** (236 exécutés ; 64 réservés à la tablette ou au mobile sont sautés selon le profil), plus `pnpm smoke:auth` et `pnpm smoke:db`. Aucun ne doit casser. Lint, typecheck et build verts. Vérification visuelle du lot 10 par captures à 1194 × 834 et 390 × 844 (planning plein et replié, fiche RDV « Pour qui ? », fiche client importée, nouvelle fiche et même numéro), pas sur appareil réel.
 
 Pour mémoire, fin du lot 9 : **729 Vitest** (218 unitaires et 511 d'intégration sur Postgres réel) et **292 parcours Playwright** (231 exécutés ; 61 réservés à la tablette ou au mobile sont sautés selon le profil), plus `pnpm smoke:auth` et `pnpm smoke:db`. Aucun ne doit casser. Lint, typecheck et build verts. Vérification visuelle du lot 9 par captures à 1194 × 834 (planning déplié et replié, icône) et 390 × 844 (Mes RDV, « moins d'une heure »), pas sur appareil réel.
 
@@ -43,10 +45,11 @@ Pour mémoire, à la fin du lot 7 : **699 Vitest** (197 unitaires et 502 d'inté
 - `src/modules/availability` (créneaux, fonctions pures), `booking` (`createAppointment`, `rescheduleAppointment`, `cancelAppointment` : seuls chemins d'écriture d'un RDV), `catalog` (lecture de la carte ; `manage.ts` : gestion par le gérant), `customers`, `auth`, `mail`, `calendar`, `appointments`, `audit` (`recordAudit`), `vitrine` (lecture en cache, horaires, textes légaux, données structurées), `security`, `staff` (accès équipe ; `manage.ts` : gestion de l'équipe), `schedule` (horaires et fermetures), `absences` (absences, RDV à traiter, emails retenus), `planning`, `dashboard` (bilan : périodes, totaux, lapins récents).
 - Tablette, lot 7 : `/equipe/gerant/bilan` (le tableau de bord, derrière le code gérant). Public, lot 7 : `/avis/desinscription` (lien signé de l'email d'avis).
 - Vitrine (lot 6) : `/`, `/prestations`, `/salon`, `/mentions-legales`, `/confidentialite`, `/conditions`, `/robots.txt`, `/sitemap.xml`.
+- Lot 11 : `src/modules/availability/recurrence.ts` (dates d'une règle et choix du coiffeur, fonctions pures), `src/modules/booking/series.ts` (répéter, prolonger, annuler la suite, vue de la série), table `appointment_series` et `appointment.series_id`, `mail/templates/series-confirmation.ts`, `/api/agenda/serie/[id]`, `_components/series-form.tsx` (formulaire dans la fiche RDV).
 - Lot 10 : `src/modules/customers/salon-customers.ts` (fiches sans compte, même numéro, fusion), `import-file.ts` et `import-apply.ts` (import, chargés par `scripts/import-customers.mjs` avec Node : **aucun import `@/` ni import à l'exécution dans ces deux fichiers**), `customer-form.tsx` (formulaire de fiche de la tablette).
 - Pages clients : `/reservation`, `/reservation/confirmation`, `/connexion`, `/inscription`, `/mot-de-passe-oublie`, `/mot-de-passe/nouveau`, `/compte/rendez-vous`, `/compte/informations`, `/compte/supprime`.
 - Tablette : `/equipe` (planning), `/equipe/reserver`, `/equipe/clients/[id]`, `/equipe/absences`, `/equipe/gerant` (code gérant) et, derrière le code, `/equipe/gerant/carte`, `/equipe/gerant/equipe`, `/equipe/gerant/horaires`, `/equipe/gerant/clients/[id]`.
-- Toutes les décisions techniques sont dans `docs/decisions.md`. Les règles et décisions métier sont dans `docs/dossier-projet.md` (R-xx, D-01 à D-57).
+- Toutes les décisions techniques sont dans `docs/decisions.md`. Les règles et décisions métier sont dans `docs/dossier-projet.md` (R-xx, D-01 à D-92).
 - Maquettes : canevas Claude Design (lien dans `docs/design/README.md`, lisible avec l'outil Artifact, action `read`, puis `path` pour un fichier). Pour le lot 7, lire dans le canevas : `Email-Rappel`, `Email-Avis`, `Email-Modification`, `Email-Annulation`, `Tablette-Dashboard`, et les `DS-*` pour les composants. « Atelier » et « Lumiere-Mur » sont des archives : ne pas les utiliser.
 
 ## Actions en attente (à demander à Florent, jamais sans son accord)
@@ -66,6 +69,7 @@ Pour mémoire, à la fin du lot 7 : **699 Vitest** (197 unitaires et 502 d'inté
 12. **Après Brevo** : essayer un vrai rappel et une vraie invitation à soi-même (aucun email réel n'a été envoyé pendant le lot : les tests utilisent un faux transport et les modèles ont été vérifiés par captures). Vérifier l'affichage dans Gmail, Apple Mail et Outlook, mode sombre compris.
 13. ~~Migration 0008 sur Supabase~~ : **appliquée le 21 octobre 2026** avec l'accord de Florent ; réglages vérifiés en ligne (grille 30 min partout, délai 1 h, 5 RDV, rappel 24 h, lien d'avis Google direct).
 14. ~~Migration 0009 sur Supabase~~ : **appliquée le 22 octobre 2026** avec l'accord de Florent (colonnes `customer.origin`, `legacy_visits`, `legacy_last_visit_on`, `origin_notice_sent_at`, `appointment.for_name`, contraintes et index vérifiés en ligne ; `pnpm smoke:db` vert), puis code du lot 10 poussé.
+14 bis. **Migration 0010 sur Supabase (lot 11)** : à appliquer avec l'accord de Florent (`pnpm db:migrate:remote` : table `appointment_series`, colonne `appointment.series_id`, type d'email `series_confirmation`), vérifier en ligne, lancer `pnpm smoke:db`, **puis** pousser le code du lot 11.
 15. **Import réel du fichier clients** : à la bascule, Florent exporte un fichier **tout neuf** (Treatwell, et Planity si le salon y a des clients récents : la commande ne lit aujourd'hui que le format Treatwell) et lance lui-même `pnpm customers:import:remote "<chemin>"` (bilan, puis « oui »). Le fichier reste hors du dossier du projet. Essai à blanc fait le 21 octobre 2026 sur l'export du 25 août 2026 : 1 968 fiches sur 3 313. Le salon prévient ses clients par ses réseaux (D-78).
 16. **Textes légaux** : la confidentialité cite maintenant les fiches sans compte et le fichier repris ; deux champs à compléter s'ajoutent (durée de conservation d'une fiche sans compte).
 
@@ -93,7 +97,14 @@ Florent a transmis en vrac les demandes du salon ; l'analyse et ses réponses on
 - Migration `0009_customers_without_account`. Aucune nouvelle dépendance. Décisions : D-76 à D-82 (`dossier-projet.md`), `decisions.md`.
 - Le salon prend aujourd'hui ses RDV sur **Planity** (le fichier Treatwell du 25 août 2026 est plus ancien) : les RDV à venir seront repris depuis Planity à la bascule.
 
-**Lot 11 : RDV répétés (D-71)** : toutes les 1, 2, 3 ou 4 semaines, ou chaque mois (même date ou même rang de jour : « flexible »), jusqu'à une date ou N fois, 6 mois au plus ; dates impossibles sautées et listées ; hors limite de R-25 ; « ce RDV » ou « celui-ci et les suivants » ; un email unique qui liste les dates ; un rappel par RDV.
+**Lot 11 (fait le 22 octobre 2026) : RDV répétés (D-71, D-83 à D-92)**
+- **Réponses de Florent** : la série se crée en touchant le RDV au planning, dans le **panneau de droite** (« comme l'application de son ami »), pas dans « Nouveau RDV » ; la prolongation aussi. Le reste suit les recommandations. Question 4 (comment Planity compte « N fois ») : la documentation de Planity (support.planity.com, « Comment gérer mes rendez-vous récurrents », « Comment supprimer un rendez-vous répété ») ne le dit pas ; elle confirme la flèche en boucle sur les RDV répétés et les choix « Juste cet événement / Tous les événements futurs / Toute la série » : d'où D-86 (N RDV en tout) et le 3e choix d'annulation (D-88).
+- **Fiche RDV** : « ↻ Répéter ce RDV » (le RDV devient le 1er de la série) : chaque semaine, toutes les 2, 3, 4 semaines, chaque mois (le 10 / le 2e mardi / le dernier mardi) ; coiffeur du RDV par défaut ou « Sans préférence » ; fin « N RDV en tout, celui-ci compris » ou « Jusqu'au », 6 mois au plus ; **aperçu** recalculé par le serveur (dates retenues avec leur coiffeur, dates sautées avec leur raison et « Réserver à une autre heure ») ; « Qui réserve ? » ; « Confirmer N RDV ».
+- Fiche d'un RDV de série : « ↻ RDV répété · Toutes les 2 semaines · 3e sur 8 », dates à venir, « Dernier RDV de la série », « ↻ Prolonger la série » (« N RDV de plus » ou « Jusqu'au »). « Annuler » propose « Ce RDV », « Celui-ci et les suivants (N) », « Tous les RDV à venir de la série (N) ». Un RDV de série se déplace seul.
+- Planning : ↻ devant l'heure ; Mes rendez-vous : étiquette « RDV répété ».
+- Limite de 5 RDV à venir : les RDV de série n'y comptent pas (D-87), ni en ligne ni au salon.
+- Emails : un seul email « Vos N rendez-vous sont confirmés » (règle, prestations, une ligne par date, « Ajouter à l'agenda » de toute la série), un rappel par RDV ; prolongation : « Vos N prochains rendez-vous sont réservés » ; annulation groupée : un seul email qui liste les dates, retenu pour le gérant si l'un des RDV est à traiter. Le RDV de départ a déjà eu sa confirmation ; il figure aussi dans la liste.
+- Migration `0010_appointment_series`. Aucune nouvelle dépendance. Décisions : D-83 à D-92 (`dossier-projet.md`), `decisions.md`.
 
 **Lot 12 : nouvelle interface client (D-72)** : une seule page de réservation, pas de photos ni d'onglets, horaires et plan animés, légal en liens discrets, ordinateur = même page centrée. **Maquettes d'abord** : Florent les fait dans Claude Design, dans le **même projet** que les maquettes d'origine, avec le **prompt complet** (7 étapes, une à la fois) de `docs/design/brief-lot12-claude-design.md` ; les pages créées commencent par « Lot12- » et leur liste viendra dans le message de démarrage du lot 12. Pas de projet de référence. Motion design « ultra poussé » : une bibliothèque d'animation pourra se justifier (`decisions.md`, aujourd'hui « pas de GSAP »). La vitrine du lot 6 (accueil, prestations, salon, galerie) disparaît ; garder les pages légales, le référencement local (données structurées) et `/compte`.
 
@@ -211,18 +222,22 @@ Questions posées à Florent et encore ouvertes : ce qui lui déplaît dans le v
 - Ne pas enchaîner `pnpm test 2>&1 | tail` avec `&&` pour décider d'un commit : `tail` réussit toujours. Utiliser `set -o pipefail` ou lire le résultat avant de commiter.
 - Lot 10 : les clients créés en SQL par les tests ont un `auth_user_id` (un client inscrit) ; sans lui, une fiche est « sans compte » et ses emails disent « Créer mon compte ». Pour une fiche sans compte dans un test : `createCustomer(sql, { withoutAccount: true })` ou un `insert` avec `origin = 'salon'`.
 - Le vrai fichier clients ne doit jamais être lu dans le chat ni recopié : seulement des nombres (bilan de la commande, ou un script qui compte). Les tests utilisent un faux fichier écrit dans le test.
+- Lot 11 : le shell refuse les longs blocs Python avec des apostrophes, et `\n` écrit par un heredoc Python devient un vrai retour à la ligne dans le fichier : écrire le script avec l'outil d'écriture (dossier scratchpad), puis le lancer.
+- Un RDV de série a `series_id` ; un test qui compte les RDV à venir pour la limite de R-25 doit s'en souvenir (D-87). Le formulaire de série attend 250 ms avant de demander l'aperçu : dans Playwright, attendre le texte « N RDV seront réservés ».
 - Un changement d'heure tombe le dernier dimanche d'octobre : les tests de dates autour du 25 octobre 2026 s'en souviennent (10 h à Paris = 8 h UTC avant, 9 h UTC après).
 
 ## Message à coller pour démarrer la prochaine conversation
 
 ```text
 Tu es le développeur principal du site et de l'application de réservation d'Elegance Strasbourg.
-Lis CLAUDE.md, puis docs/reprise.md : les lots 0 à 7 sont validés, le lot 8 (recette et bascule) est en pause, les lots 9 et 10 sont faits.
-On attaque le lot 11 (RDV répétés depuis la tablette, D-71). Commence par me poser les questions ouvertes du lot 11 et propose-moi le plan du lot ; ne code rien avant mon accord.
+Lis CLAUDE.md, puis docs/reprise.md : les lots 0 à 7 et 9 à 10 sont validés, le lot 8 (recette et bascule) est en pause, le lot 11 est fait.
+Migration 0010 (lot 11) sur Supabase : [d'accord, applique-la puis pousse le code / pas encore].
+Mon retour sur le lot 11 :
+- Répéter un RDV depuis la fiche (fréquence, coiffeur, fin, aperçu, dates sautées) : [ok / à revoir : ...]
+- Fiche d'un RDV de série, prolonger, annuler « celui-ci et les suivants » : [ok / à revoir : ...]
+- Email unique qui liste les dates : [ok / à revoir : ...]
+Maquettes du lot 12 dans Claude Design : [pas finies / finies, pages « Lot12- » : ...].
+Si elles sont finies, on attaque le lot 12 ; sinon le lot 14 (SumUp), indépendant de la nouvelle page client. Commence par me poser les questions ouvertes du lot et propose-moi le plan ; ne code rien avant mon accord.
 Travaille comme avant : une règle R-xx = au moins un test, décisions notées dans docs/decisions.md, vérification sur mobile et sur tablette.
 À la fin, mets à jour docs/reprise.md et prépare le message de la conversation suivante.
-Mon retour sur le lot 10 :
-- Planning (case entièrement en couleur, languette quand le résumé est replié) : [ok / à revoir : ...]
-- Fiche sans compte, « Pour qui ? », fusion des fiches au même numéro : [ok / à revoir : ...]
-- Maquettes du lot 12 dans Claude Design : [pas commencées / en cours / finies, pages « Lot12- » : ...]
 ```

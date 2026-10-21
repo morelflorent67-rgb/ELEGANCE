@@ -63,12 +63,19 @@ export function ReserveFlow({
   today,
   maxUpcoming,
   initialClient,
+  initialServiceIds = [],
+  initialStaffId = "any",
+  initialDate,
 }: {
   catalog: CatalogService[];
   team: TeamMemberView[];
   today: string;
   maxUpcoming: number;
   initialClient: ClientView | null;
+  /** Prestations, coiffeur et jour d'une date sautée d'une série (D-84). */
+  initialServiceIds?: string[];
+  initialStaffId?: string | "any";
+  initialDate?: string;
 }) {
   const router = useRouter();
   const [client, setClient] = useState<ClientView | null>(initialClient);
@@ -78,9 +85,9 @@ export function ReserveFlow({
   // Résultats de la dernière recherche, avec le texte cherché : un texte plus ancien ne s'affiche plus.
   const [found, setFound] = useState<{ text: string; hits: CustomerHitView[] } | null>(null);
 
-  const [serviceIds, setServiceIds] = useState<string[]>([]);
+  const [serviceIds, setServiceIds] = useState<string[]>(initialServiceIds);
   const [choices, setChoices] = useState<StaffChoice[]>([]);
-  const [staffId, setStaffId] = useState<string | "any">("any");
+  const [staffId, setStaffId] = useState<string | "any">(initialStaffId);
   const [slot, setSlot] = useState<PickedSalonSlot | null>(null);
   const [authorId, setAuthorId] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -513,6 +520,7 @@ export function ReserveFlow({
               <SlotPicker
                 load={loadDays}
                 today={today}
+                startDate={initialDate}
                 value={slot?.iso ?? null}
                 onPick={setSlot}
                 reloadKey={`${serviceIds.join(",")}:${staffId}:${reloadKey}`}
