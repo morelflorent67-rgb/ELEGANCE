@@ -54,6 +54,15 @@ export const inView = {
   ledLine: { threshold: 0.2, once: true },
 } as const;
 
+/**
+ * Un élément déjà à l'écran quand la révélation démarre reste affiché tel quel : le masquer pour le refaire
+ * apparaître en fondu donnait un clignotement au premier affichage (lot 8). Seuls les éléments plus bas s'animent.
+ */
+export const alreadyOnScreen = (
+  rect: { top: number; bottom: number },
+  viewportHeight: number,
+): boolean => rect.top < viewportHeight && rect.bottom > 0;
+
 /** Affiche l'indicateur de chargement seulement au-delà de ce délai. */
 export const loaderDelay = 300;
 

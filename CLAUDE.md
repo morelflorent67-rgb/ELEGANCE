@@ -32,6 +32,8 @@
 - `pnpm staff:account` : crée le compte « équipe » de la tablette sur Supabase ; `pnpm manager:set-code` (ou `:remote`) : définit le code gérant à 6 chiffres. Les deux se tapent dans le terminal, rien dans le chat ni en ligne de commande.
 - `pnpm measure:vitrine` : mesure ponctuelle de la vitrine (FCP, LCP, CLS, poids) sur un build lancé par `pnpm start -p 3300`.
 - `pnpm smoke:auth` : contrôle manuel de l'authentification Supabase réelle (crée puis supprime un compte jetable sur le projet de test).
+- `pnpm smoke:db` : contrôle manuel, en lecture seule, des chargements de la tablette sur la base en ligne (pooler Supabase). À lancer après tout changement du client de base : les tests locaux n'ont pas de pooler. Jamais le mode transaction (6543), voir `src/db/connection-url.ts`.
+- `/api/diagnostic` : durées mesurées côté serveur (base, planning, authentification), sans données ; à retirer à la bascule.
 - **`pnpm build` lit la base** (la vitrine est prérendue, `DATABASE_URL` requis, comme sur Vercel et en intégration continue).
 - Variables : copier `.env.example` vers `.env.local`. Jamais de `NEXT_PUBLIC_` pour la base ni pour Supabase.
 

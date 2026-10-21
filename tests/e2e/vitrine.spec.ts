@@ -396,3 +396,51 @@ test("de la vitrine à la réservation en un geste", async ({ page }) => {
     page.getByRole("button", { name: "Choisir Coupe homme", exact: true }),
   ).toBeVisible();
 });
+
+test.describe("révélations (lot 8)", () => {
+  test("ce qui est à l'écran au premier affichage ne clignote pas ; le reste apparaît au défilement", async ({
+    page,
+  }) => {
+    // Relève, dès le premier affichage, l'opacité la plus basse des sections visibles d'emblée.
+    await page.addInitScript(() => {
+      const w = window as unknown as { __minOpacity: number[] };
+      w.__minOpacity = [];
+      const sample = () => {
+        const els = [...document.querySelectorAll<HTMLElement>("[data-reveal]")].filter((el) => {
+          const r = el.getBoundingClientRect();
+          return r.top < window.innerHeight && r.bottom > 0;
+        });
+        els.forEach((el, i) => {
+          const o = Number(getComputedStyle(el).opacity);
+          w.__minOpacity[i] = Math.min(w.__minOpacity[i] ?? 1, o);
+        });
+        if (performance.now() < 3000) requestAnimationFrame(sample);
+      };
+      document.addEventListener("DOMContentLoaded", () => requestAnimationFrame(sample));
+    });
+    await page.goto("/prestations");
+    await page.waitForTimeout(3200);
+    const minOpacity = await page.evaluate(
+      () => (window as unknown as { __minOpacity: number[] }).__minOpacity,
+    );
+    expect(minOpacity.length).toBeGreaterThan(0);
+    for (const o of minOpacity) expect(o).toBe(1);
+
+    // Plus bas, la révélation au défilement fonctionne toujours.
+    const last = page.locator("main [data-reveal]").last();
+    await expect(last).not.toHaveClass(/is-visible/);
+    await last.scrollIntoViewIfNeeded();
+    await expect(last).toHaveClass(/is-visible/);
+    await expect(last).not.toHaveClass(/is-shown/);
+  });
+});
+
+test("sonde de santé : base et file d'envoi, sans donnée personnelle", async ({ request }) => {
+  const response = await request.get("/api/health");
+  expect(response.status()).toBe(200);
+  expect(await response.json()).toEqual({
+    status: "ok",
+    database: "ok",
+    emails: { overdue: 0, failedLastWeek: 0 },
+  });
+});

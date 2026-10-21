@@ -1,7 +1,7 @@
 # Reprise du projet : où on en est
 
 Ce document permet de reprendre le travail dans une **nouvelle conversation**, sans rien perdre. Il se met à jour à la fin de chaque lot.
-À jour au **21 octobre 2026**, lot 8 commencé. Les lots 0 à 7 sont validés.
+À jour au **21 octobre 2026** (après-midi), lot 8 en cours. Les lots 0 à 7 sont validés.
 
 ## Avancement
 
@@ -15,9 +15,11 @@ Ce document permet de reprendre le travail dans une **nouvelle conversation**, s
 | 5 | Gestion : carte et habilitations, équipe, horaires, fermetures, absences et RDV touchés | Validé |
 | 6 | Vitrine : accueil, prestations, le salon, pages légales, référencement local, animations, version ordinateur | Validé |
 | 7 | Emails (rappel, invitation à un avis) et tableau de bord, correction du montant encaissé | Validé (emails réels reçus) |
-| 8 | Recette et bascule | En cours : fonctions à Dublin et visuels de lancement faits ; le reste du plan attend Florent (voir « Lot 8 ») |
+| 8 | Recette et bascule | En cours : lenteur de la tablette corrigée (pooler en mode session), clignotement de la vitrine corrigé, surveillance des emails dans `/api/health`, visuels de lancement faits ; le reste du plan attend les réponses de Florent (voir « Lot 8 ») |
 
-Tests à la fin du lot 7 : **699 Vitest** (197 unitaires et 502 d'intégration sur Postgres réel) et **284 parcours Playwright** (224 exécutés ; 60 réservés à la tablette ou au mobile sont sautés selon le profil). Aucun ne doit casser. Lint, typecheck et build verts. Vérification visuelle du lot 7 par captures à 1194 × 834 et 390 × 844 (Bilan, fiche RDV, emails), pas sur appareil réel.
+Tests au 21 octobre 2026 (lot 8 en cours) : **719 Vitest** (213 unitaires et 506 d'intégration sur Postgres réel) et **288 parcours Playwright** (228 exécutés ; 60 réservés à la tablette ou au mobile sont sautés selon le profil), plus deux contrôles manuels sur les services en ligne : `pnpm smoke:auth` et `pnpm smoke:db`. Aucun ne doit casser. Lint, typecheck et build verts. Vérification visuelle du 21 octobre par captures à 390 × 844 (prestations, le salon) et 1194 × 834 (planning, prestations), pas sur appareil réel.
+
+Pour mémoire, à la fin du lot 7 : **699 Vitest** (197 unitaires et 502 d'intégration sur Postgres réel) et **284 parcours Playwright** (224 exécutés ; 60 réservés à la tablette ou au mobile sont sautés selon le profil). Aucun ne doit casser. Lint, typecheck et build verts. Vérification visuelle du lot 7 par captures à 1194 × 834 et 390 × 844 (Bilan, fiche RDV, emails), pas sur appareil réel.
 
 ## Accès
 
@@ -42,7 +44,7 @@ Tests à la fin du lot 7 : **699 Vitest** (197 unitaires et 502 d'intégration s
 2. ~~Compte équipe de la tablette~~ et ~~code gérant~~ : faits le 20 octobre 2026. Pour les changer : `pnpm staff:account`, `pnpm manager:set-code` (base locale) ou `pnpm manager:set-code:remote` (base Supabase, modifie la base en ligne). Florent tape lui-même ses secrets dans le terminal, jamais dans le chat.
 3. **Brevo** (compte ouvert) : créer une clé d'API, faire vérifier une adresse d'expéditeur, puis ajouter `BREVO_API_KEY`, `EMAIL_FROM` et `CRON_SECRET` dans Vercel (Settings, Environment Variables). Tant que ce n'est pas fait, les emails restent en file en production (confirmations, **rappels**, **invitations à un avis**, annulations, déplacements, et ceux que le gérant libère). Les rappels et invitations partent au passage du cron : en Hobby, une fois par jour (7 h UTC) ; avec Vercel Pro, `* * * * *`.
 4. **Supabase** : Authentication, URL Configuration (Site URL et adresse de redirection `…/auth/callback`), puis SMTP Brevo pour le mot de passe oublié.
-5. **Vercel Pro** : à prendre avec le client juste avant la livraison (c'est lui qui paie). Passer alors le cron de `vercel.json` à `* * * * *`. D'ici là, l'envoi immédiat des emails couvre le cas normal. **Région : faite le 21 octobre 2026** (`"regions": ["dub1"]`, Dublin, à côté de la base Supabase `eu-west-1`), possible dès l'offre Hobby. Avant, les fonctions tournaient à Washington (`iad1`). Mesures depuis la France : `/api/health` 0,25 s → 0,10 s ; `/reservation` 0,36 s → 0,16 s. **Reste à faire** : l'avis de Florent sur la vraie tablette ; si c'est encore lent, réduire les requêtes par écran (le nombre de RDV à traiter de la barre est recalculé à chaque écran).
+5. **Vercel Pro** : à prendre avec le client juste avant la livraison (c'est lui qui paie). Passer alors le cron de `vercel.json` à `* * * * *`. D'ici là, l'envoi immédiat des emails couvre le cas normal. **Région : faite le 21 octobre 2026** (`"regions": ["dub1"]`, Dublin, à côté de la base Supabase `eu-west-1`), possible dès l'offre Hobby. Avant, les fonctions tournaient à Washington (`iad1`). Mesures depuis la France : `/api/health` 0,25 s → 0,10 s ; `/reservation` 0,36 s → 0,16 s. La vraie cause de la lenteur était ailleurs (pooler en mode transaction, voir « PRIORITÉ 1 », corrigée le 21 octobre). **Reste à faire** : l'avis de Florent sur la vraie tablette.
 6. Les clés Supabase et le mot de passe de la base, passés dans le chat, sont laissés tels quels par décision de Florent.
 7. Domaine définitif : à poser dans `SITE_URL` (Vercel) ; ensuite `ALLOW_INDEXING=true` ouvre l'indexation (robots, plan du site et données structurées suivent tout seuls).
 8. **Textes légaux** (lot 6, Florent les complétera quand il aura les informations) : rédigés d'après ce que le site fait réellement, mais **à faire valider par un professionnel** avant l'ouverture. À fournir par le salon (champs entre crochets visibles sur les pages ; `placeholdersOf` dans `src/modules/vitrine/legal.ts` les liste) : forme juridique, capital, SIRET, directeur de la publication, adresse de l'hébergeur (Vercel), email de contact, durée de conservation d'un compte inactif, modalités de réponse aux droits RGPD, conditions de suspension et responsabilité. L'invitation à donner son avis est citée automatiquement dans la confidentialité dès que `review_url` est renseigné.
@@ -61,31 +63,37 @@ Tests à la fin du lot 7 : **699 Vitest** (197 unitaires et 502 d'intégration s
 - Session lue avec `getClaims()` au lieu de `getUser()` (proxy et `currentUser`, voir `decisions.md`), commit `6f2d712`. Tous les tests verts : 202 unitaires, 502 d'intégration, 224 parcours.
 - Je ne me connecte pas au site en ligne avec les identifiants de Florent, même provisoires (règle de sécurité de l'assistant : pas de vrai mot de passe sur un site public). Florent a écrit son mot de passe provisoire du compte équipe dans la conversation du 21 octobre : **il doit le changer** (`pnpm staff:account`, ou Supabase, Authentication, Users).
 - Vidéo de lancement **validée par Florent** (21 octobre).
+- **Lenteur de la tablette : cause trouvée et corrigée** (section suivante).
+- **Clignotement de la vitrine corrigé** : ce qui est à l'écran au premier affichage reste affiché, sans fondu (`alreadyOnScreen`, classe `is-shown`) ; plus bas, la révélation au défilement est inchangée. Parcours Playwright qui relève l'opacité dès le premier affichage.
+- **Surveillance** : `/api/health` répond 503 si la base ne répond pas ou si un email dû n'est pas parti depuis plus de 25 h (cron arrêté, Brevo injoignable ; emails retenus pour le gérant exclus), et compte les échecs définitifs des 7 derniers jours (`src/modules/mail/health.ts`). 25 h à cause du cron quotidien : à ramener à 1 h avec Vercel Pro (`OVERDUE_AFTER_HOURS`). Reste à brancher un service de surveillance externe gratuit, avec l'adresse d'alerte de Florent.
 
-### PRIORITÉ 1 : la tablette reste lente (enquête à poursuivre)
+### PRIORITÉ 1 : lenteur de la tablette, cause trouvée et corrigée (21 octobre 2026)
 
-**Symptômes (Florent, 21 octobre, après les deux corrections ci-dessus)** : lenteur « inchangée ». Le chargement du planning et de chaque écran prend « énormément de temps ». La connexion est parfois rapide, mais il est aussi **resté bloqué sur la page de connexion** (`/equipe/connexion`).
+**Symptômes (Florent, 21 octobre)** : planning et chaque écran très lents, chaque bouton aussi, connexion parfois **bloquée** sur `/equipe/connexion`, malgré Dublin et `getClaims()`. La vitrine, servie depuis le cache, restait fluide.
 
-**Mesures déjà faites** (depuis la France, sans session)
-- Fonctions à Washington (`iad1`) avant, à Dublin (`dub1`) depuis le commit `d2e11f2`. `/api/health` (un `select 1`) : 0,25 s → 0,10 s ; à froid : 1 à 1,7 s.
-- Service d'authentification Supabase, `GET /auth/v1/user` (jeton invalide) : **très irrégulier, 0,08 à 5,5 s** (5,5 / 3,1 / 1,1 / 0,7 / 0,24 / 1,28 / 0,29 / 0,57 / 0,16 / 1,10 / 0,08 …). `GET /auth/v1/settings` : environ 0,09 s, stable.
-- Clés publiques du projet (`/auth/v1/.well-known/jwks.json`) : une clé **ES256**. Mais cela ne prouve pas que les jetons émis sont signés avec : si le projet signe encore avec l'ancien secret **HS256** (la clé ES256 pouvant être en attente), `getClaims()` retombe en silence sur `getUser()`, donc **aucun gain**. Cela expliquerait « inchangé ».
-- Base : un client `postgres` gardé par instance (`src/db/client.ts`, `max: 5`, pooler en mode transaction, `eu-west-1`). Le planning enchaîne environ 5 allers-retours ; la pastille « à traiter » de la barre (`countAppointmentsToHandle`) environ 3 de plus, à chaque écran et à chaque rafraîchissement (toutes les 30 s sur le planning, et après chaque action : `router.refresh()`).
+**Mesure en production** (`/api/diagnostic`, qui chronomètre depuis Dublin et ne renvoie que des durées)
+- Base : 2 ms par requête, 70 à 80 ms pour ouvrir une connexion. Service d'authentification Supabase vu de Dublin : 20 ms environ (la clé publique, gardée 10 min en mémoire, parfois 0,5 s). Liste de l'équipe : 5 ms.
+- Mais **chargement du planning et pastille « à traiter » bloqués** : plus de 8 s ; une première mesure sans délai a été coupée par Vercel à **300 s** (`FUNCTION_INVOCATION_TIMEOUT`). Sur la base, une requête du site restait « active » en attendant le site (`ClientRead`).
+- `pnpm smoke:auth` (Florent) : jetons signés en **ES256**, donc `getClaims()` vérifie bien sur place (piste 1 écartée).
 
-**Pistes, dans l'ordre**
-1. **Algorithme des jetons** : Florent tape `pnpm smoke:auth` dans le terminal. L'étape « getClaims() vérifie le jeton sur place » affiche l'algorithme. Si c'est **HS256** : dans Supabase, Settings, JWT Keys, passer aux clés asymétriques (rotation vers ES256). Toutes les sessions sont alors coupées, il faut se reconnecter.
-2. **Mesurer pour de vrai en production** : ajouter des temps mesurés (en-tête `Server-Timing` et `console.log` des durées : session, chaque chargement, rendu) sur `/equipe`, `/equipe/connexion` et les actions de la tablette, puis lire les journaux Vercel (Vercel, projet, Logs). Ou une route de diagnostic protégée par `CRON_SECRET` qui chronomètre, côté Dublin, la session, `select 1` et les chargements du planning, sans renvoyer de données.
-3. **Connexion bloquée** : `signInWithPassword` passe par le même service d'authentification lent. Vérifier dans les journaux Vercel si l'action dépasse la durée maximale d'une fonction (offre Hobby) ou échoue. Vérifier aussi que le bouton montre bien qu'il travaille.
-4. **Offre et santé du projet Supabase** : l'offre gratuite partage de petites ressources, et l'irrégularité du service d'authentification va dans ce sens. Le dossier prévoit Supabase Pro. Regarder Supabase, Reports et Logs (Auth, API, base) au moment d'une lenteur.
-5. **Démarrages à froid** : environ 1 à 1,5 s après un temps d'inactivité. Un service de surveillance qui appelle `/api/health` toutes les 5 minutes garderait une instance chaude (prévu au plan, étape 3).
-6. **Côté navigateur** : comparer le planning sur un ordinateur et sur l'iPad, pour exclure le rendu sur la tablette (beaucoup de blocs).
-7. Pour pouvoir tester moi-même avec un compte équipe **de test** : un environnement de test dont l'adresse le dit (par exemple `staging.<domaine>`) avec un compte de test dédié, ou des mesures en local (`pnpm build && pnpm start` avec l'authentification en mémoire).
+**Cause** : le pooler Supabase en **mode transaction (port 6543)**. Dès que plusieurs requêtes partent en même temps (le planning en lance jusqu'à 6, plus la barre, plus les préchargements), le client `postgres` les enchaîne sur une même connexion, et le mode transaction les bloque. Reproduit depuis le poste avec le vrai code : bloqué à chaque essai en 6543, jamais en 5432 (mode session, même adresse). En local il n'y a pas de pooler : les 502 tests d'intégration et les parcours ne pouvaient pas le voir. La connexion bloquait pour la même raison (la limite d'essais écrit en base avant d'appeler Supabase).
+
+**Correction** (commit `5e58ed8`, tests d'abord) : `connectionOptions` passe le pooler Supabase de 6543 à 5432 ; client limité à 3 connexions par instance, fermées après 20 s sans requête, délai de connexion 10 s. **Après, en production** : planning 30 à 44 ms (115 ms à froid), pastille « à traiter » 20 à 26 ms. Nouveau contrôle **`pnpm smoke:db`** : les chargements de la tablette sur la base en ligne, en lecture seule ; il échoue sur l'ancien réglage. Détail et alternatives écartées : `decisions.md`.
+
+**Reste à faire**
+- **Avis de Florent sur la vraie tablette** (planning, boutons, connexion). S'il reste une lenteur, `/api/diagnostic` (ouvrir l'adresse dans un navigateur, une fois toutes les 10 s) dit où passe le temps côté serveur ; `scripts/measure-tablet.mjs` mesure les écrans sur le build local.
+- Limite du mode session : chaque connexion ouverte occupe une session Postgres, une quinzaine pour tout le projet sur l'offre gratuite. Avec 3 par instance et la fermeture après 20 s, c'est large pour un salon ; Supabase Pro en donne davantage. Erreur à reconnaître : « max clients reached » dans les journaux.
+- `/api/diagnostic` est à **retirer à la bascule** (liste de contrôle).
+- Démarrages à froid (environ 1 s après une longue inactivité) : le service de surveillance qui appellera `/api/health` toutes les 5 minutes gardera une instance chaude.
+
+**Autres travaux du lot 8**
+
 - **Visuels de lancement** (`communication/lancement/`, outillage à part, voir `decisions.md`) : vidéo story 19 s, 1080 × 1920, 60 images/s, muette, qui s'ouvre sur le logo en néon dévoilé par deux lignes de lumière (demande de Florent : pas de texte au début) (Florent ajoute une musique dans Instagram) ; affiche A4 en PDF et PNG. Commandes, dans ce dossier : `npm install` une fois, puis `node render.mjs video`, `node render.mjs poster https://<domaine>` (QR code vers `/reservation`), `node render.mjs serve` pour l'aperçu. Fichiers produits dans `export/`. **L'affiche actuelle pointe vers le site de test : à régénérer avec le domaine avant impression.**
 
-**Plan proposé, à confirmer avec Florent** (ses réponses aux questions du 21 octobre sont attendues)
-1. Vitesse : la tablette d'abord (priorité 1 ci-dessus). Défauts relevés sur la vitrine : un **clignotement** (le texte `[data-reveal]` visible au premier affichage se masque quand `html.js-reveal` est posé après l'hydratation, puis revient en fondu) et l'**ouverture animée** de l'accueil (plaque ivoire vide pendant environ 1 s). Proposition : logo visible tout de suite, animation de moins de 1 s.
+**Plan proposé, à confirmer avec Florent** (ses réponses aux questions du 21 octobre sont **toujours attendues** : le message de démarrage de la conversation du 21 octobre après-midi ne contenait que le résultat de `pnpm smoke:auth`)
+1. Vitesse : tablette **corrigée** (priorité 1 ci-dessus, à confirmer sur l'iPad) ; **clignotement** de la vitrine **corrigé**. Reste l'**ouverture animée** de l'accueil (plaque ivoire vide pendant environ 1 s) : proposition, logo visible tout de suite et animation de moins de 1 s, **à valider par Florent** avant d'y toucher.
 2. Retouches visuelles de la vitrine, selon les remarques de Florent.
-3. Mise en ligne côté code : application installable (manifeste et icônes, sans hors-ligne), surveillance (`/api/health` étendu aux emails bloqués, service de surveillance externe gratuit), sauvegardes (Supabase Pro et export complet), liste de contrôle avant l'ouverture, guide d'exploitation.
+3. Mise en ligne côté code : application installable (manifeste et icônes, sans hors-ligne ; prévue au socle du dossier, détails à confirmer), surveillance (**`/api/health` fait** ; service de surveillance externe gratuit à brancher avec l'adresse d'alerte), sauvegardes (Supabase Pro et export complet), liste de contrôle avant l'ouverture (y retirer `/api/diagnostic`), guide d'exploitation.
 4. Recette réelle par Florent, avec une fiche à cocher (téléphone, tablette, emails).
 5. Bascule : Vercel Pro, Supabase Pro, domaine, Brevo sur le domaine, changement des clés passées dans le chat, saisie des RDV Planity à venir, jour J, une semaine sans incident, fermeture de Planity.
 
@@ -149,16 +157,28 @@ Questions posées à Florent et encore ouvertes : ce qui lui déplaît dans le v
 - Un parcours Playwright qui a besoin du code gérant sur une page précise (le Bilan) fait `goto` puis saisit le code **sur la page même** (la saisie du code s'y affiche) : un chargement complet reverrouille.
 - Le shell de l'outil Bash refuse parfois un heredoc avec apostrophes : écrire le script Python dans un fichier avec l'outil Write.
 - `pastOpenDay(n)` recule un dimanche ou un lundi jusqu'au samedi : deux valeurs de `n` voisines peuvent donner le même jour. Un test qui pose plusieurs RDV passés pour le même coiffeur leur donne des heures différentes (sinon la contrainte R-23 les refuse, selon le jour où le test tourne).
+- **Pooler Supabase** : jamais le mode transaction (port 6543) avec postgres-js, des requêtes simultanées s'y bloquent jusqu'à 300 s. `connectionOptions` force le mode session (5432). Les tests locaux n'ont pas de pooler : après tout changement du client de base, lancer `pnpm smoke:db` (lecture seule sur la base en ligne).
+- Ne pas enchaîner `pnpm test 2>&1 | tail` avec `&&` pour décider d'un commit : `tail` réussit toujours. Utiliser `set -o pipefail` ou lire le résultat avant de commiter.
 - Un changement d'heure tombe le dernier dimanche d'octobre : les tests de dates autour du 25 octobre 2026 s'en souviennent (10 h à Paris = 8 h UTC avant, 9 h UTC après).
 
 ## Message à coller pour démarrer la prochaine conversation
 
 ```text
 Tu es le développeur principal du site et de l'application de réservation d'Elegance Strasbourg.
-Lis CLAUDE.md, puis docs/reprise.md : les lots 0 à 7 sont validés et le lot 8 (recette et bascule) est commencé.
-Priorité 1 : la tablette du salon reste très lente (planning, chaque écran, chaque bouton) et la connexion reste parfois bloquée, malgré le passage à Dublin et la lecture de session par getClaims(). Reprends l'enquête de la section « PRIORITÉ 1 » de docs/reprise.md, dans l'ordre des pistes : mesure d'abord, en production, où passe le temps, puis corrige la cause, tests d'abord.
-Ensuite, reprends le plan du lot 8 (même section) avec mes réponses ci-dessous.
+Lis CLAUDE.md, puis docs/reprise.md : les lots 0 à 7 sont validés et le lot 8 (recette et bascule) est en cours.
+La lenteur de la tablette a été corrigée le 21 octobre (pooler Supabase en mode session) : commence par mon retour sur la vraie tablette ci-dessous. S'il reste une lenteur, mesure d'abord (/api/diagnostic, pnpm smoke:db), puis corrige, tests d'abord.
+Ensuite, reprends le plan du lot 8 (section « Lot 8 ») avec mes réponses ci-dessous ; ne commence pas un point dont la réponse manque.
 Travaille comme avant : une règle R-xx = au moins un test, décisions notées dans docs/decisions.md, vérification sur mobile et sur tablette.
 À la fin, mets à jour docs/reprise.md et prépare le message de la conversation suivante.
-Point de départ : [Collez ici le résultat de « pnpm smoke:auth », surtout la ligne « getClaims() vérifie le jeton sur place », et dites si votre mot de passe du compte équipe a été changé. Ajoutez vos réponses aux questions encore ouvertes du lot 8.]
+Point de départ :
+- Tablette (planning, boutons, connexion) : [rapide maintenant / encore lent à tel endroit]
+- Mot de passe du compte équipe changé : [oui / non]
+- Ce qui me déplaît dans le visuel de la vitrine : [...]
+- Ouverture animée de l'accueil (logo tout de suite, moins de 1 s) : [d'accord / autre idée]
+- Base de production : [neuve / celle de test vidée]
+- Domaine : [...]
+- Date de bascule et nombre de RDV Planity à reprendre : [...]
+- Application installable sur la tablette et les téléphones : [oui / non]
+- Adresse email pour les alertes de surveillance : [...]
+- Appareils de recette (modèles de téléphones, iPad) : [...]
 ```

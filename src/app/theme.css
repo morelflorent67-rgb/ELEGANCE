@@ -264,6 +264,11 @@
     animation: var(--animate-reveal);
     animation-delay: calc(var(--i, 0) * 70ms);
   }
+  /* Déjà à l'écran au premier affichage (Reveal) : reste tel quel, sans fondu. */
+  [data-reveal].is-shown,
+  .led-line.is-shown {
+    animation: none;
+  }
 
   /* Tracé SVG : pathLength="1" sur le path */
   .trace path {
