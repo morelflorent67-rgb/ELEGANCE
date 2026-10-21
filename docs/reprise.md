@@ -61,7 +61,7 @@ Pour mémoire, à la fin du lot 7 : **699 Vitest** (197 unitaires et 502 d'inté
 11. ~~Migration 0007 sur Supabase~~ : **appliquée le 21 octobre 2026** avec l'accord de Florent (colonnes `customer.review_opt_out` et `salon_settings.review_url` vérifiées), puis code poussé. Le lien d'avis provisoire est remplacé par le lien direct dans la migration 0008 (lot 9).
 11 bis. **Brevo et Supabase branchés le 21 octobre 2026** : clé d'API, expéditeur (adresse Gmail de Florent, provisoire), `BREVO_API_KEY`, `EMAIL_FROM` et `CRON_SECRET` dans Vercel ; un email de confirmation réel est parti en 3 secondes. SMTP Brevo actif dans Supabase (« mot de passe oublié » reçu). Piège rencontré : Brevo refusait Supabase avec `525 5.7.1 Unauthorized IP address` tant que le blocage des adresses IP n'était pas désactivé (Brevo, Sécurité). Modèles d'emails de Supabase en français dans `docs/supabase-emails/` (à coller dans Authentication, Emails, Templates ; le logo y pointe vers l'adresse du site de test : **à changer avec le nom de domaine**). À la fin : remplacer l'expéditeur par une adresse du domaine et authentifier le domaine dans Brevo (DKIM, DMARC), puis mettre à jour Site URL et Redirect URLs de Supabase.
 12. **Après Brevo** : essayer un vrai rappel et une vraie invitation à soi-même (aucun email réel n'a été envoyé pendant le lot : les tests utilisent un faux transport et les modèles ont été vérifiés par captures). Vérifier l'affichage dans Gmail, Apple Mail et Outlook, mode sombre compris.
-13. **Migration 0008 sur Supabase** (lot 9 : nouveaux réglages du salon et lien d'avis Google) : **à appliquer avec l'accord de Florent** (`pnpm db:migrate:remote`). Le code du lot 9 ne lit aucune nouvelle colonne : tant qu'elle n'est pas passée, le site en ligne garde 48 h, 72 h, 2 RDV et la grille de 15 min de la tablette.
+13. ~~Migration 0008 sur Supabase~~ : **appliquée le 21 octobre 2026** avec l'accord de Florent ; réglages vérifiés en ligne (grille 30 min partout, délai 1 h, 5 RDV, rappel 24 h, lien d'avis Google direct).
 
 ## Demandes du salon (21 octobre 2026) : lots 9 à 14
 
@@ -75,7 +75,7 @@ Florent a transmis en vrac les demandes du salon ; l'analyse et ses réponses on
 - Email d'avis : **lien direct Google** (`https://g.page/r/CV_HUH2O58tMEAE/review`, dans `review_url`) et bouton « Prendre un nouveau RDV » en plus de « Reprendre le même RDV » (D-67).
 - Planning : liseré **or = en ligne**, **ivoire = salon**, légende dans l'en-tête ; le **résumé du jour se replie** (bouton flèche), le choix reste sur la tablette (D-68).
 - **Icône « E »** (les trois barres du E du logo ; seule, elle rappelle un peu un menu « ≡ » : à faire valider par Florent, une variante reste possible) ivoire sur noir (iPad, iPhone, Android) et **application installable** : deux manifestes, la tablette s'ouvre sur le planning (D-69). Pas d'App Store. Pour Florent : sur l'iPad, **supprimer l'ancienne icône « P »** puis, depuis Safari sur `/equipe`, Partager, « Sur l'écran d'accueil ».
-- Migration `0008_salon_requests_oct21` : valeurs par défaut et mise à jour de la ligne de réglages (y compris `review_url`).
+- Migration `0008_salon_requests_oct21` : valeurs par défaut et mise à jour de la ligne de réglages (y compris `review_url`). **Appliquée sur Supabase le 21 octobre 2026.**
 
 **Lot 10 : clients sans compte (D-70)**
 - Sur la **tablette seulement** : réserver pour une personne sans compte (nom, téléphone ; email facultatif ?). Le planning affiche son nom : fini les deux RDV au même nom.
