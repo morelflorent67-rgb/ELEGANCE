@@ -24,6 +24,28 @@ describe("timeOnce", () => {
   });
 });
 
+describe("timeOnce, délai", () => {
+  it("abandonne une opération bloquée au bout du délai", async () => {
+    const ms = await timeOnce(() => new Promise(() => {}), 30);
+    expect(ms).toBeGreaterThanOrEqual(25);
+    expect(ms).toBeLessThan(1_000);
+  });
+
+  it("n'insiste pas après un dépassement", async () => {
+    let calls = 0;
+    const timing = await timeRuns(
+      5,
+      () => {
+        calls++;
+        return new Promise(() => {});
+      },
+      20,
+    );
+    expect(calls).toBe(1);
+    expect(timing.runs).toHaveLength(1);
+  });
+});
+
 describe("timeRuns", () => {
   it("exécute l'opération le nombre de fois demandé", async () => {
     let calls = 0;

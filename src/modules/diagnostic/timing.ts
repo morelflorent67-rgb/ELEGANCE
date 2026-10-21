@@ -21,20 +21,42 @@ export function summarize(durations: number[]): Timing {
   return { runs, min: sorted[0] ?? 0, median, max: sorted.at(-1) ?? 0 };
 }
 
-/** Durée d'une opération, en millisecondes ; une erreur est mesurée elle aussi. */
-export async function timeOnce(task: () => Promise<unknown>): Promise<number> {
+/** Une opération qui dépasse ce délai est abandonnée : sa durée est alors le délai lui-même. */
+export const STEP_TIMEOUT_MS = 8_000;
+
+/** Durée d'une opération, en millisecondes ; une erreur ou un dépassement du délai est mesuré lui aussi. */
+export async function timeOnce(
+  task: () => Promise<unknown>,
+  timeoutMs: number = STEP_TIMEOUT_MS,
+): Promise<number> {
   const start = performance.now();
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
-    await task();
+    await Promise.race([
+      task(),
+      new Promise((resolve) => {
+        timer = setTimeout(resolve, timeoutMs);
+      }),
+    ]);
   } catch {
     // La durée compte, pas le résultat : un échec reste une mesure.
+  } finally {
+    clearTimeout(timer);
   }
   return performance.now() - start;
 }
 
-/** `times` exécutions l'une après l'autre. */
-export async function timeRuns(times: number, task: () => Promise<unknown>): Promise<Timing> {
+/** `times` exécutions l'une après l'autre ; on s'arrête au premier dépassement du délai. */
+export async function timeRuns(
+  times: number,
+  task: () => Promise<unknown>,
+  timeoutMs: number = STEP_TIMEOUT_MS,
+): Promise<Timing> {
   const durations: number[] = [];
-  for (let i = 0; i < times; i++) durations.push(await timeOnce(task));
+  for (let i = 0; i < times; i++) {
+    const ms = await timeOnce(task, timeoutMs);
+    durations.push(ms);
+    if (ms >= timeoutMs) break;
+  }
   return summarize(durations);
 }
