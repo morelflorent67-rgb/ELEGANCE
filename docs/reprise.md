@@ -57,13 +57,33 @@ Tests à la fin du lot 7 : **699 Vitest** (197 unitaires et 502 d'intégration s
 **Retour de Florent sur le lot 7 (21 octobre 2026)** : fonctions et visuel bons dans l'ensemble, tests d'emails réels réussis. La **tablette** est lente (affichage des RDV, chaque bouton) ; la vitrine lui paraît fluide. Il n'est pas entièrement satisfait du visuel de la vitrine : **détails à lui demander**.
 
 **Fait**
-- Fonctions Vercel à Dublin (action 5). Insuffisant pour la tablette, selon Florent.
-- **Vraie cause de la lenteur de la tablette** : chaque lecture de session appelait le service d'authentification de Supabase (`getUser()`), qui répond entre 0,08 et 5,5 s (mesuré le 21 octobre), deux fois de suite par écran et quatre fois par bouton. La session se lit désormais avec `getClaims()` (vérification locale de la signature, voir `decisions.md`), dans le proxy et dans `currentUser`. **À confirmer par Florent sur la vraie tablette**, et `pnpm smoke:auth` à faire tourner par lui (il crée un compte jetable sur Supabase : je ne le lance pas moi-même).
-- Je ne me connecte pas au site en ligne avec les identifiants de Florent, même provisoires : mesures faites par le code, en local et sur les services eux-mêmes.
+- Fonctions Vercel à Dublin (action 5).
+- Session lue avec `getClaims()` au lieu de `getUser()` (proxy et `currentUser`, voir `decisions.md`), commit `6f2d712`. Tous les tests verts : 202 unitaires, 502 d'intégration, 224 parcours.
+- Je ne me connecte pas au site en ligne avec les identifiants de Florent, même provisoires (règle de sécurité de l'assistant : pas de vrai mot de passe sur un site public). Florent a écrit son mot de passe provisoire du compte équipe dans la conversation du 21 octobre : **il doit le changer** (`pnpm staff:account`, ou Supabase, Authentication, Users).
+- Vidéo de lancement **validée par Florent** (21 octobre).
+
+### PRIORITÉ 1 : la tablette reste lente (enquête à poursuivre)
+
+**Symptômes (Florent, 21 octobre, après les deux corrections ci-dessus)** : lenteur « inchangée ». Le chargement du planning et de chaque écran prend « énormément de temps ». La connexion est parfois rapide, mais il est aussi **resté bloqué sur la page de connexion** (`/equipe/connexion`).
+
+**Mesures déjà faites** (depuis la France, sans session)
+- Fonctions à Washington (`iad1`) avant, à Dublin (`dub1`) depuis le commit `d2e11f2`. `/api/health` (un `select 1`) : 0,25 s → 0,10 s ; à froid : 1 à 1,7 s.
+- Service d'authentification Supabase, `GET /auth/v1/user` (jeton invalide) : **très irrégulier, 0,08 à 5,5 s** (5,5 / 3,1 / 1,1 / 0,7 / 0,24 / 1,28 / 0,29 / 0,57 / 0,16 / 1,10 / 0,08 …). `GET /auth/v1/settings` : environ 0,09 s, stable.
+- Clés publiques du projet (`/auth/v1/.well-known/jwks.json`) : une clé **ES256**. Mais cela ne prouve pas que les jetons émis sont signés avec : si le projet signe encore avec l'ancien secret **HS256** (la clé ES256 pouvant être en attente), `getClaims()` retombe en silence sur `getUser()`, donc **aucun gain**. Cela expliquerait « inchangé ».
+- Base : un client `postgres` gardé par instance (`src/db/client.ts`, `max: 5`, pooler en mode transaction, `eu-west-1`). Le planning enchaîne environ 5 allers-retours ; la pastille « à traiter » de la barre (`countAppointmentsToHandle`) environ 3 de plus, à chaque écran et à chaque rafraîchissement (toutes les 30 s sur le planning, et après chaque action : `router.refresh()`).
+
+**Pistes, dans l'ordre**
+1. **Algorithme des jetons** : Florent tape `pnpm smoke:auth` dans le terminal. L'étape « getClaims() vérifie le jeton sur place » affiche l'algorithme. Si c'est **HS256** : dans Supabase, Settings, JWT Keys, passer aux clés asymétriques (rotation vers ES256). Toutes les sessions sont alors coupées, il faut se reconnecter.
+2. **Mesurer pour de vrai en production** : ajouter des temps mesurés (en-tête `Server-Timing` et `console.log` des durées : session, chaque chargement, rendu) sur `/equipe`, `/equipe/connexion` et les actions de la tablette, puis lire les journaux Vercel (Vercel, projet, Logs). Ou une route de diagnostic protégée par `CRON_SECRET` qui chronomètre, côté Dublin, la session, `select 1` et les chargements du planning, sans renvoyer de données.
+3. **Connexion bloquée** : `signInWithPassword` passe par le même service d'authentification lent. Vérifier dans les journaux Vercel si l'action dépasse la durée maximale d'une fonction (offre Hobby) ou échoue. Vérifier aussi que le bouton montre bien qu'il travaille.
+4. **Offre et santé du projet Supabase** : l'offre gratuite partage de petites ressources, et l'irrégularité du service d'authentification va dans ce sens. Le dossier prévoit Supabase Pro. Regarder Supabase, Reports et Logs (Auth, API, base) au moment d'une lenteur.
+5. **Démarrages à froid** : environ 1 à 1,5 s après un temps d'inactivité. Un service de surveillance qui appelle `/api/health` toutes les 5 minutes garderait une instance chaude (prévu au plan, étape 3).
+6. **Côté navigateur** : comparer le planning sur un ordinateur et sur l'iPad, pour exclure le rendu sur la tablette (beaucoup de blocs).
+7. Pour pouvoir tester moi-même avec un compte équipe **de test** : un environnement de test dont l'adresse le dit (par exemple `staging.<domaine>`) avec un compte de test dédié, ou des mesures en local (`pnpm build && pnpm start` avec l'authentification en mémoire).
 - **Visuels de lancement** (`communication/lancement/`, outillage à part, voir `decisions.md`) : vidéo story 19 s, 1080 × 1920, 60 images/s, muette, qui s'ouvre sur le logo en néon dévoilé par deux lignes de lumière (demande de Florent : pas de texte au début) (Florent ajoute une musique dans Instagram) ; affiche A4 en PDF et PNG. Commandes, dans ce dossier : `npm install` une fois, puis `node render.mjs video`, `node render.mjs poster https://<domaine>` (QR code vers `/reservation`), `node render.mjs serve` pour l'aperçu. Fichiers produits dans `export/`. **L'affiche actuelle pointe vers le site de test : à régénérer avec le domaine avant impression.**
 
 **Plan proposé, à confirmer avec Florent** (ses réponses aux questions du 21 octobre sont attendues)
-1. Vitesse : avis sur la tablette après Dublin ; réduire les requêtes par écran si besoin. Défauts relevés sur la vitrine : un **clignotement** (le texte `[data-reveal]` visible au premier affichage se masque quand `html.js-reveal` est posé après l'hydratation, puis revient en fondu) et l'**ouverture animée** de l'accueil (plaque ivoire vide pendant environ 1 s). Proposition : logo visible tout de suite, animation de moins de 1 s.
+1. Vitesse : la tablette d'abord (priorité 1 ci-dessus). Défauts relevés sur la vitrine : un **clignotement** (le texte `[data-reveal]` visible au premier affichage se masque quand `html.js-reveal` est posé après l'hydratation, puis revient en fondu) et l'**ouverture animée** de l'accueil (plaque ivoire vide pendant environ 1 s). Proposition : logo visible tout de suite, animation de moins de 1 s.
 2. Retouches visuelles de la vitrine, selon les remarques de Florent.
 3. Mise en ligne côté code : application installable (manifeste et icônes, sans hors-ligne), surveillance (`/api/health` étendu aux emails bloqués, service de surveillance externe gratuit), sauvegardes (Supabase Pro et export complet), liste de contrôle avant l'ouverture, guide d'exploitation.
 4. Recette réelle par Florent, avec une fiche à cocher (téléphone, tablette, emails).
@@ -136,8 +156,9 @@ Questions posées à Florent et encore ouvertes : ce qui lui déplaît dans le v
 ```text
 Tu es le développeur principal du site et de l'application de réservation d'Elegance Strasbourg.
 Lis CLAUDE.md, puis docs/reprise.md : les lots 0 à 7 sont validés et le lot 8 (recette et bascule) est commencé.
-Reprends le plan du lot 8 décrit dans docs/reprise.md (section « Lot 8 ») avec mes réponses ci-dessous, puis attends ma validation avant d'écrire du code.
-Travaille ensuite comme avant : tests d'abord, une règle R-xx = au moins un test, décisions notées dans docs/decisions.md, vérification sur mobile et sur tablette.
-À la fin du lot, mets à jour docs/reprise.md et prépare le message de la conversation suivante.
-Point de départ : [Ajoutez ici votre avis sur la vitesse de la tablette depuis le passage à Dublin, ce qui vous déplaît dans le visuel du site, et vos réponses aux questions encore ouvertes.]
+Priorité 1 : la tablette du salon reste très lente (planning, chaque écran, chaque bouton) et la connexion reste parfois bloquée, malgré le passage à Dublin et la lecture de session par getClaims(). Reprends l'enquête de la section « PRIORITÉ 1 » de docs/reprise.md, dans l'ordre des pistes : mesure d'abord, en production, où passe le temps, puis corrige la cause, tests d'abord.
+Ensuite, reprends le plan du lot 8 (même section) avec mes réponses ci-dessous.
+Travaille comme avant : une règle R-xx = au moins un test, décisions notées dans docs/decisions.md, vérification sur mobile et sur tablette.
+À la fin, mets à jour docs/reprise.md et prépare le message de la conversation suivante.
+Point de départ : [Collez ici le résultat de « pnpm smoke:auth », surtout la ligne « getClaims() vérifie le jeton sur place », et dites si votre mot de passe du compte équipe a été changé. Ajoutez vos réponses aux questions encore ouvertes du lot 8.]
 ```
