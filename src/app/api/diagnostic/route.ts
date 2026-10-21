@@ -1,7 +1,7 @@
 import { connection } from "next/server";
 import postgres from "postgres";
 import { db, sql } from "@/db/client";
-import { connectionOptions } from "@/db/connection-url";
+import { CLIENT_OPTIONS, connectionOptions } from "@/db/connection-url";
 import { databaseEnv } from "@/lib/env";
 import { parisDate } from "@/lib/format";
 import { countAppointmentsToHandle } from "@/modules/absences";
@@ -35,7 +35,7 @@ export async function GET() {
   const warmQuery = await timeRuns(5, () => sql()`select 1`);
   const newConnection = await timeRuns(2, async () => {
     const { url, ssl } = connectionOptions(databaseEnv().DATABASE_URL);
-    const client = postgres(url, { prepare: false, max: 1, ssl });
+    const client = postgres(url, { ...CLIENT_OPTIONS, max: 1, ssl });
     try {
       await client`select 1`;
     } finally {
