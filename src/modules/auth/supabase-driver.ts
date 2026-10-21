@@ -3,7 +3,8 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { supabaseEnv } from "@/lib/env";
-import type { AuthDriver, AuthRole } from "./types";
+import { roleOf, userFromClaims } from "./claims";
+import type { AuthDriver } from "./types";
 
 // Authentification Supabase, toujours côté serveur : cookies httpOnly, aucune clé dans le navigateur (principe 5).
 // Ne se teste pas en intégration continue (pas de Supabase en local) : voir scripts/smoke-supabase-auth.mjs.
@@ -31,10 +32,6 @@ function adminClient() {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 }
-
-/** Seul « staff » ouvre la tablette ; tout autre rôle, ou son absence, vaut « customer ». */
-const roleOf = (user: { app_metadata?: object }): AuthRole =>
-  (user.app_metadata as { role?: unknown } | undefined)?.role === "staff" ? "staff" : "customer";
 
 const isWeakPassword = (error: { code?: string; message: string }) =>
   error.code === "weak_password" || /password/i.test(error.message);
@@ -91,11 +88,11 @@ export function createSupabaseDriver(): AuthDriver {
     },
 
     async currentUser() {
-      // getUser() vérifie le jeton auprès de Supabase ; getSession() se fierait au cookie seul.
-      const { data } = await (await serverClient()).auth.getUser();
-      return data.user?.email
-        ? { id: data.user.id, email: data.user.email, role: roleOf(data.user) }
-        : null;
+      // getClaims() vérifie la signature et l'expiration du jeton avec la clé publique du projet (ES256, gardée en
+      // mémoire) : aucun appel au service d'authentification, sauf pour renouveler un jeton expiré. getUser() l'appelait
+      // à chaque lecture (0,1 à 5 s mesurées) ; getSession() se fierait au cookie sans vérifier. Voir decisions.md.
+      const { data } = await (await serverClient()).auth.getClaims();
+      return userFromClaims(data?.claims);
     },
 
     async requestPasswordReset(email, redirectTo) {

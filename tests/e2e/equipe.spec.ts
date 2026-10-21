@@ -517,13 +517,14 @@ test.describe("R-73 : l'espace gérant demande un code", () => {
     await setManagerCode("246810");
     const thomas = await addCustomer("Thomas", "Durand");
     const sage = await addCustomer("Hugo", "Sage");
-    for (const [days, who] of [
-      [3, thomas],
-      [5, thomas],
-      [4, sage],
+    // Une heure par RDV : deux jours passés peuvent tomber sur le même samedi (un dimanche recule au samedi).
+    for (const [days, time, who] of [
+      [3, "10:00", thomas],
+      [5, "11:00", thomas],
+      [4, "13:00", sage],
     ] as const) {
       await addAppointment(who.email, {
-        startsAt: parisIso(pastOpenDay(days), "10:00"),
+        startsAt: parisIso(pastOpenDay(days), time),
         status: "no_show",
       });
     }

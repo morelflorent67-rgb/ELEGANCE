@@ -21,7 +21,8 @@ export async function proxy(request: NextRequest) {
       },
     },
   });
-  await supabase.auth.getUser();
+  // getClaims() renouvelle le jeton s'il a expiré et vérifie sa signature sur place : pas d'appel réseau à chaque page.
+  await supabase.auth.getClaims();
   return response;
 }
 

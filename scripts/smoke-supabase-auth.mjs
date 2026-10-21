@@ -93,6 +93,18 @@ try {
     me.data.user?.app_metadata?.role === "customer",
   );
 
+  // Lot 8 : le site lit la session avec getClaims() (vérification locale de la signature, sans appel au service).
+  const claims = await anon.auth.getClaims(login.data.session?.access_token);
+  check(
+    "getClaims() vérifie le jeton sur place (signature asymétrique)",
+    claims.data?.claims?.sub === userId && claims.data?.header?.alg !== "HS256",
+    claims.error?.message ?? claims.data?.header?.alg,
+  );
+  check(
+    "le jeton porte l'email et le rôle de app_metadata",
+    claims.data?.claims?.email === email && claims.data?.claims?.app_metadata?.role === "customer",
+  );
+
   // Lot 3 : changement d'adresse par l'API d'administration (src/modules/auth/supabase-driver.ts, updateEmail).
   const newEmail = `moved-${email}`;
   const changed = await admin.auth.admin.updateUserById(userId, {

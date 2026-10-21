@@ -47,10 +47,16 @@ body:not(.render) #stage { transform: scale(var(--fit, .4)); }
 }
 #ceiling { width: 100%; height: 100%; overflow: visible; }
 #ceiling path { fill: none; stroke: #fff; stroke-width: 7; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
-#ledH { left: 90px; width: 900px; top: 1080px; transform: scaleX(0); }
-#s1label { position: absolute; left: 0; right: 0; top: 1380px; text-align: center; }
-#s1label .caps { font-size: 24px; color: var(--ivory); }
-#s1label p { margin-top: 26px; font-size: 28px; color: var(--stone); letter-spacing: .02em; }
+/* Ouverture : la ligne de lumière se dédouble et dévoile le logo en néon. */
+#ledTop, #ledBot { left: 90px; width: 900px; top: 979px; }
+#opening { position: absolute; left: 140px; top: 900px; width: 800px; height: 159px; transform-origin: 50% 50%; }
+#bloom { position: absolute; left: -320px; right: -320px; top: -300px; bottom: -300px; opacity: 0;
+  background: radial-gradient(closest-side, rgba(255,255,255,.17), rgba(255,255,255,.05) 55%, rgba(255,255,255,0)); }
+#neonLogo { position: absolute; inset: 0; clip-path: inset(50% 0 50% 0); }
+#sheen { position: absolute; inset: 0; opacity: 0;
+  -webkit-mask: url(assets/logo.svg) center / 100% 100% no-repeat; mask: url(assets/logo.svg) center / 100% 100% no-repeat;
+  background: linear-gradient(100deg, rgba(240,211,154,0) 38%, rgba(240,211,154,1) 50%, rgba(240,211,154,0) 62%);
+  background-size: 300% 100%; background-position: 100% 0; }
 
 /* ---------- 2. Le salon ---------- */
 #photo { position: absolute; left: -60px; top: -40px; width: 1200px; height: 1600px; object-fit: cover; object-position: 50% 0; opacity: 0; }
@@ -160,11 +166,13 @@ body:not(.render) #stage { transform: scale(var(--fit, .4)); }
     <img id="photo" src="assets/hero-hex-v.jpg" alt="">
     <div class="layer" id="photoShade"></div>
   </div>
-  <div id="ledH" class="led"></div>
-  <div id="s1label">
-    <div class="mask"><span class="caps"><i class="node"></i>Elegance Strasbourg</span></div>
-    <div class="mask"><span><p>Barbier sur rendez-vous · Schiltigheim</p></span></div>
+  <div id="opening">
+    <div id="bloom"></div>
+    <div id="neonLogo" class="logo" data-logo="#f4f0e8"></div>
+    <div id="sheen"></div>
   </div>
+  <div id="ledTop" class="led"></div>
+  <div id="ledBot" class="led"></div>
   <div id="s2text">
     <div class="mask"><span class="caps"><i class="node"></i>Nouveau</span></div>
     <h1>
@@ -328,7 +336,7 @@ function buildCeiling() {
     const [x1, y1, x2, y2] = path.getAttribute("d").match(/-?\d+(\.\d+)?/g).map(Number);
     const d = Math.hypot((x1 + x2) / 2 - cx, (y1 + y2) / 2 - (cy + 300));
     const jitter = ((n++ * 9301 + 49297) % 233280) / 233280 * .12;
-    draw(path, .55 + d / 2600 + jitter, .55, E.draw);
+    draw(path, .3 + d / 3000 + jitter, .5, E.draw);
   }
 }
 
@@ -345,25 +353,34 @@ function placeTaps() {
 function timeline() {
   placeTaps();
   // 1. Allumage (0 → 2,8 s)
-  IN($("#ledH"), [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], .15, 1.0, E.draw);
-  OUT($("#ledH"), [{ opacity: 1, transform: "translateY(0) scaleX(1)" }, { opacity: 0, transform: "translateY(-260px) scaleX(.4)" }], 1.15, .7, E.inout);
+  // Une ligne de lumière se trace, se dédouble et dévoile le logo entre ses deux moitiés.
+  for (const [sel, dy] of [["#ledTop", -118], ["#ledBot", 118]]) {
+    IN($(sel), [{ transform: "translateY(0) scaleX(0)" }, { transform: "translateY(0) scaleX(1)" }], .15, .8, E.draw);
+    OUT($(sel), [{ transform: "translateY(0) scaleX(1)" }, { transform: `translateY(${dy}px) scaleX(1)` }], .85, .75, E.expo);
+    fadeOut($(sel), 1.9, .6, E.inout);
+  }
+  IN($("#neonLogo"), [{ clipPath: "inset(50% 0 50% 0)" }, { clipPath: "inset(0% 0 0% 0)" }], .85, .75, E.expo);
   buildCeiling();
   const glowOff = "brightness(.55) drop-shadow(0 0 0 rgba(255,255,255,0)) drop-shadow(0 0 0 rgba(255,255,255,0))";
   const glowOn = "brightness(1) drop-shadow(0 0 6px rgba(255,255,255,.95)) drop-shadow(0 0 26px rgba(255,255,255,.5))";
   const glowLow = "brightness(.7) drop-shadow(0 0 2px rgba(255,255,255,.4)) drop-shadow(0 0 8px rgba(255,255,255,.15))";
-  // Néon qui s'allume : deux battements, puis pleine lumière.
-  IN($("#ceiling"), [
+  // Néon qui s'allume : deux battements, puis pleine lumière, le plafond et le logo ensemble.
+  const ignite = [
     { filter: glowOff }, { filter: glowOn, offset: .14 }, { filter: glowLow, offset: .24 }, { filter: glowOn, offset: .36 },
     { filter: glowLow, offset: .42 }, { filter: glowOn },
-  ], 1.55, .9, E.linear);
+  ];
+  IN($("#ceiling"), ignite, 1.3, .9, E.linear);
+  IN($("#neonLogo"), ignite, 1.3, .9, E.linear);
+  fadeIn($("#bloom"), 1.4, .9, E.out);
+  IN($("#sheen"), [{ opacity: 1, backgroundPosition: "100% 0" }, { opacity: 1, backgroundPosition: "0% 0" }], 1.85, 1.0, E.shine);
+  OUT($("#opening"), [
+    { opacity: 1, transform: "scale(1)", filter: "blur(0px)" }, { opacity: 0, transform: "scale(1.08)", filter: "blur(8px)" },
+  ], 2.45, .65, E.inout);
   IN($("#ceilingWrap"), [
     { transform: "perspective(1100px) rotateX(-50deg) translateY(0)" },
     { transform: "perspective(1100px) rotateX(-50deg) translateY(-520px)" },
   ], 0, 3.6, E.linear);
   fadeOut($("#s1"), 2.55, .9, E.inout);
-  rise($("#s1label .mask:nth-child(1) > span"), 1.25);
-  rise($("#s1label .mask:nth-child(2) > span"), 1.4);
-  fadeOut($("#s1label"), 2.35, .4);
 
   // 2. Le salon (2,5 → 5,6 s) : le plafond dessiné se fond dans la vraie photo du plafond.
   fadeIn($("#photo"), 2.45, 1.0, E.inout);
