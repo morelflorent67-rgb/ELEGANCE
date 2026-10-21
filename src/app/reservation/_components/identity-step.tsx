@@ -9,7 +9,8 @@ import { formatPhone } from "@/lib/phone";
 import type { BookingState, CustomerProfile } from "@/modules/customers/accounts";
 
 /**
- * Étape 4 : connexion ou création de compte (R-70, R-71), note au salon (R-29), et avertissements dès ici :
+ * Étape 4 : connexion ou création de compte (R-70, R-71), « Pour qui ? » (R-28, D-80), note au salon (R-29), et
+ * avertissements dès ici :
  * réservation en ligne bloquée par le gérant (R-52) ou déjà 2 RDV à venir (R-25).
  */
 export function IdentityStep({
@@ -17,6 +18,8 @@ export function IdentityStep({
   booking,
   note,
   onNote,
+  forName,
+  onForName,
   onAuthenticated,
   onLoggedOut,
   onContinue,
@@ -25,6 +28,8 @@ export function IdentityStep({
   booking: BookingState | null;
   note: string;
   onNote: (note: string) => void;
+  forName: string;
+  onForName: (forName: string) => void;
   onAuthenticated: (customer: CustomerProfile, booking: BookingState) => void;
   onLoggedOut: () => void;
   onContinue: () => void;
@@ -131,6 +136,22 @@ export function IdentityStep({
   return (
     <>
       {identity}
+      <Field
+        id="booking-for-name"
+        label="Pour qui ?"
+        optional
+        hint="Vous réservez pour un proche ? Son prénom. Le rendez-vous reste à votre nom."
+      >
+        <input
+          id="booking-for-name"
+          type="text"
+          maxLength={40}
+          autoComplete="off"
+          value={forName}
+          onChange={(event) => onForName(event.target.value)}
+          className={inputClass}
+        />
+      </Field>
       <Field id="booking-note" label="Note au salon" optional hint={`${note.length}/300`}>
         <textarea
           id="booking-note"

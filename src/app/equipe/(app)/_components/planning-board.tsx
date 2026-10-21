@@ -17,6 +17,13 @@ const REFRESH_MS = 30_000;
 const hhmm = (minute: number) =>
   `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
 
+/** « Karim Dupont » → « Karim D. » */
+const shortName = (name: string) => {
+  const [first, ...rest] = name.split(" ");
+  const last = rest.join(" ");
+  return last ? `${first} ${last.charAt(0)}.` : first;
+};
+
 const countLabel = (n: number) =>
   n === 0 ? "Aucun rendez-vous" : n === 1 ? "1 rendez-vous" : `${n} rendez-vous`;
 
@@ -34,18 +41,33 @@ function HexBadge({ initial }: { initial: string }) {
 const STATUS_TAG: Partial<
   Record<PlanningAppointment["status"], { word: string; className: string }>
 > = {
-  in_progress: { word: "En cours", className: "border-gold text-gold" },
+  in_progress: { word: "En cours", className: "border-ink bg-ink text-ivory" },
   no_show: { word: "Lapin", className: "border-brick text-brick" },
-  honored: { word: "Honoré", className: "border-line-strong text-stone" },
+  honored: { word: "Honoré", className: "border-line-strong text-ivory-soft" },
 };
 
 const blockTag = (appt: PlanningAppointment) => STATUS_TAG[appt.status] ?? null;
 
-// D-68 : chaque RDV porte la couleur de son origine, en ligne ou salon (légende dans l'en-tête).
-const SOURCE_ACCENT: Record<PlanningAppointment["source"], string> = {
-  online: "border-l-gold",
-  salon: "border-l-ivory",
+// D-68 : chaque RDV est rempli de la couleur de son origine, or en ligne, ivoire au salon (légende dans l'en-tête).
+// Passé et honoré, il garde sa couleur en plus sombre ; un lapin redevient sombre, contour brique et nom barré.
+const SOURCE_FILL: Record<PlanningAppointment["source"], string> = {
+  online: "border-gold bg-gold text-ink",
+  salon: "border-ivory bg-ivory text-ink",
 };
+const SOURCE_FILL_HONORED: Record<PlanningAppointment["source"], string> = {
+  online: "border-gold/35 bg-gold/35 text-ivory",
+  salon: "border-ivory/25 bg-ivory/25 text-ivory",
+};
+
+function blockTone(appt: PlanningAppointment): { block: string; muted: string } {
+  if (appt.status === "no_show") {
+    return { block: "border-brick bg-charcoal text-ivory", muted: "text-stone" };
+  }
+  if (appt.status === "honored") {
+    return { block: SOURCE_FILL_HONORED[appt.source], muted: "text-ivory-soft" };
+  }
+  return { block: SOURCE_FILL[appt.source], muted: "text-ink/75" };
+}
 const SOURCE_WORD: Record<PlanningAppointment["source"], string> = {
   online: "Pris en ligne",
   salon: "Pris au salon",
@@ -156,7 +178,7 @@ export function PlanningBoard({
   const columnsTemplate = `56px repeat(${Math.max(day.columns.length, 1)}, minmax(0, 1fr))`;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+    <div className="relative flex min-h-0 flex-1 flex-col lg:flex-row">
       <section
         aria-label={`Planning du ${day.label}`}
         className="flex min-h-0 min-w-0 flex-1 flex-col"
@@ -231,11 +253,11 @@ export function PlanningBoard({
           <span className="ml-auto flex items-center gap-4 text-[13px] text-stone">
             <span className="flex items-center gap-3 text-[12px]" aria-hidden="true">
               <span className="flex items-center gap-1.5">
-                <span className="h-3.5 w-1 bg-gold" />
+                <span className="h-3.5 w-3.5 bg-gold" />
                 En ligne
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="h-3.5 w-1 bg-ivory" />
+                <span className="h-3.5 w-3.5 bg-ivory" />
                 Salon
               </span>
             </span>
@@ -343,35 +365,37 @@ export function PlanningBoard({
                     );
                     const tall = height >= 70;
                     const on = appt.id === selectedId;
-                    const tone =
-                      appt.status === "no_show"
-                        ? "border-brick bg-charcoal"
-                        : appt.status === "honored"
-                          ? "border-line-subtle bg-charcoal text-stone"
-                          : appt.status === "in_progress"
-                            ? "border-line-strong bg-graphite-light"
-                            : "border-line-strong bg-graphite";
+                    const tone = blockTone(appt);
                     return (
                       <button
                         key={appt.id}
                         type="button"
                         onClick={() => setSelectedId(on ? null : appt.id)}
                         aria-pressed={on}
-                        aria-label={`${formatTime(appt.startsAt)}, ${appt.customerName}, ${appt.summary}, avec ${col.staff.firstName}, ${SOURCE_WORD[appt.source].toLowerCase()}${tag ? `, ${tag.word}` : ""}`}
+                        aria-label={`${formatTime(appt.startsAt)}, ${appt.forName ? `${appt.forName}, au nom de ` : ""}${appt.customerName}, ${appt.summary}, avec ${col.staff.firstName}, ${SOURCE_WORD[appt.source].toLowerCase()}${tag ? `, ${tag.word}` : ""}`}
                         data-source={appt.source}
-                        className={`absolute inset-x-1 flex flex-col justify-center gap-0.5 overflow-hidden border border-l-4 px-2.5 text-left ${tone} ${SOURCE_ACCENT[appt.source]} ${
+                        className={`absolute inset-x-1 flex flex-col justify-center gap-0.5 overflow-hidden border px-2.5 text-left ${tone.block} ${
                           on ? "outline outline-2 outline-offset-2 outline-ivory" : ""
                         }`}
                         style={{ top: top(appt.startMinute) + 8, height }}
                       >
                         <span className="flex items-center gap-2 whitespace-nowrap text-[13px]">
                           <span className="min-w-0 flex-1 truncate">
-                            <span className="tabular-nums text-stone">
+                            <span className={`tabular-nums ${tone.muted}`}>
                               {formatTime(appt.startsAt)}
                             </span>{" "}
-                            <span className={appt.status === "no_show" ? "line-through" : ""}>
-                              {appt.customerName}
+                            <span
+                              className={`font-medium ${appt.status === "no_show" ? "line-through" : ""}`}
+                            >
+                              {appt.forName ?? appt.customerName}
                             </span>
+                            {/* D-80 : le proche en premier, le titulaire du RDV en petit. */}
+                            {appt.forName ? (
+                              <span className={`text-[12px] ${tone.muted}`}>
+                                {" "}
+                                · {shortName(appt.customerName)}
+                              </span>
+                            ) : null}
                           </span>
                           {tag ? (
                             <span
@@ -382,7 +406,7 @@ export function PlanningBoard({
                           ) : null}
                         </span>
                         {tall ? (
-                          <span className="truncate whitespace-nowrap text-[12px] text-ivory-soft">
+                          <span className={`truncate whitespace-nowrap text-[12px] ${tone.muted}`}>
                             {appt.summary}
                           </span>
                         ) : null}

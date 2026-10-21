@@ -1,6 +1,7 @@
-import { and, count, eq, gt, isNull } from "drizzle-orm";
+import { and, count, eq, gt, isNull, sql } from "drizzle-orm";
 import type { Database } from "@/db/types";
 import { appointment, customer } from "@/db/schema";
+import { recordAudit } from "@/modules/audit/record";
 import type { AuthDriver } from "@/modules/auth/types";
 import { loadSettings } from "@/modules/availability";
 import { hitRateLimit } from "@/modules/security/rate-limit";
@@ -91,11 +92,13 @@ export async function registerCustomer(
   );
   if (retry !== null) return { ok: false, error: "rate_limited", retryAfterSeconds: retry };
 
+  // D-79 : une fiche sans compte au même email (créée au salon ou importée) devient ce compte, avec son historique.
+  // Une fiche qui a déjà un compte garde le refus habituel.
   const [existing] = await db
-    .select({ id: customer.id })
+    .select({ id: customer.id, authUserId: customer.authUserId })
     .from(customer)
-    .where(eq(customer.email, input.email));
-  if (existing) return { ok: false, error: "email_taken" };
+    .where(and(sql`lower(${customer.email}) = ${input.email}`, isNull(customer.anonymizedAt)));
+  if (existing?.authUserId) return { ok: false, error: "email_taken" };
 
   const created = await driver.signUp({ email: input.email, password: input.password });
   if (!created.ok) {
@@ -111,16 +114,41 @@ export async function registerCustomer(
   }
 
   try {
-    const [row] = await db
-      .insert(customer)
-      .values({
-        authUserId: created.user.id,
-        firstName: input.firstName,
-        lastName: input.lastName,
-        phone: input.phone,
-        email: input.email,
-      })
-      .returning();
+    const details = {
+      authUserId: created.user.id,
+      firstName: input.firstName,
+      lastName: input.lastName,
+      phone: input.phone,
+      email: input.email,
+    };
+    if (existing) {
+      const row = await db.transaction(async (tx) => {
+        // Rattachement seulement si la fiche est toujours sans compte : deux inscriptions simultanées ne la partagent pas.
+        const [linked] = await tx
+          .update(customer)
+          .set(details)
+          .where(
+            and(
+              eq(customer.id, existing.id),
+              isNull(customer.authUserId),
+              isNull(customer.anonymizedAt),
+            ),
+          )
+          .returning();
+        if (!linked) throw Object.assign(new Error("fiche déjà rattachée"), { code: "23505" });
+        await recordAudit(tx, {
+          actorType: "customer",
+          actorId: linked.id,
+          action: "customer.account_linked",
+          entity: "customer",
+          entityId: linked.id,
+          after: { origin: linked.origin },
+        });
+        return linked;
+      });
+      return { ok: true, customer: toProfile(row) };
+    }
+    const [row] = await db.insert(customer).values(details).returning();
     return { ok: true, customer: toProfile(row) };
   } catch (error) {
     await driver.signOut();

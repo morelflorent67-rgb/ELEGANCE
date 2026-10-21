@@ -26,6 +26,8 @@ export interface CreateAppointmentInput {
   /** « online » : délais de R-06 appliqués ; « salon » : exemptés (R-27). */
   source: Audience;
   note?: string;
+  /** R-28, D-80 : « Pour qui ? », le prénom du proche pour qui le titulaire réserve (40 caractères au plus). */
+  forName?: string;
   /** Membre de l'équipe qui réserve, pour une réservation au salon (R-74). */
   createdByStaffId?: string;
 }
@@ -38,6 +40,9 @@ export interface CreatedAppointment {
   durationMinutes: number;
   totalPriceCents: number;
 }
+
+/** « Pour qui ? » : un prénom, pas une fiche (D-80). */
+export const FOR_NAME_MAX = 40;
 
 /** Code d'erreur Postgres, qu'il soit direct ou enveloppé par Drizzle. */
 function pgCode(error: unknown): string | undefined {
@@ -59,6 +64,8 @@ export async function createAppointment(
   input: CreateAppointmentInput,
   now: Date = new Date(),
 ): Promise<CreatedAppointment> {
+  const forName = input.forName?.trim() || null;
+  if (forName && forName.length > FOR_NAME_MAX) throw new DomainError("invalid_for_name");
   try {
     return await db.transaction(async (tx) => {
       // R-74 : une réservation au salon est signée par un membre de l'équipe, choisi sur la tablette.
@@ -72,7 +79,7 @@ export async function createAppointment(
         .where(eq(customer.id, input.customerId))
         .for("update");
       if (!client) throw new DomainError("unknown_customer");
-      // R-26 : le salon ne réserve que pour un client qui a un compte ; une fiche supprimée n'en a plus (R-75).
+      // R-26 : le salon réserve pour un client inscrit ou une fiche sans compte (D-76) ; jamais pour une fiche supprimée (R-75).
       if (input.source === "salon" && client.anonymizedAt) {
         throw new DomainError("customer_has_no_account");
       }
@@ -150,6 +157,7 @@ export async function createAppointment(
           status: "confirmed",
           source: input.source,
           customerNote: input.note ?? null,
+          forName,
           createdByStaffId: authorId,
           createdAt: now, // même horloge que les délais : R-32 compare cette date à celle du RDV
         })

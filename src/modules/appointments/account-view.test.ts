@@ -10,6 +10,7 @@ const appointment = (overrides: Partial<AppointmentView> = {}): AppointmentView 
   createdAt: new Date("2026-10-20T10:00:00Z"),
   staffFirstName: "Orhan",
   note: null,
+  forName: null,
   items: [{ name: "Coupe & taille de barbe", priceCents: 2800, durationMin: 30 }],
   totalPriceCents: 2800,
   durationMinutes: 30,
@@ -142,5 +143,13 @@ describe("R-76 : « À venir » et « Passés »", () => {
       }),
     );
     expect(view.summary).toBe("Coupe homme + Taillage barbe · 30 € · avec Orhan");
+  });
+});
+
+describe("R-28, D-80 : « Pour qui ? » dans Mes rendez-vous", () => {
+  it("nomme le proche sur un RDV à venir et dans l'historique", () => {
+    const forLina = appointment({ forName: "Lina" });
+    expect(upcomingView(forLina, NOW, 1).staffLabel).toBe("Pour Lina, avec Orhan");
+    expect(pastView(forLina).summary).toBe("Coupe & taille de barbe · 28 € · avec Orhan · pour Lina");
   });
 });

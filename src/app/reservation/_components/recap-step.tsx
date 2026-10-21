@@ -16,6 +16,7 @@ export function RecapStep({
   slot,
   staffLabel,
   note,
+  forName = "",
   cutoffHours,
   changeableOnline,
   submitting,
@@ -31,6 +32,8 @@ export function RecapStep({
   slot: PickedSlot;
   staffLabel: string;
   note: string;
+  /** « Pour qui ? » (D-80). */
+  forName?: string;
   cutoffHours: number;
   changeableOnline: boolean;
   submitting: boolean;
@@ -88,6 +91,7 @@ export function RecapStep({
       </div>
 
       <div className="flex flex-col gap-1.5 text-body-sm text-ivory-soft">
+        {forName.trim() ? <span className="text-ivory">Pour {forName.trim()}</span> : null}
         <span>{staffLabel}</span>
         <span>{salonAddressLine}</span>
         {note.trim() ? <span className="text-stone">Note : {note.trim()}</span> : null}

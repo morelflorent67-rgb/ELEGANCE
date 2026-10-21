@@ -19,3 +19,8 @@ supabase/.branches/
 # Visuels de lancement : fichiers produits (sources dans communication/lancement)
 communication/lancement/export/
 communication/lancement/qr.svg
+
+# Fichiers clients du salon (D-70) : jamais dans le dépôt, qui est public. Les tests utilisent un faux fichier écrit
+# dans le test lui-même.
+*.csv
+*.xlsx

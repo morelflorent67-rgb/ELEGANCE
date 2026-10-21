@@ -149,9 +149,11 @@ test.describe("planning du jour", () => {
     const salon = block(page, /Yanis Benali/);
     await expect(online).toHaveAccessibleName(/pris en ligne/);
     await expect(salon).toHaveAccessibleName(/pris au salon/);
-    const accent = (locator: typeof online) =>
-      locator.evaluate((el) => getComputedStyle(el).borderLeftColor);
-    expect(await accent(online)).not.toBe(await accent(salon));
+    // Toute la case est remplie de la couleur de son origine (or en ligne, ivoire au salon), pas seulement un liseré.
+    const fill = (locator: typeof online) =>
+      locator.evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(await fill(online)).toBe("rgb(184, 147, 90)");
+    expect(await fill(salon)).toBe("rgb(239, 233, 221)");
 
     const summary = page.getByRole("complementary", { name: "Résumé du jour", exact: true });
     const grid = page.getByRole("region", { name: /Planning du/ });
@@ -160,7 +162,11 @@ test.describe("planning du jour", () => {
     await expect(summary).toHaveCount(0);
     const open = page.getByRole("button", { name: "Afficher le résumé du jour" });
     await expect(open).toBeVisible();
-    expect((await grid.boundingBox())!.width).toBeGreaterThan(wide + 200);
+    // Replié, le résumé ne garde aucune colonne : le planning va jusqu'au bord, seule la languette dépasse.
+    const box = (await grid.boundingBox())!;
+    expect(box.width).toBeGreaterThan(wide + 300);
+    expect(box.x + box.width).toBeGreaterThanOrEqual(page.viewportSize()!.width - 1);
+    expect((await open.boundingBox())!.width).toBeLessThanOrEqual(40);
 
     // Une fiche s'ouvre toujours ; fermée, le résumé reste replié, même après un rechargement.
     await online.click();
@@ -437,7 +443,7 @@ test.describe("R-26, R-27 : réserver pour un client par téléphone ou au compt
     await expect(panel(page).getByRole("link", { name: "Thomas Durand" })).toBeVisible();
   });
 
-  test("R-26 : un client sans compte ne se trouve pas, le client doit d'abord s'inscrire", async ({
+  test("R-26, D-76 : une personne sans compte : nouvelle fiche, « Pour qui ? », RDV sans email, planning", async ({
     page,
   }) => {
     tabletOnly(page);
@@ -446,11 +452,93 @@ test.describe("R-26, R-27 : réserver pour un client par téléphone ou au compt
     // La recherche ne réagit qu'une fois la page active : on retape jusqu'à obtenir la réponse.
     await expect(async () => {
       await page.getByLabel("Nom, prénom ou téléphone").fill("");
-      await page.getByLabel("Nom, prénom ou téléphone").fill("personne");
-      await expect(page.getByText(/Aucun client inscrit ne correspond/)).toBeVisible({
-        timeout: 1500,
-      });
+      await page.getByLabel("Nom, prénom ou téléphone").fill("Lina Martin");
+      await expect(page.getByText("Aucun client ne correspond.")).toBeVisible({ timeout: 1500 });
     }).toPass({ timeout: 10_000 });
+
+    await page.getByRole("button", { name: "Nouvelle fiche sans compte" }).click();
+    // Ce qui a été cherché pré-remplit la fiche.
+    await expect(page.getByLabel("Prénom")).toHaveValue("Lina");
+    await expect(page.getByLabel("Nom", { exact: true })).toHaveValue("Martin");
+    await page.getByRole("button", { name: "Enregistrer la fiche" }).click();
+    await expect(page.getByText("Indiquez le téléphone.")).toBeVisible();
+    await page.getByLabel("Téléphone").fill("06 11 22 33 44");
+    await page.getByRole("button", { name: "Enregistrer la fiche" }).click();
+
+    const card = page.getByRole("region", { name: "Client" });
+    await expect(card.getByText("Lina Martin")).toBeVisible();
+    await expect(card.getByText("Sans compte")).toBeVisible();
+    await expect(card.getByText(/Pas d’email sur la fiche/)).toBeVisible();
+    await page.getByLabel(/Pour qui \?/).fill("Inès");
+
+    await page.getByRole("button", { name: "Choisir Coupe homme", exact: true }).click();
+    await page.getByRole("button", { name: "Semaine suivante" }).click();
+    await slotButtons(page).first().click();
+    await chooseAuthor(page, "Taha", "Qui réserve ?");
+    await page.getByRole("button", { name: /^Confirmer/ }).click();
+    await expect(page.getByText(/aucune confirmation n’est envoyée/)).toBeVisible();
+
+    const [row] = await sql`
+      select a.for_name, c.origin, c.auth_user_id, c.phone
+      from appointment a join customer c on c.id = a.customer_id`;
+    expect(row).toEqual({ for_name: "Inès", origin: "salon", auth_user_id: null, phone: "+33611223344" });
+    const [{ n }] = await sql`select count(*)::int as n from email_outbox`;
+    expect(n).toBe(0);
+
+    // D-80 : au planning, le proche en premier, le titulaire en petit ; la fiche le dit en entier.
+    await page.getByRole("link", { name: "Voir le planning" }).click();
+    const appointment = block(page, /Inès, au nom de Lina Martin/);
+    await expect(appointment).toContainText("Inès");
+    await expect(appointment).toContainText("Lina M.");
+    await expect(panel(page).getByText("Pour Inès")).toBeVisible();
+    await expect(panel(page).getByText("Sans compte")).toBeVisible();
+  });
+
+  test("D-76 : une fiche au même numéro est proposée, et se choisit au lieu d'en créer une autre", async ({
+    page,
+  }) => {
+    tabletOnly(page);
+    const thomas = await addCustomer("Thomas", "Durand", "+33612345678");
+    await loginTablet(page);
+    await page.goto("/equipe/reserver");
+    await expect(async () => {
+      await page.getByRole("button", { name: "Nouvelle fiche sans compte" }).click();
+      await expect(page.getByLabel("Prénom")).toBeVisible({ timeout: 1500 });
+    }).toPass({ timeout: 10_000 });
+    await page.getByLabel("Prénom").fill("Tom");
+    await page.getByLabel("Nom", { exact: true }).fill("Durand");
+    await page.getByLabel("Téléphone").fill("06 12 34 56 78");
+    await page.getByRole("button", { name: "Enregistrer la fiche" }).click();
+    await expect(page.getByText(/Une fiche a déjà ce numéro/)).toBeVisible();
+    await page.getByRole("button", { name: "Choisir", exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`client=${thomas.id}`));
+    await expect(page.getByRole("region", { name: "Client" }).getByText("Thomas Durand")).toBeVisible();
+    const [{ n }] = await sql`select count(*)::int as n from customer`;
+    expect(n).toBe(1);
+  });
+
+  test("D-76 : l'équipe corrige une fiche sans compte (ajoute l'email), signée d'un prénom", async ({
+    page,
+  }) => {
+    tabletOnly(page);
+    const [lina] = await sql`
+      insert into customer (first_name, last_name, phone, origin) values ('Lina', 'Martin', '+33611223344', 'salon')
+      returning id`;
+    await loginTablet(page);
+    await page.goto(`/equipe/clients/${lina.id}`);
+    await expect(page.getByText("Sans compte", { exact: true })).toBeVisible();
+    await expect(async () => {
+      await page.getByRole("button", { name: "Corriger la fiche" }).click();
+      await expect(page.getByLabel("Email (facultatif)")).toBeVisible({ timeout: 1500 });
+    }).toPass({ timeout: 10_000 });
+    await page.getByLabel("Email (facultatif)").fill("lina@exemple.fr");
+    await expect(page.getByRole("button", { name: "Enregistrer", exact: true })).toBeDisabled();
+    await chooseAuthor(page, "Enes", "Qui corrige ?");
+    await page.getByRole("button", { name: "Enregistrer", exact: true }).click();
+    await expect(page.getByText("Fiche enregistrée.")).toBeVisible();
+    await expect(page.getByText("lina@exemple.fr")).toBeVisible();
+    const [audit] = await sql`select actor_type from audit_log where action = 'customer.updated'`;
+    expect(audit.actor_type).toBe("staff");
   });
 
   test("la fiche client propose « Réserver pour ce client » avec le client déjà choisi", async ({
@@ -550,6 +638,36 @@ test.describe("R-73 : l'espace gérant demande un code", () => {
     await page.getByRole("button", { name: "Déverrouiller" }).click();
     await expect(page.getByRole("heading", { name: "Gérer le salon" })).toBeVisible();
   }
+
+  test("D-79 : deux fiches au même numéro se signalent, le gérant les fusionne ; le compte reste", async ({
+    page,
+  }) => {
+    tabletOnly(page);
+    await setManagerCode("246810");
+    const thomas = await addCustomer("Thomas", "Durand", "+33612345678");
+    const [salon] = await sql`
+      insert into customer (first_name, last_name, phone, origin) values ('Tom', 'Durand', '+33612345678', 'salon')
+      returning id`;
+    await addAppointment(thomas.email, { startsAt: parisIso(pastOpenDay(5), "10:00") });
+    await sql`update appointment set customer_id = ${salon.id}`;
+
+    await loginTablet(page);
+    await page.goto(`/equipe/clients/${salon.id}`);
+    const same = page.getByRole("region", { name: "Même numéro" });
+    await expect(same.getByRole("link", { name: /Thomas Durand/ })).toBeVisible();
+
+    await unlock(page);
+    await page.getByLabel("Chercher un client").fill("tom dur");
+    await page.getByRole("link", { name: /Tom Durand/ }).click();
+    await page.getByRole("region", { name: "Fusion" }).getByRole("button", { name: "Fusionner" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Fusionner" }).click();
+    // La fiche qui a un compte reste : on y arrive.
+    await expect(page).toHaveURL(new RegExp(`/equipe/gerant/clients/${thomas.id}`));
+    const rows = await sql`select id from customer`;
+    expect(rows.map((r) => r.id)).toEqual([thomas.id]);
+    const [{ n }] = await sql`select count(*)::int as n from appointment where customer_id = ${thomas.id}`;
+    expect(n).toBe(1);
+  });
 
   test("R-52 : après 2 lapins, le gérant bloque la réservation en ligne du client, puis la débloque", async ({
     page,

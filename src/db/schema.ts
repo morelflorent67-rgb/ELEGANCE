@@ -34,6 +34,8 @@ export const appointmentStatus = pgEnum("appointment_status", [
   "cancelled_by_salon",
 ]);
 export const appointmentSource = pgEnum("appointment_source", ["online", "salon"]);
+/** D'où vient une fiche client : inscription en ligne, créée à la tablette, ou importée du fichier du salon (D-70). */
+export const customerOrigin = pgEnum("customer_origin", ["account", "salon", "import"]);
 export const actorType = pgEnum("actor_type", ["customer", "staff", "manager", "system"]);
 export const emailType = pgEnum("email_type", [
   "confirmation",
@@ -153,14 +155,24 @@ export const customer = pgTable(
     email: text("email"),
     onlineBookingBlocked: boolean("online_booking_blocked").notNull().default(false), // R-52
     reviewOptOut: boolean("review_opt_out").notNull().default(false), // R-64 : ne veut plus des invitations à un avis
+    /** Sans compte de connexion tant que `authUserId` est vide ; l'origine reste après le rattachement (D-70). */
+    origin: customerOrigin("origin").notNull().default("account"),
+    /** Historique repris du fichier du salon, affiché à titre indicatif sur la fiche (D-77). */
+    legacyVisits: integer("legacy_visits"),
+    legacyLastVisitOn: date("legacy_last_visit_on", { mode: "string" }),
+    /** Premier email reçu par une fiche importée : il a dit d'où vient l'adresse (D-78). */
+    originNoticeSentAt: instant("origin_notice_sent_at"),
     anonymizedAt: instant("anonymized_at"),
     createdAt: instant("created_at").notNull().defaultNow(),
   },
   (t) => [
-    // Un email = un compte (R-70), sans tenir compte de la casse ; les fiches anonymisées n'ont plus d'email.
+    // Un email = une fiche (R-70), sans tenir compte de la casse ; les fiches anonymisées n'ont plus d'email.
     uniqueIndex("customer_email_unique")
       .on(sql`lower(${t.email})`)
       .where(sql`${t.email} is not null`),
+    // Fiches au même numéro (doublons possibles, D-79) et recherche par téléphone.
+    index("customer_phone_idx").on(t.phone),
+    check("customer_legacy_visits", sql`${t.legacyVisits} is null or ${t.legacyVisits} >= 0`),
   ],
 );
 
@@ -179,6 +191,7 @@ export const appointment = pgTable(
     status: appointmentStatus("status").notNull().default("confirmed"), // R-24
     source: appointmentSource("source").notNull(),
     customerNote: text("customer_note"), // R-29
+    forName: text("for_name"), // R-28 : « Pour qui ? », le prénom du proche ; le RDV reste au nom du titulaire
     createdByStaffId: uuid("created_by_staff_id").references(() => staff.id), // R-74
     adjustedAmountCents: integer("adjusted_amount_cents"), // R-53, R-54
     createdAt: instant("created_at").notNull().defaultNow(),
@@ -186,6 +199,7 @@ export const appointment = pgTable(
   (t) => [
     check("appointment_order", sql`${t.endsAt} > ${t.startsAt}`),
     check("appointment_note_length", sql`char_length(${t.customerNote}) <= 300`),
+    check("appointment_for_name_length", sql`char_length(${t.forName}) between 1 and 40`),
     index("appointment_customer_idx").on(t.customerId, t.startsAt),
     index("appointment_staff_idx").on(t.staffId, t.startsAt),
   ],

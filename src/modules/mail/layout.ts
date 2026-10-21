@@ -32,6 +32,49 @@ export interface RenderedEmail {
   text: string;
 }
 
+/**
+ * Ce que l'email sait de son destinataire (D-78, D-81). Une fiche sans compte (créée au salon ou importée) n'a pas de
+ * « Mes rendez-vous » : le bouton l'invite à créer son compte avec cette adresse, et les changements passent par le
+ * salon. Le premier email reçu par une fiche importée dit d'où vient l'adresse.
+ */
+export interface Recipient {
+  /** Faux pour une fiche sans compte. Absent : un compte (comportement d'origine). */
+  hasAccount?: boolean;
+  /** Page d'inscription, pour une fiche sans compte. */
+  signupUrl?: string;
+  /** Premier email d'une fiche importée du fichier du salon (D-78). */
+  originNotice?: boolean;
+}
+
+export const ORIGIN_NOTICE = `Vos coordonnées viennent du fichier clients du salon ${SALON.name}, qui reprend ses rendez-vous sur son nouveau site. Elles servent aux emails de vos rendez-vous. Pour les faire corriger ou effacer, appelez le ${SALON.phoneDisplay}.`;
+
+export const NO_ACCOUNT_TEXT =
+  "Pour gérer vos rendez-vous en ligne, créez votre compte avec cette adresse email : vous les y retrouverez.";
+
+export const withoutAccount = (recipient: Recipient) =>
+  recipient.hasAccount === false && !!recipient.signupUrl;
+
+/** « Gérer mon rendez-vous », ou « Créer mon compte » pour une fiche sans compte (D-81). */
+export function manageButton(recipient: Recipient, manageUrl: string): string {
+  return withoutAccount(recipient)
+    ? button("Créer mon compte", recipient.signupUrl!, "primary")
+    : button("Gérer mon rendez-vous", manageUrl, "primary");
+}
+
+export function manageLine(recipient: Recipient, manageUrl: string): string {
+  return withoutAccount(recipient)
+    ? `Créer mon compte : ${recipient.signupUrl}`
+    : `Gérer mon rendez-vous : ${manageUrl}`;
+}
+
+/** Fin de la version texte : la mention d'origine, quand elle est due. */
+export const noticeLines = (recipient: Recipient): string[] =>
+  recipient.originNotice ? ["", ORIGIN_NOTICE] : [];
+
+/** « Pour Lina » au-dessus du coiffeur, quand le RDV est pris pour un proche (D-80). */
+export const forNameHtml = (forName: string | null | undefined) =>
+  forName ? `Pour ${escapeHtml(forName)}<br>` : "";
+
 /** Bouton « tableau » : principal (ivoire) ou secondaire (contour). */
 export function button(label: string, href: string, kind: "primary" | "secondary"): string {
   const bg = kind === "primary" ? COLORS.ivory : COLORS.ink;
@@ -46,8 +89,10 @@ export function layout(input: {
   logoUrl: string;
   bodyHtml: string;
   footerNote: string;
+  /** D-78 : la mention d'origine de l'adresse, en pied d'email. */
+  originNotice?: boolean;
 }): string {
-  const { title, preheader, logoUrl, bodyHtml, footerNote } = input;
+  const { title, preheader, logoUrl, bodyHtml, footerNote, originNotice } = input;
   return `<!doctype html>
 <html lang="fr">
 <head>
@@ -69,7 +114,11 @@ export function layout(input: {
 <div style="color:${COLORS.ivory};">${escapeHtml(SALON.name)} · ${escapeHtml(SALON.tagline)}</div>
 <div style="padding-top:12px;">${escapeHtml(salonAddressLine)} · ${escapeHtml(SALON.phoneDisplay)}</div>
 <div style="padding-top:12px;"><a href="${SALON.instagram}" style="color:${COLORS.ivorySoft};">Instagram</a> · <a href="${SALON.snapchat}" style="color:${COLORS.ivorySoft};">Snapchat</a></div>
-<div style="padding-top:12px;font-size:12px;">${escapeHtml(footerNote)}</div>
+<div style="padding-top:12px;font-size:12px;">${escapeHtml(footerNote)}</div>${
+    originNotice
+      ? `<div style="padding-top:12px;font-size:12px;color:${COLORS.ivorySoft};">${escapeHtml(ORIGIN_NOTICE)}</div>`
+      : ""
+  }
 </td></tr>
 </table>
 </td></tr>

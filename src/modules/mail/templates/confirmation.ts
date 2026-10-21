@@ -7,9 +7,25 @@ import {
   formatTime,
 } from "@/lib/format";
 import { SALON, salonAddressLine, salonMapsUrl } from "@/lib/salon";
-import { COLORS, FONT, button, escapeHtml, layout, type RenderedEmail } from "../layout";
+import {
+  COLORS,
+  FONT,
+  NO_ACCOUNT_TEXT,
+  button,
+  escapeHtml,
+  forNameHtml,
+  layout,
+  manageButton,
+  manageLine,
+  noticeLines,
+  withoutAccount,
+  type Recipient,
+  type RenderedEmail,
+} from "../layout";
 
-export interface ConfirmationData {
+export interface ConfirmationData extends Recipient {
+  /** « Pour qui ? » (D-80). */
+  forName?: string | null;
   firstName: string | null;
   startsAt: Date;
   endsAt: Date;
@@ -39,9 +55,11 @@ export function renderConfirmationEmail(data: ConfirmationData): RenderedEmail {
     ? `À ${weekday(data.startsAt)}, ${data.firstName}.`
     : `À ${weekday(data.startsAt)}.`;
 
-  const changeText = data.changeableOnline
-    ? `Modifiable ou annulable en ligne jusqu'au ${formatDay(data.changeDeadline)}, ${formatTime(data.changeDeadline)}. Ensuite : ${SALON.phoneDisplay}.`
-    : `Pour tout changement, appelez le salon : ${SALON.phoneDisplay}.`;
+  const changeText = withoutAccount(data)
+    ? `Pour tout changement, appelez le salon : ${SALON.phoneDisplay}. ${NO_ACCOUNT_TEXT}`
+    : data.changeableOnline
+      ? `Modifiable ou annulable en ligne jusqu'au ${formatDay(data.changeDeadline)}, ${formatTime(data.changeDeadline)}. Ensuite : ${SALON.phoneDisplay}.`
+      : `Pour tout changement, appelez le salon : ${SALON.phoneDisplay}.`;
 
   const rows = data.items
     .map(
@@ -63,11 +81,11 @@ export function renderConfirmationEmail(data: ConfirmationData): RenderedEmail {
 <div style="font-size:12px;letter-spacing:0.26em;text-transform:uppercase;color:${COLORS.gold};">${escapeHtml(day)}</div>
 <div style="padding:4px 0 18px;font-size:40px;font-weight:300;line-height:1.2;color:${COLORS.ivory};">${escapeHtml(time)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid ${COLORS.line};"><tr><td height="18" style="height:18px;line-height:18px;font-size:1px;">&nbsp;</td></tr>${rows}${totalRow}</table>
-<div style="padding-top:14px;font-size:14px;line-height:1.6;color:${COLORS.stone};">avec ${escapeHtml(data.staffFirstName)}<br>Paiement sur place</div>
+<div style="padding-top:14px;font-size:14px;line-height:1.6;color:${COLORS.stone};">${forNameHtml(data.forName)}avec ${escapeHtml(data.staffFirstName)}<br>Paiement sur place</div>
 </td></tr></table>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;"><tr>
-<td width="50%" style="padding-right:6px;">${button("Gérer mon rendez-vous", data.manageUrl, "primary")}</td>
+<td width="50%" style="padding-right:6px;">${manageButton(data, data.manageUrl)}</td>
 <td width="50%" style="padding-left:6px;">${button("Ajouter à l'agenda", data.calendarUrl, "secondary")}</td>
 </tr></table>
 
@@ -85,6 +103,7 @@ ${escapeHtml(changeText)}</td>
     preheader,
     logoUrl: data.logoUrl,
     bodyHtml,
+    originNotice: data.originNotice,
     footerNote: `Vous recevez cet email suite à votre réservation chez ${SALON.name}.`,
   });
 
@@ -100,7 +119,7 @@ ${escapeHtml(changeText)}</td>
     `Total : ${formatPrice(data.totalPriceCents)} · ${formatDuration(data.durationMinutes)}`,
     `Avec ${data.staffFirstName}. Paiement sur place.`,
     "",
-    `Gérer mon rendez-vous : ${data.manageUrl}`,
+    manageLine(data, data.manageUrl),
     `Ajouter à l'agenda : ${data.calendarUrl}`,
     "",
     `${SALON.name}, ${salonAddressLine}`,
@@ -108,6 +127,7 @@ ${escapeHtml(changeText)}</td>
     changeText,
     "",
     `${SALON.name} · ${SALON.tagline}`,
+    ...noticeLines(data),
   ].join("\n");
 
   return { subject, preheader, html, text };

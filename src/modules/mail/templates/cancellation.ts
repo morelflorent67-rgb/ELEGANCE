@@ -7,9 +7,18 @@ import {
   formatTime,
 } from "@/lib/format";
 import { SALON } from "@/lib/salon";
-import { COLORS, FONT, button, escapeHtml, layout, type RenderedEmail } from "../layout";
+import {
+  COLORS,
+  FONT,
+  button,
+  escapeHtml,
+  layout,
+  type RenderedEmail,
+  noticeLines,
+  type Recipient,
+} from "../layout";
 
-export interface CancellationData {
+export interface CancellationData extends Recipient {
   firstName: string | null;
   /** Créneau annulé. */
   startsAt: Date;
@@ -61,6 +70,7 @@ export function renderCancellationEmail(data: CancellationData): RenderedEmail {
     preheader,
     logoUrl: data.logoUrl,
     bodyHtml,
+    originNotice: data.originNotice,
     footerNote: `Vous recevez cet email car vous aviez un rendez-vous chez ${SALON.name}.`,
   });
 
@@ -77,6 +87,7 @@ export function renderCancellationEmail(data: CancellationData): RenderedEmail {
     notYou,
     "",
     `${SALON.name} · ${SALON.tagline}`,
+    ...noticeLines(data),
   ].join("\n");
 
   return { subject, preheader, html, text };

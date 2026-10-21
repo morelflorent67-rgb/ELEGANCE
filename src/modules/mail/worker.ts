@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, lte } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, lte } from "drizzle-orm";
 import { DateTime } from "luxon";
 import type { Database } from "@/db/types";
 import {
@@ -92,6 +92,11 @@ interface EmailAppointment {
   customerId: string;
   customerFirstName: string | null;
   reviewOptOut: boolean;
+  /** Faux pour une fiche sans compte : « Créer mon compte » au lieu de « Gérer mon rendez-vous » (D-81). */
+  hasAccount: boolean;
+  /** Fiche importée qui n'a encore reçu aucun email : la mention d'origine est due (D-78). */
+  originNotice: boolean;
+  forName: string | null;
   items: { name: string; durationMin: number; priceCents: number }[];
   totalPriceCents: number;
   durationMinutes: number;
@@ -113,6 +118,10 @@ async function loadEmailAppointment(db: Database, row: Row): Promise<EmailAppoin
       customerId: appointment.customerId,
       customerFirstName: customer.firstName,
       reviewOptOut: customer.reviewOptOut,
+      authUserId: customer.authUserId,
+      origin: customer.origin,
+      originNoticeSentAt: customer.originNoticeSentAt,
+      forName: appointment.forName,
     })
     .from(appointment)
     .innerJoin(staff, eq(staff.id, appointment.staffId))
@@ -132,8 +141,11 @@ async function loadEmailAppointment(db: Database, row: Row): Promise<EmailAppoin
     .where(eq(appointmentItem.appointmentId, appt.id))
     .orderBy(asc(appointmentItem.position));
   const [settings] = await db.select().from(salonSettings).limit(1);
+  const { authUserId, origin, originNoticeSentAt, ...rest } = appt;
   return {
-    ...appt,
+    ...rest,
+    hasAccount: !!authUserId,
+    originNotice: origin === "import" && !originNoticeSentAt,
     items,
     totalPriceCents: items.reduce((sum, i) => sum + i.priceCents, 0),
     durationMinutes: items.reduce((sum, i) => sum + i.durationMin, 0),
@@ -148,6 +160,13 @@ const isCancelled = (appt: EmailAppointment) =>
 
 const calendarUrl = (appt: EmailAppointment, options: ProcessOptions) =>
   `${options.baseUrl}/api/agenda/${appt.id}?t=${signToken(options.secret, calendarSubject(appt.id))}`;
+
+/** Ce que chaque modèle reçoit du destinataire (D-78, D-80, D-81). */
+const recipient = (appt: EmailAppointment, options: ProcessOptions) => ({
+  hasAccount: appt.hasAccount,
+  signupUrl: `${options.baseUrl}/inscription`,
+  originNotice: appt.originNotice,
+});
 
 function message(row: Row, appt: EmailAppointment, rendered: RenderedEmail): EmailMessage {
   return {
@@ -174,6 +193,8 @@ async function renderConfirmation(
     row,
     appt,
     renderConfirmationEmail({
+      ...recipient(appt, options),
+      forName: appt.forName,
       firstName: appt.customerFirstName,
       startsAt: appt.startsAt,
       endsAt: appt.endsAt,
@@ -222,6 +243,8 @@ async function renderModification(
     row,
     appt,
     renderModificationEmail({
+      ...recipient(appt, options),
+      forName: appt.forName,
       firstName: appt.customerFirstName,
       startsAt,
       items: appt.items,
@@ -258,6 +281,7 @@ async function renderCancellation(
     row,
     appt,
     renderCancellationEmail({
+      ...recipient(appt, options),
       firstName: appt.customerFirstName,
       startsAt: appt.startsAt,
       items: appt.items,
@@ -304,6 +328,8 @@ async function renderReminder(
     row,
     appt,
     renderReminderEmail({
+      ...recipient(appt, options),
+      forName: appt.forName,
       firstName: appt.customerFirstName,
       startsAt: appt.startsAt,
       items: appt.items,
@@ -337,6 +363,7 @@ async function renderReviewInvitation(
     row,
     appt,
     renderReviewInvitationEmail({
+      ...recipient(appt, options),
       firstName: appt.customerFirstName,
       startsAt: appt.startsAt,
       items: appt.items,
@@ -371,6 +398,29 @@ async function render(
     default:
       throw new EmailSendError(`Type d'email non géré : ${row.type}`, true);
   }
+}
+
+/**
+ * D-78 : une fois un email parti vers une fiche importée, la mention d'origine a été faite ; les suivants ne la répètent
+ * pas. Sans effet pour les autres fiches.
+ */
+async function markOriginNotified(db: Database, row: Row, now: Date): Promise<void> {
+  if (!row.appointmentId) return;
+  const [appt] = await db
+    .select({ customerId: appointment.customerId })
+    .from(appointment)
+    .where(eq(appointment.id, row.appointmentId));
+  if (!appt) return;
+  await db
+    .update(customer)
+    .set({ originNoticeSentAt: now })
+    .where(
+      and(
+        eq(customer.id, appt.customerId),
+        eq(customer.origin, "import"),
+        isNull(customer.originNoticeSentAt),
+      ),
+    );
 }
 
 /** Prend en charge les emails à envoyer : réserve chacun pour 5 minutes, sans jamais en prendre un déjà pris. */
@@ -433,6 +483,7 @@ export async function processOutbox(db: Database, options: ProcessOptions): Prom
         .update(emailOutbox)
         .set({ status: "sent", sentAt: new Date(), lastError: null })
         .where(eq(emailOutbox.id, row.id));
+      await markOriginNotified(db, row, now);
       result.sent++;
     } catch (error) {
       if (error instanceof Defer) {

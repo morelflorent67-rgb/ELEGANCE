@@ -38,6 +38,9 @@ const ghostButton =
 
 const firstName = (name: string) => name.split(" ")[0] ?? name;
 
+/** Fiche sans email (D-76) : personne n'est prévenu, l'équipe appelle. */
+const NO_EMAIL = "pas d’email sur la fiche : prévenez le client par téléphone.";
+
 export function AppointmentPanel({
   day,
   today,
@@ -137,7 +140,9 @@ export function AppointmentPanel({
       let result: TeamResult<object>;
       if (mode === "cancel") {
         result = await cancelAppointmentAsSalon({ appointmentId: appointment.id, authorId });
-        message = `Rendez-vous de ${firstName(appointment.customerName)} annulé · le client reçoit un email d’annulation.`;
+        message = `Rendez-vous de ${firstName(appointment.customerName)} annulé · ${
+          appointment.hasEmail ? "le client reçoit un email d’annulation." : NO_EMAIL
+        }`;
       } else if (mode === "noshow") {
         result = await markNoShowAction({ appointmentId: appointment.id, authorId });
         message = `Lapin signalé pour ${firstName(appointment.customerName)}.`;
@@ -166,7 +171,9 @@ export function AppointmentPanel({
           startsAt: slot.iso,
           authorId,
         });
-        message = `Rendez-vous de ${firstName(appointment.customerName)} déplacé au ${slot.dayLabel.toLowerCase()}, ${slot.time} · le client reçoit un email.`;
+        message = `Rendez-vous de ${firstName(appointment.customerName)} déplacé au ${slot.dayLabel.toLowerCase()}, ${slot.time} · ${
+          appointment.hasEmail ? "le client reçoit un email." : NO_EMAIL
+        }`;
       } else {
         return;
       }
@@ -193,16 +200,17 @@ export function AppointmentPanel({
   if (!appointment && summaryCollapsed) {
     return (
       <>
+        {/* Replié, le résumé ne prend aucune place : seule une languette dépasse du bord droit, par-dessus le planning. */}
         <aside
           aria-label="Résumé du jour, replié"
-          className="hidden w-14 shrink-0 flex-col items-center border-l border-line-subtle bg-charcoal py-4 lg:flex"
+          className="pointer-events-none absolute inset-y-0 right-0 z-20 hidden items-center lg:flex"
         >
           <button
             type="button"
             onClick={() => onSummaryCollapsedChange(false)}
             aria-expanded={false}
             aria-label="Afficher le résumé du jour"
-            className="flex h-12 w-12 items-center justify-center border border-line-strong"
+            className="pointer-events-auto flex h-16 w-9 items-center justify-center border border-r-0 border-line-strong bg-charcoal text-gold shadow-[0_0_18px_rgba(0,0,0,0.6)]"
           >
             <svg
               width="18"
@@ -276,7 +284,9 @@ export function AppointmentPanel({
                 >
                   <span className="w-12 text-[15px] tabular-nums">{formatTime(n.startsAt)}</span>
                   <span className="flex flex-1 flex-col gap-0.5">
-                    <span className="text-[14px]">{n.customerName}</span>
+                    <span className="text-[14px]">
+                      {n.forName ? `${n.forName} · ${n.customerName}` : n.customerName}
+                    </span>
                     <span className="text-[12px] text-stone">
                       {n.summary} · {n.staffFirstName}
                     </span>
@@ -317,7 +327,13 @@ export function AppointmentPanel({
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 flex-col gap-1">
             <span className="text-label uppercase tracking-[0.26em] text-gold">{when}</span>
-            <h2 className="text-[26px] font-light leading-tight">
+            {a.forName ? (
+              <span className="text-[20px] font-light leading-tight">Pour {a.forName}</span>
+            ) : null}
+            <h2
+              className={`font-light leading-tight ${a.forName ? "text-[16px] text-ivory-soft" : "text-[26px]"}`}
+            >
+              {a.forName ? "Au nom de " : null}
               <Link
                 href={`/equipe/clients/${a.customerId}`}
                 className="underline decoration-line-strong underline-offset-4"
@@ -387,6 +403,7 @@ export function AppointmentPanel({
           {a.blocked ? (
             <span className={`${chip} border-brick text-brick`}>Bloqué en ligne</span>
           ) : null}
+          {a.hasAccount ? null : <span className={chip}>Sans compte</span>}
         </div>
 
         {a.note ? (

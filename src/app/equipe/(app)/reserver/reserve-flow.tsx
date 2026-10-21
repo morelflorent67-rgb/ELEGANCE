@@ -1,12 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useTransition } from "react";
+import { Field, inputClass } from "@/components/ui";
 import { formatDuration, formatPrice } from "@/lib/format";
 import type { CatalogService, StaffChoice } from "@/modules/catalog";
 import { teamMessage, type TeamResult } from "../../_lib/messages";
 import {
   createSalonAppointment,
+  createSalonCustomerAction,
   fetchSalonDays,
   fetchSalonStaffChoices,
   searchCustomersAction,
@@ -14,10 +17,12 @@ import {
   type SalonDayView,
 } from "../../actions";
 import { AuthorPicker, type TeamMemberView } from "../_components/author-picker";
+import { CustomerForm, EMPTY_FIELDS, type CustomerFields } from "../_components/customer-form";
 import { SlotPicker, type PickedSalonSlot } from "../_components/slot-picker";
 
-// Réservation par le salon, par téléphone ou au comptoir (R-26, R-27). Seul un client qui a déjà un compte se
-// choisit ; les créneaux (heure pile ou demie, D-65 ; sans délai de réservation) et tous les contrôles viennent du serveur.
+// Réservation par le salon, par téléphone ou au comptoir (R-26, R-27). Le client se choisit parmi les fiches, avec ou
+// sans compte, ou se crée sur place sans compte (D-76) ; « Pour qui ? » nomme un proche (D-80). Les créneaux (heure pile
+// ou demie, D-65 ; sans délai de réservation) et tous les contrôles viennent du serveur.
 
 export interface ClientView {
   id: string;
@@ -26,7 +31,23 @@ export interface ClientView {
   lastVisitLabel: string | null;
   upcoming: number;
   blocked: boolean;
+  hasAccount: boolean;
+  hasEmail: boolean;
 }
+
+/** Ce qui a été tapé dans la recherche pré-remplit la nouvelle fiche : un numéro, ou « prénom nom ». */
+function prefill(text: string): CustomerFields {
+  const trimmed = text.trim();
+  if (/^[\d+\s.]+$/.test(trimmed)) return { ...EMPTY_FIELDS, phone: trimmed };
+  const [firstName = "", ...rest] = trimmed.split(/\s+/);
+  return { ...EMPTY_FIELDS, firstName, lastName: rest.join(" ") };
+}
+
+const NoAccountChip = () => (
+  <span className="border border-line-strong px-1.5 py-px text-[10px] uppercase tracking-[0.14em] text-stone">
+    Sans compte
+  </span>
+);
 
 const stepTitle = "text-[20px] font-light";
 
@@ -49,7 +70,10 @@ export function ReserveFlow({
   maxUpcoming: number;
   initialClient: ClientView | null;
 }) {
+  const router = useRouter();
   const [client, setClient] = useState<ClientView | null>(initialClient);
+  const [creating, setCreating] = useState(false);
+  const [forName, setForName] = useState("");
   const [query, setQuery] = useState("");
   // Résultats de la dernière recherche, avec le texte cherché : un texte plus ancien ne s'affiche plus.
   const [found, setFound] = useState<{ text: string; hits: CustomerHitView[] } | null>(null);
@@ -141,6 +165,8 @@ export function ReserveFlow({
 
   const reset = () => {
     setClient(null);
+    setCreating(false);
+    setForName("");
     setQuery("");
     setFound(null);
     setServiceIds([]);
@@ -172,6 +198,7 @@ export function ReserveFlow({
         staffId,
         startsAt: slot.iso,
         authorId,
+        ...(forName.trim() ? { forName: forName.trim() } : {}),
       });
       if (!result.ok) {
         setError(teamMessage(result.error));
@@ -207,7 +234,10 @@ export function ReserveFlow({
         {client ? (
           <div className="flex flex-col gap-2.5 bg-graphite p-5">
             <div className="flex items-start justify-between gap-3">
-              <span className="text-[20px] font-light">{client.name}</span>
+              <span className="flex flex-col items-start gap-1.5">
+                <span className="text-[20px] font-light">{client.name}</span>
+                {client.hasAccount ? null : <NoAccountChip />}
+              </span>
               {!created ? (
                 <button
                   type="button"
@@ -236,6 +266,53 @@ export function ReserveFlow({
                 Ce client a déjà {client.upcoming} rendez-vous à venir : c’est le maximum.
               </p>
             ) : null}
+            {client.hasEmail ? null : (
+              <p className="text-[13px] leading-normal text-stone">
+                Pas d’email sur la fiche : le client ne recevra ni confirmation ni rappel.
+              </p>
+            )}
+            {!created ? (
+              <div className="pt-1.5">
+                <Field id="for-name" label="Pour qui ?" optional hint="Le prénom d’un proche.">
+                  <input
+                    id="for-name"
+                    type="text"
+                    maxLength={40}
+                    autoComplete="off"
+                    value={forName}
+                    onChange={(event) => setForName(event.target.value)}
+                    className={inputClass}
+                  />
+                </Field>
+              </div>
+            ) : null}
+          </div>
+        ) : creating ? (
+          <div className="flex flex-col gap-4">
+            <h2 className="text-[18px] font-light">Nouvelle fiche, sans compte</h2>
+            <CustomerForm
+              idPrefix="new-client"
+              initial={prefill(query)}
+              submitLabel="Enregistrer la fiche"
+              onSubmit={(fields, samePhoneConfirmed) =>
+                createSalonCustomerAction({ fields, samePhoneConfirmed })
+              }
+              onDone={(id, fields) => {
+                setCreating(false);
+                setClient({
+                  id,
+                  name: `${fields.firstName.trim()} ${fields.lastName.trim()}`,
+                  phone: fields.phone.trim(),
+                  lastVisitLabel: null,
+                  upcoming: 0,
+                  blocked: false,
+                  hasAccount: false,
+                  hasEmail: fields.email.trim() !== "",
+                });
+              }}
+              onPick={(existing) => router.push(`/equipe/reserver?client=${existing.id}`)}
+              onCancel={() => setCreating(false)}
+            />
           </div>
         ) : (
           <>
@@ -249,7 +326,7 @@ export function ReserveFlow({
                 autoComplete="off"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Rechercher un client inscrit"
+                placeholder="Rechercher un client"
                 className="h-14 w-full min-w-0 border border-ivory bg-ink px-4 text-[16px] text-ivory placeholder:text-stone-dark"
               />
             </div>
@@ -267,12 +344,17 @@ export function ReserveFlow({
                           lastVisitLabel: hit.lastVisitLabel,
                           upcoming: hit.upcoming,
                           blocked: false,
+                          hasAccount: hit.hasAccount,
+                          hasEmail: hit.hasEmail,
                         })
                       }
                       className="flex min-h-16 w-full items-center gap-3.5 border-b border-line text-left"
                     >
                       <span className="flex flex-1 flex-col gap-0.5">
-                        <span className="text-[16px]">{hit.name}</span>
+                        <span className="flex items-center gap-2 text-[16px]">
+                          {hit.name}
+                          {hit.hasAccount ? null : <NoAccountChip />}
+                        </span>
                         <span className="text-[13px] tabular-nums text-stone">
                           {hit.maskedPhone}
                           {hit.lastVisitLabel ? ` · Dernier RDV : ${hit.lastVisitLabel}` : ""}
@@ -295,14 +377,27 @@ export function ReserveFlow({
               </ul>
             ) : searched ? (
               <p role="status" className="text-[14px] leading-normal text-stone">
-                Aucun client inscrit ne correspond. Le client doit d’abord créer son compte, ou
-                réserver par téléphone avec le salon une fois inscrit.
+                Aucun client ne correspond.
               </p>
-            ) : (
-              <p className="text-[13px] leading-normal text-stone">
-                Le salon ne réserve que pour un client qui a déjà un compte.
-              </p>
-            )}
+            ) : null}
+            <button
+              type="button"
+              onClick={() => setCreating(true)}
+              className="flex h-[52px] items-center justify-center gap-2.5 border border-line-strong px-5 text-[11px] uppercase tracking-[0.2em] transition-colors duration-200 hover:bg-graphite-light"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                aria-hidden="true"
+              >
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              Nouvelle fiche sans compte
+            </button>
           </>
         )}
       </section>
@@ -446,7 +541,10 @@ export function ReserveFlow({
                 >
                   <path d="M5 12.5l4.5 4.5L19 7.5" />
                 </svg>
-                Rendez-vous créé par {created.author} · le client reçoit l’email de confirmation.
+                Rendez-vous créé par {created.author} ·{" "}
+                {client?.hasEmail
+                  ? "le client reçoit l’email de confirmation."
+                  : "pas d’email sur la fiche, aucune confirmation n’est envoyée."}
               </p>
               <Link
                 href={`/equipe?jour=${created.date}&rdv=${created.id}`}

@@ -64,11 +64,13 @@ export function connectTestDb(): TestDb {
 
 export async function createCustomer(
   sql: postgres.Sql,
-  overrides: { blocked?: boolean; name?: string } = {},
+  overrides: { blocked?: boolean; name?: string; withoutAccount?: boolean } = {},
 ): Promise<string> {
+  // Un client inscrit par défaut (compte de connexion) ; `withoutAccount` : une fiche créée au salon (D-76).
   const [row] = await sql`
-    insert into customer (first_name, last_name, phone, email, online_booking_blocked)
-    values (${overrides.name ?? "Test"}, 'Client', '+33600000000', ${`client-${randomUUID()}@example.com`}, ${overrides.blocked ?? false})
+    insert into customer (first_name, last_name, phone, email, online_booking_blocked, auth_user_id, origin)
+    values (${overrides.name ?? "Test"}, 'Client', '+33600000000', ${`client-${randomUUID()}@example.com`}, ${overrides.blocked ?? false},
+            ${overrides.withoutAccount ? null : randomUUID()}, ${overrides.withoutAccount ? "salon" : "account"})
     returning id`;
   return row.id as string;
 }

@@ -34,6 +34,10 @@ export type DomainErrorCode =
   | "not_no_show"
   | "customer_not_blockable"
   | "customer_has_no_account"
+  // Fiches sans compte (D-76, D-79)
+  | "customer_has_account"
+  | "customers_both_have_accounts"
+  | "invalid_for_name"
   // Correction du montant à la clôture (R-53, R-54)
   | "invalid_amount"
   // Gestion de la carte et de l'équipe par le gérant (R-10 à R-13)

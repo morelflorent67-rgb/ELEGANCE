@@ -12,6 +12,8 @@ export interface AppointmentView {
   createdAt: Date;
   staffFirstName: string;
   note: string | null;
+  /** « Pour qui ? » (D-80), ou null. */
+  forName: string | null;
   items: { name: string; priceCents: number; durationMin: number }[];
   totalPriceCents: number;
   durationMinutes: number;
@@ -27,6 +29,7 @@ async function withItems(
     createdAt: Date;
     staffFirstName: string;
     note: string | null;
+    forName: string | null;
   }[],
 ): Promise<AppointmentView[]> {
   if (rows.length === 0) return [];
@@ -64,6 +67,7 @@ const columns = {
   createdAt: appointment.createdAt,
   staffFirstName: staff.firstName,
   note: appointment.customerNote,
+  forName: appointment.forName,
 };
 
 /** Un RDV d'un client, ou null s'il n'existe pas ou appartient à quelqu'un d'autre : on ne révèle rien. */

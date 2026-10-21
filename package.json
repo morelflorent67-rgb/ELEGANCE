@@ -27,7 +27,9 @@
     "smoke:db": "vitest run --config vitest.smoke.config.mts",
     "staff:account": "node scripts/staff-account.mjs",
     "manager:set-code": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/manager-code.mjs",
-    "manager:set-code:remote": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/manager-code.mjs --remote"
+    "manager:set-code:remote": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/manager-code.mjs --remote",
+    "customers:import": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/import-customers.mjs",
+    "customers:import:remote": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/import-customers.mjs --remote"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

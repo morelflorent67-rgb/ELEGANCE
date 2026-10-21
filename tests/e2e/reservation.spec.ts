@@ -310,6 +310,28 @@ test.describe("cas particuliers de la maquette", () => {
     await expect(page.getByRole("button", { name: "Continuer", exact: true })).toHaveCount(0);
   });
 
+  test("R-28, D-80 : « Pour qui ? » nomme un proche ; le RDV reste au titulaire et Mes rendez-vous le rappelle", async ({
+    page,
+  }) => {
+    const client = newClient();
+    await reachIdentityStep(page);
+    await page.getByRole("tab", { name: "Créer un compte" }).click();
+    await fillSignUp(page, client, "step-signup");
+    await page.getByRole("button", { name: "Créer mon compte" }).click();
+    await expect(page.getByText("Connecté", { exact: true })).toBeVisible();
+    await page.getByLabel(/Pour qui \?/).fill("Lina");
+    await page.getByRole("button", { name: "Continuer", exact: true }).click();
+    await expect(page.getByText("Pour Lina", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Confirmer" }).click();
+    await expect(page).toHaveURL(/\/reservation\/confirmation\?rdv=/);
+
+    const [row] = await sql`
+      select a.for_name, c.email from appointment a join customer c on c.id = a.customer_id`;
+    expect(row).toEqual({ for_name: "Lina", email: client.email.toLowerCase() });
+    await page.goto("/compte/rendez-vous");
+    await expect(page.getByText(/Pour Lina, avec/).filter({ visible: true })).toBeVisible();
+  });
+
   test("R-29 : la note au salon est limitée à 300 caractères", async ({ page }) => {
     await reachIdentityStep(page);
     await page.getByRole("tab", { name: "Créer un compte" }).click();

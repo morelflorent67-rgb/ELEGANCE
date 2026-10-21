@@ -162,8 +162,8 @@ export async function addCustomer(
 ): Promise<{ id: string; email: string }> {
   const email = `${first}.${last}.${randomUUID().slice(0, 6)}@exemple.fr`.toLowerCase();
   const [row] = await sql`
-    insert into customer (first_name, last_name, phone, email)
-    values (${first}, ${last}, ${phone}, ${email}) returning id`;
+    insert into customer (first_name, last_name, phone, email, auth_user_id)
+    values (${first}, ${last}, ${phone}, ${email}, ${randomUUID()}) returning id`;
   return { id: row.id as string, email };
 }
 

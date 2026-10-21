@@ -289,6 +289,8 @@ export async function anonymizeCustomer(
         phone: null,
         email: null,
         authUserId: null,
+        legacyVisits: null,
+        legacyLastVisitOn: null,
         anonymizedAt: now,
       })
       .where(eq(customer.id, row.id));

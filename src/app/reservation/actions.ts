@@ -154,6 +154,7 @@ export async function confirmBooking(
       staffId,
       startsAt: z.iso.datetime(),
       note: z.string().max(300).optional(),
+      forName: z.string().max(200).optional(),
     })
     .safeParse(input);
   if (!parsed.success) return { ok: false, error: "invalid" };
@@ -169,6 +170,7 @@ export async function confirmBooking(
     if (!limit.allowed) return { ok: false, error: "rate_limited" };
 
     const note = parsed.data.note?.trim();
+    const forName = parsed.data.forName?.trim();
     const created = await createAppointment(db(), {
       customerId: customer.id,
       serviceIds: parsed.data.serviceIds,
@@ -176,6 +178,7 @@ export async function confirmBooking(
       startsAt: new Date(parsed.data.startsAt),
       source: "online",
       ...(note ? { note } : {}),
+      ...(forName ? { forName } : {}),
     });
 
     // R-60 : l'email part après la réponse. En cas d'échec, il reste dans la file et le cron le reprend.

@@ -37,6 +37,12 @@ import {
   updateService,
 } from "@/modules/catalog/manage";
 import {
+  createSalonCustomer,
+  mergeCustomers,
+  updateSalonCustomer,
+  type SameCustomer,
+} from "@/modules/customers/salon-customers";
+import {
   deleteCustomerAsManager,
   searchCustomers,
   setOnlineBookingBlocked,
@@ -165,6 +171,8 @@ export interface CustomerHitView {
   /** « 10 oct. », ou null. */
   lastVisitLabel: string | null;
   upcoming: number;
+  hasAccount: boolean;
+  hasEmail: boolean;
 }
 
 const shortDate = new Intl.DateTimeFormat("fr-FR", {
@@ -188,8 +196,90 @@ export async function searchCustomersAction(
         maskedPhone: h.maskedPhone,
         lastVisitLabel: h.lastVisit ? shortDate.format(h.lastVisit) : null,
         upcoming: h.upcoming,
+        hasAccount: h.hasAccount,
+        hasEmail: h.hasEmail,
       })),
     };
+  });
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Fiches sans compte (D-70, D-76, D-79)
+
+const customerFields = z.object({
+  firstName: z.string().max(200),
+  lastName: z.string().max(200),
+  phone: z.string().max(40),
+  email: z.string().max(320),
+});
+
+/** Refus d'une fiche : champs à corriger, email déjà pris, ou numéro déjà connu (la tablette demande confirmation). */
+export type CustomerFormResult =
+  | { ok: true; customerId: string }
+  | { ok: false; error: "fields"; fieldErrors: Record<string, string> }
+  | { ok: false; error: "email_taken"; existing: SameCustomer }
+  | { ok: false; error: "phone_exists"; existing: SameCustomer[] };
+
+export async function createSalonCustomerAction(
+  input: unknown,
+): Promise<TeamResult<{ result: CustomerFormResult }>> {
+  const parsed = z
+    .object({ fields: customerFields, samePhoneConfirmed: z.boolean() })
+    .safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asStaff<{ result: CustomerFormResult }>(async () => {
+    const limit = await hitRateLimit(db(), "salon-customer-create", {
+      limit: 60,
+      windowSeconds: 3600,
+    });
+    if (!limit.allowed) return { ok: false, error: "rate_limited" };
+    const result = await createSalonCustomer(db(), parsed.data.fields, {
+      samePhoneConfirmed: parsed.data.samePhoneConfirmed,
+    });
+    return { ok: true, result: formResult(result) };
+  });
+}
+
+export async function updateSalonCustomerAction(
+  input: unknown,
+): Promise<TeamResult<{ result: CustomerFormResult }>> {
+  const parsed = z
+    .object({ customerId: uuid, authorId: z.string(), fields: customerFields })
+    .safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asStaff<{ result: CustomerFormResult }>(async () => {
+    const result = await updateSalonCustomer(db(), {
+      customerId: parsed.data.customerId,
+      authorStaffId: parsed.data.authorId,
+      fields: parsed.data.fields,
+    });
+    return { ok: true, result: formResult(result) };
+  });
+}
+
+function formResult(
+  result: Awaited<ReturnType<typeof createSalonCustomer>>,
+): CustomerFormResult {
+  if (result.ok) return result;
+  if (result.error === "invalid") {
+    return { ok: false, error: "fields", fieldErrors: result.fieldErrors };
+  }
+  return result;
+}
+
+/** Fusion de deux fiches de la même personne, par le gérant (D-79, R-73). */
+export async function mergeCustomersAction(
+  input: unknown,
+): Promise<TeamResult<{ keptId: string }>> {
+  const parsed = z.object({ keepId: uuid, mergeId: uuid }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asManager<{ keptId: string }>(async (user) => {
+    const result = await mergeCustomers(db(), {
+      keepId: parsed.data.keepId,
+      mergeId: parsed.data.mergeId,
+      actorId: user.id,
+    });
+    return { ok: true, keptId: result.keptId };
   });
 }
 
@@ -298,6 +388,7 @@ export async function createSalonAppointment(
       staffId,
       startsAt: isoInstant,
       authorId: z.string(),
+      forName: z.string().max(200).optional(),
     })
     .safeParse(input);
   if (!parsed.success) return { ok: false, error: "invalid" };
@@ -309,6 +400,7 @@ export async function createSalonAppointment(
       startsAt: new Date(parsed.data.startsAt),
       source: "salon",
       createdByStaffId: parsed.data.authorId,
+      ...(parsed.data.forName ? { forName: parsed.data.forName } : {}),
     });
     after(() => sendEmailsForAppointment(db(), created.id));
     return { ok: true, appointmentId: created.id, startsAtIso: created.startsAt.toISOString() };

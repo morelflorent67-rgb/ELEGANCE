@@ -1,4 +1,4 @@
-export { createAppointment } from "./create-appointment";
+export { createAppointment, FOR_NAME_MAX } from "./create-appointment";
 export type { CreateAppointmentInput, CreatedAppointment } from "./create-appointment";
 export {
   cancelAppointment,

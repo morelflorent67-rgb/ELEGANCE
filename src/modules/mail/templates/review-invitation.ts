@@ -1,8 +1,16 @@
 import { capitalize, formatDay } from "@/lib/format";
 import { SALON } from "@/lib/salon";
-import { COLORS, button, escapeHtml, layout, type RenderedEmail } from "../layout";
+import {
+  COLORS,
+  button,
+  escapeHtml,
+  layout,
+  type RenderedEmail,
+  noticeLines,
+  type Recipient,
+} from "../layout";
 
-export interface ReviewInvitationData {
+export interface ReviewInvitationData extends Recipient {
   firstName: string | null;
   startsAt: Date;
   items: { name: string }[];
@@ -55,6 +63,7 @@ export function renderReviewInvitationEmail(data: ReviewInvitationData): Rendere
     preheader,
     logoUrl: data.logoUrl,
     bodyHtml,
+    originNotice: data.originNotice,
     footerNote: `Vous recevez cet email après votre rendez-vous chez ${SALON.name}.`,
   });
 
@@ -71,6 +80,7 @@ export function renderReviewInvitationEmail(data: ReviewInvitationData): Rendere
     `Ne plus recevoir ces invitations : ${data.unsubscribeUrl}`,
     "",
     `${SALON.name} · ${SALON.tagline}`,
+    ...noticeLines(data),
   ].join("\n");
 
   return { subject, preheader, html, text };

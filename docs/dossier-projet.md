@@ -189,9 +189,9 @@ Ces 52 règles fixent le comportement du moteur de réservation : toutes sont d�
 | R-23 | Deux réservations sur le même créneau sont impossibles, même à la même seconde : la base refuse la seconde. | Décidé |
 | R-24 | Un RDV créé est immédiatement confirmé. | Décidé |
 | R-25 | Un client a au plus 5 RDV à venir en même temps (D-66, réglage). | Décidé |
-| R-26 | Le salon réserve par téléphone ou au comptoir, uniquement pour un client qui a déjà un compte. | Décidé |
-| R-27 | Un client sans compte s'inscrit lui-même avant toute réservation ; le salon n'est pas soumis aux délais de R-06. | Décidé |
-| R-28 | Un RDV est toujours au nom du titulaire du compte, même pris pour quelqu'un d'autre ; la note au salon peut le préciser. | Décidé |
+| R-26 | Le salon réserve par téléphone ou au comptoir, pour un client inscrit ou pour une fiche sans compte qu'il crée sur place (D-70, D-76). | Décidé (modifiée le 21/10/2026) |
+| R-27 | Pour réserver en ligne, le client s'inscrit lui-même ; le salon n'est pas soumis aux délais de R-06. | Décidé (modifiée le 21/10/2026) |
+| R-28 | Un RDV est toujours au nom du titulaire de la fiche, même pris pour quelqu'un d'autre ; « Pour qui ? » donne le prénom du proche (D-80). | Décidé (précisée le 21/10/2026) |
 | R-29 | Le client peut laisser une note au salon, de 300 caractères au plus. | Décidé |
 
 ### Modification et annulation
@@ -247,7 +247,7 @@ Ces 52 règles fixent le comportement du moteur de réservation : toutes sont d�
 
 ## Journal des décisions
 
-Le 20 octobre 2026, 57 décisions ont fixé le cadre du projet ; le 21 octobre 2026, les demandes du salon ont ajouté D-63 à D-75 ; on ne revient sur l'une d'elles qu'en l'écrivant ici.
+Le 20 octobre 2026, 57 décisions ont fixé le cadre du projet ; le 21 octobre 2026, les demandes du salon ont ajouté D-63 à D-75, puis le lot 10 D-76 à D-82 ; on ne revient sur l'une d'elles qu'en l'écrivant ici.
 
 | N° | Décision | Raison |
 | --- | --- | --- |
@@ -320,12 +320,19 @@ Le 20 octobre 2026, 57 décisions ont fixé le cadre du projet ; le 21 octobre 2
 | D-67 | L'email d'avis mène au lien direct « Donner un avis » de Google et propose aussi « Prendre un nouveau RDV » (précise D-58) | Lien reçu le 21 octobre 2026 |
 | D-68 | Au planning, les RDV pris en ligne et ceux pris par le salon ont deux couleurs ; le panneau de droite se replie pour agrandir le planning | Demandes du salon et de Florent, 21 octobre 2026 |
 | D-69 | Icône de l'application : le « E » du logo, ivoire sur fond noir (exception à D-33). Le site s'installe sur l'écran d'accueil (tablette et téléphones) ; **pas d'App Store** pour l'instant | Florent, 21 octobre 2026 : publier un site emballé sur l'App Store est souvent refusé par Apple et coûte 99 $ par an |
-| D-70 | **À coder (lot 10).** Le salon réserve depuis la tablette pour une personne sans compte (nom et téléphone) ; le fichier clients du salon (CSV issu de Planity ou Treatwell) est importé en fiches sans compte, rattachées au compte si la personne s'inscrit ensuite (modifie R-26, D-09, D-18) | Florent, 21 octobre 2026 : fichier du salon lui-même ; le planning ne montre plus deux RDV au même nom |
+| D-70 | **Codé (lot 10), précisé par D-76 à D-82.** Le salon réserve depuis la tablette pour une personne sans compte (nom et téléphone) ; le fichier clients du salon (export Treatwell) est importé en fiches sans compte, rattachées au compte si la personne s'inscrit ensuite (modifie R-26, D-09, D-18) | Florent, 21 octobre 2026 : fichier du salon lui-même ; le planning ne montre plus deux RDV au même nom |
 | D-71 | **À coder (lot 11).** Depuis la tablette, un RDV se répète : toutes les 1, 2, 3 ou 4 semaines, ou chaque mois (même date ou même jour, par exemple « 2e mardi »), jusqu'à une date ou un nombre de fois, 6 mois au plus. Les dates impossibles sont sautées et affichées ; la série échappe à la limite de R-25 ; on annule « ce RDV » ou « celui-ci et les suivants » ; un seul email liste les dates, chaque RDV a son rappel | Florent, 21 octobre 2026 : comme Planity, renouvelée au besoin |
 | D-72 | **À coder (lot 12).** L'interface client devient une seule page de réservation, sans photos ni onglets, en motion design poussé, avec les horaires et un plan animés ; les pages légales restent, en liens discrets ; sur ordinateur, la même page centrée (remplace la vitrine du lot 6, D-30, D-37) | Le salon trouve la vitrine trop « site internet » ; maquettes à refaire avec Claude Design |
 | D-73 | **À coder (lot 13).** Liste d'attente : quand rien n'est libre, le client s'inscrit pour un jour, un coiffeur ou « Sans préférence » et une plage (matin, après-midi, journée). Quand un créneau qui lui convient se libère, tous les inscrits concernés reçoivent un email ; le premier qui réserve l'obtient | Demande du salon, 21 octobre 2026 |
 | D-74 | **À coder (lot 13).** 15 jours après son dernier RDV honoré, un client sans RDV à venir reçoit une fois « Nous serions ravis de vous revoir », avec un bouton pour réserver et un lien de désinscription (délai en réglage) | Demande du salon, 21 octobre 2026 |
 | D-75 | **À coder (lot 14).** La fiche RDV envoie le montant au terminal SumUp Solo (Cloud API SumUp) ; le résultat revient tout seul et devient le montant encaissé (précise D-08, R-53) | Le salon tape aujourd'hui le montant dans l'application SumUp ; le Solo accepte les paiements lancés à distance |
+| D-76 | Une fiche sans compte, créée à la tablette, demande **prénom, nom et téléphone** ; l'email est facultatif. Un email ne sert qu'à une fiche ; un numéro déjà connu est signalé et la tablette propose de choisir la fiche existante, ou de créer quand même (une famille partage un numéro). L'équipe corrige une fiche sans compte en choisissant son nom (R-74) ; une fiche avec compte appartient à son titulaire (précise D-70, R-26) | Florent, 21 octobre 2026 |
+| D-77 | Import du fichier du salon : seulement les clients **venus dans les 3 dernières années** et qui ont **un téléphone ou un email** ; seuls le prénom, le nom, le téléphone, l'email, le nombre de visites et la date de la dernière visite sont repris (rien d'autre : ni genre, ni dépense, ni adresse). L'import se fait par une commande lancée par Florent, rejouable sans doublon, sur la base locale d'abord ; en ligne seulement avec son accord (précise D-70) | Florent, 21 octobre 2026 : 1 968 fiches sur 3 313 lignes de l'export Treatwell du 25 août 2026 ; le salon prend aujourd'hui ses RDV sur Planity |
+| D-78 | **Aucun email groupé** à l'import. Le salon prévient ses clients par ses réseaux, et le **premier email** reçu par une fiche importée dit d'où vient l'adresse (fichier clients du salon) et comment la faire effacer ; la page Confidentialité le dit aussi | Florent, 21 octobre 2026 ; plafond de Brevo gratuit (300 emails par jour) ; à faire valider avec les textes légaux |
+| D-79 | Une personne qui **s'inscrit avec l'email d'une fiche sans compte** retrouve cette fiche (rattachement automatique, avec ses RDV et son historique). Le même téléphone seul ne rattache rien : les fiches au même numéro se signalent sur la fiche client, et le **gérant les fusionne** (code gérant) ; la fiche qui a un compte reste toujours, deux comptes ne se fusionnent pas | Florent, 21 octobre 2026 : le site ne vérifie pas l'email à l'inscription (D-42), risque de prise de fiche jugé faible |
+| D-80 | « **Pour qui ?** » : en ligne comme à la tablette, un champ facultatif donne le prénom du proche (40 caractères au plus). Au planning, le proche en premier, le titulaire en petit (« Inès · Lina M. ») ; la fiche RDV, Mes rendez-vous et les emails le rappellent (précise R-28) | Florent, 21 octobre 2026 : le client en ligne garde cette possibilité |
+| D-81 | Une fiche sans compte qui a un email reçoit les mêmes emails qu'un client inscrit (confirmation, rappel, modification, annulation, invitation à un avis) ; « Gérer mon rendez-vous » y devient « **Créer mon compte** », et les changements passent par le téléphone du salon. Sans email, rien ne part et la tablette le dit | Florent, 21 octobre 2026 |
+| D-82 | Planning : la case du RDV est **entièrement remplie** de sa couleur (or en ligne, ivoire au salon, texte noir) ; un RDV honoré garde sa couleur assombrie, un lapin redevient sombre au contour brique. Replié, le résumé du jour ne prend plus de colonne : seule une **languette avec la flèche** dépasse du bord droit (précise D-68) | Retour de Florent sur le lot 9, 21 octobre 2026 |
 
 ## Documents liés
 

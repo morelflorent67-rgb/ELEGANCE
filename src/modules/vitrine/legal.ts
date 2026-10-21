@@ -66,7 +66,7 @@ function privacy(rules: SalonRules): Raw[] {
     ],
     [
       "Données collectées",
-      "À la création de votre compte : prénom, nom, numéro de téléphone, adresse email et mot de passe. Votre mot de passe est chiffré par le service d'authentification : le salon ne le voit jamais et il n'est jamais lisible.\nLors d'une réservation : les prestations, le coiffeur, la date et l'heure, et la note que vous laissez éventuellement au salon.\nLe salon peut noter sur votre fiche qu'un rendez-vous n'a pas été honoré.",
+      "À la création de votre compte : prénom, nom, numéro de téléphone, adresse email et mot de passe. Votre mot de passe est chiffré par le service d'authentification : le salon ne le voit jamais et il n'est jamais lisible.\nLors d'une réservation : les prestations, le coiffeur, la date et l'heure, le prénom du proche pour qui vous réservez et la note que vous laissez éventuellement au salon.\nSi vous réservez par téléphone ou au salon sans compte, le salon enregistre votre prénom, votre nom, votre téléphone et, si vous le donnez, votre email.\nLe salon a aussi repris le fichier clients de son ancien outil de réservation, pour les clients venus ces trois dernières années : prénom, nom, téléphone, email, nombre de visites et date de la dernière visite. Le premier email que vous recevez du site le rappelle. Si vous créez un compte avec la même adresse email, cette fiche devient votre compte.\nLe salon peut noter sur votre fiche qu'un rendez-vous n'a pas été honoré.",
     ],
     [
       "Utilisation",
@@ -78,7 +78,7 @@ function privacy(rules: SalonRules): Raw[] {
     ],
     [
       "Durée de conservation",
-      "Vos données sont conservées tant que votre compte existe. Si vous supprimez votre compte, votre nom, votre téléphone et votre email sont effacés ; vos rendez-vous passés sont gardés sans aucune information qui permette de vous identifier, pour que les statistiques du salon restent justes. [Durée de conservation d'un compte inactif : à définir.]",
+      "Vos données sont conservées tant que votre compte existe. Si vous supprimez votre compte, votre nom, votre téléphone et votre email sont effacés ; vos rendez-vous passés sont gardés sans aucune information qui permette de vous identifier, pour que les statistiques du salon restent justes. Une fiche sans compte peut être effacée sur simple demande au salon. [Durée de conservation d'un compte inactif : à définir.] [Durée de conservation d'une fiche sans compte : à définir.]",
     ],
     [
       "Vos droits",
@@ -95,7 +95,7 @@ function conditions(rules: SalonRules): Raw[] {
   return [
     [
       "Réservation",
-      `La réservation en ligne nécessite un compte. Un client peut avoir au maximum ${rules.maxUpcomingPerCustomer} rendez-vous à venir en même temps. Un rendez-vous est confirmé dès sa réservation ; un email de confirmation vous est envoyé. Il est toujours au nom du titulaire du compte.`,
+      `La réservation en ligne nécessite un compte. Un client peut avoir au maximum ${rules.maxUpcomingPerCustomer} rendez-vous à venir en même temps. Un rendez-vous est confirmé dès sa réservation ; un email de confirmation vous est envoyé. Il est toujours au nom du titulaire du compte ; « Pour qui ? » permet d'indiquer le prénom d'un proche.`,
     ],
     [
       "Modification et annulation",

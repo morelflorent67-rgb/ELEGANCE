@@ -72,6 +72,8 @@ async function ManagerClient({
           blocked={file.blocked}
           canBlock={file.canBlock}
           upcoming={upcoming}
+          hasAccount={file.hasAccount}
+          samePhone={file.samePhone}
         />
       </div>
     </main>

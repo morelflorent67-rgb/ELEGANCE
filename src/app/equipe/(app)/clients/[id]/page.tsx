@@ -5,10 +5,19 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { z } from "zod";
 import { db } from "@/db/client";
-import { capitalize, formatDay, formatPrice, formatTime, parisDate } from "@/lib/format";
+import {
+  capitalize,
+  formatDay,
+  formatDayWithYear,
+  formatPrice,
+  formatTime,
+  parisDate,
+} from "@/lib/format";
 import { planningStatus } from "@/modules/appointments/status";
 import { loadCustomerFile } from "@/modules/customers/staff-view";
+import { listActiveStaff } from "@/modules/staff";
 import { requireStaff } from "../../../_lib/session";
+import { EditCustomer } from "./edit-customer";
 
 export const metadata: Metadata = { title: "Fiche client" };
 
@@ -39,7 +48,10 @@ async function ClientFile({ params }: { params: PageProps<"/equipe/clients/[id]"
   await requireStaff();
   const id = z.uuid().safeParse((await params).id);
   if (!id.success) notFound();
-  const file = await loadCustomerFile(db(), id.data);
+  const [file, team] = await Promise.all([
+    loadCustomerFile(db(), id.data),
+    listActiveStaff(db()),
+  ]);
   if (!file) notFound();
 
   const now = new Date();
@@ -110,6 +122,18 @@ async function ClientFile({ params }: { params: PageProps<"/equipe/clients/[id]"
             >
               Fonctions gérant
             </Link>
+            {file.hasAccount ? null : (
+              <EditCustomer
+                customerId={file.id}
+                initial={{
+                  firstName: file.firstName,
+                  lastName: file.lastName,
+                  phone: file.phone,
+                  email: file.email,
+                }}
+                team={team.map((m) => ({ id: m.id, firstName: m.firstName }))}
+              />
+            )}
           </div>
         </div>
 
@@ -128,7 +152,57 @@ async function ClientFile({ params }: { params: PageProps<"/equipe/clients/[id]"
               Bloqué en ligne
             </span>
           ) : null}
+          {file.hasAccount ? null : (
+            <span className="border border-line-strong px-2 py-1 text-[11px] uppercase tracking-[0.16em] text-stone">
+              {file.origin === "import" ? "Sans compte · fichier du salon" : "Sans compte"}
+            </span>
+          )}
         </div>
+
+        {file.hasAccount ? null : (
+          <p className="text-[14px] leading-normal text-stone">
+            {file.email
+              ? "Le client reçoit les emails de ses rendez-vous. S’il crée son compte en ligne avec cette adresse, il retrouve cette fiche."
+              : "Pas d’email : le client ne reçoit ni confirmation ni rappel. Ajoutez son adresse en corrigeant la fiche."}
+          </p>
+        )}
+
+        {file.legacyVisits !== null ? (
+          <p className="text-[14px] leading-normal text-ivory-soft">
+            Avant le site : {file.legacyVisits} visite{file.legacyVisits > 1 ? "s" : ""}
+            {file.legacyLastVisit
+              ? `, la dernière le ${formatDayWithYear(file.legacyLastVisit)}`
+              : ""}{" "}
+            <span className="text-stone">(fichier du salon)</span>
+          </p>
+        ) : null}
+
+        {file.samePhone.length > 0 ? (
+          <section
+            aria-label="Même numéro"
+            className="flex flex-col gap-2.5 border border-line-strong p-4"
+          >
+            <h2 className="text-label uppercase tracking-[0.3em] text-stone">Même numéro</h2>
+            <ul className="flex flex-col gap-1.5">
+              {file.samePhone.map((other) => (
+                <li key={other.id}>
+                  <Link
+                    href={`/equipe/clients/${other.id}`}
+                    className="flex min-h-10 items-center gap-2 text-[15px] underline decoration-line-strong underline-offset-4"
+                  >
+                    {other.name}
+                    <span className="text-[13px] text-stone no-underline">
+                      {other.hasAccount ? "avec compte" : "sans compte"}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <p className="text-[13px] leading-normal text-stone">
+              Si c’est la même personne, le gérant peut fusionner les fiches (Fonctions gérant).
+            </p>
+          </section>
+        ) : null}
 
         <section aria-label="Rendez-vous à venir" className="flex flex-col">
           <h2 className="border-b border-line pb-2 text-label uppercase tracking-[0.3em] text-stone">

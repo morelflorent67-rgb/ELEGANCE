@@ -76,6 +76,7 @@ export function BookingFlow({
   const [pickedAt, setPickedAt] = useState(0);
   const [notice, setNotice] = useState<"taken" | "gone" | null>(null);
   const [note, setNote] = useState("");
+  const [forName, setForName] = useState("");
   const [customer, setCustomer] = useState(initialCustomer);
   const [booking, setBooking] = useState(initialBooking);
   const [submitting, setSubmitting] = useState(false);
@@ -175,6 +176,7 @@ export function BookingFlow({
           staffId,
           startsAt: slot.iso,
           note: note.trim() || undefined,
+          forName: forName.trim() || undefined,
         });
     if (result.ok) {
       if ("changed" in result && !result.changed) {
@@ -369,6 +371,8 @@ export function BookingFlow({
               booking={booking}
               note={note}
               onNote={setNote}
+              forName={forName}
+              onForName={setForName}
               onAuthenticated={(c, b) => {
                 setCustomer(c);
                 setBooking(b);
@@ -398,6 +402,7 @@ export function BookingFlow({
               slot={slot}
               staffLabel={staffLabel}
               note={editing ? "" : note}
+              forName={editing ? "" : forName}
               cutoffHours={cutoffHours}
               changeableOnline={changeableOnline}
               submitting={submitting}

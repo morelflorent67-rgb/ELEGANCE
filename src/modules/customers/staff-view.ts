@@ -9,8 +9,9 @@ import { loadSettings } from "@/modules/availability";
 import type { AuthDriver } from "@/modules/auth/types";
 import { countNoShows } from "@/modules/booking/salon-changes";
 import { anonymizeCustomer } from "./profile";
+import { findSamePhone, type SameCustomer } from "./salon-customers";
 
-// Ce que la tablette sait des clients : recherche pour réserver (R-26), fiche avec les lapins (R-52), et les deux
+// Ce que la tablette sait des clients : recherche pour réserver (R-26 ; fiches sans compte comprises, D-70), fiche avec les lapins (R-52), et les deux
 // fonctions réservées au gérant, qui demandent le code (R-73) : bloquer la réservation en ligne, supprimer la fiche.
 
 const MAX_RESULTS = 8;
@@ -50,11 +51,20 @@ export interface CustomerHit {
   lastVisit: Date | null;
   /** RDV confirmés à venir. */
   upcoming: number;
+  /** Faux pour une fiche créée au salon ou importée, tant que la personne ne s'est pas inscrite (D-70). */
+  hasAccount: boolean;
+  /** Faux : aucun email ne part à cette fiche (D-81). */
+  hasEmail: boolean;
 }
 
+/** Dernière visite reprise du fichier du salon (D-77), à midi à Paris pour l'afficher au bon jour. */
+const legacyVisit = (date: string | null): Date | null =>
+  date ? new Date(`${date}T12:00:00+01:00`) : null;
+
 /**
- * Cherche un client inscrit par nom, prénom ou téléphone (R-26). 2 caractères au moins, 8 réponses au plus. Les fiches
- * supprimées (R-75) n'apparaissent jamais. Le téléphone est masqué : la fiche entière s'ouvre au choix du client.
+ * Cherche un client, inscrit ou sans compte (R-26, D-70), par nom, prénom ou téléphone. 2 caractères au moins,
+ * 8 réponses au plus. Les fiches supprimées (R-75) n'apparaissent jamais. Le téléphone est masqué : la fiche entière
+ * s'ouvre au choix du client.
  */
 export async function searchCustomers(
   db: Database,
@@ -75,6 +85,9 @@ export async function searchCustomers(
       firstName: customer.firstName,
       lastName: customer.lastName,
       phone: customer.phone,
+      authUserId: customer.authUserId,
+      email: customer.email,
+      legacyLastVisitOn: customer.legacyLastVisitOn,
     })
     .from(customer)
     .where(and(isNull(customer.anonymizedAt), ...conditions))
@@ -106,8 +119,10 @@ export async function searchCustomers(
       id: r.id,
       name: `${r.firstName ?? ""} ${r.lastName ?? ""}`.trim(),
       maskedPhone: r.phone ? maskPhone(r.phone) : "",
-      lastVisit: visit?.last ? new Date(visit.last) : null,
+      lastVisit: visit?.last ? new Date(visit.last) : legacyVisit(r.legacyLastVisitOn),
       upcoming: visit?.upcoming ?? 0,
+      hasAccount: !!r.authUserId,
+      hasEmail: !!r.email,
     };
   });
 }
@@ -157,6 +172,14 @@ export interface CustomerFile {
   /** Nombre de lapins à partir duquel le gérant peut bloquer (réglage). */
   blockThreshold: number;
   canBlock: boolean;
+  /** Faux pour une fiche sans compte (D-70) : le salon peut la corriger. */
+  hasAccount: boolean;
+  origin: "account" | "salon" | "import";
+  /** Historique repris du fichier du salon (D-77). */
+  legacyVisits: number | null;
+  legacyLastVisit: Date | null;
+  /** Autres fiches au même numéro : doublons possibles, que le gérant peut fusionner (D-79). */
+  samePhone: SameCustomer[];
   /** Tous les RDV du client, le plus récent d'abord. */
   appointments: AppointmentView[];
 }
@@ -171,10 +194,11 @@ export async function loadCustomerFile(
     .from(customer)
     .where(and(eq(customer.id, customerId), isNull(customer.anonymizedAt)));
   if (!row) return null;
-  const [settings, noShowCount, appointments] = await Promise.all([
+  const [settings, noShowCount, appointments, samePhone] = await Promise.all([
     loadSettings(db),
     countNoShows(db, row.id),
     listCustomerAppointments(db, row.id),
+    row.phone ? findSamePhone(db, row.phone, row.id) : Promise.resolve([]),
   ]);
   return {
     id: row.id,
@@ -186,6 +210,11 @@ export async function loadCustomerFile(
     noShowCount,
     blockThreshold: settings.noShowBlockThreshold,
     canBlock: noShowCount >= settings.noShowBlockThreshold,
+    hasAccount: !!row.authUserId,
+    origin: row.origin,
+    legacyVisits: row.legacyVisits,
+    legacyLastVisit: legacyVisit(row.legacyLastVisitOn),
+    samePhone,
     appointments,
   };
 }

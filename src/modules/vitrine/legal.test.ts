@@ -98,6 +98,12 @@ describe("la politique de confidentialité décrit ce que le site fait vraiment"
     expect(privacy).toMatch(/ni publicité ni mesure d'audience|aucun cookie publicitaire/i);
   });
 
+  it("D-78 : dit d'où viennent les fiches sans compte et le fichier repris du salon", () => {
+    expect(privacy).toContain("sans compte, le salon enregistre votre prénom");
+    expect(privacy).toContain("repris le fichier clients de son ancien outil de réservation");
+    expect(privacy).toContain("cette fiche devient votre compte");
+  });
+
   it("les prestataires sont nommés : hébergement, base de données, emails", () => {
     for (const name of ["Vercel", "Supabase", "Brevo"]) expect(privacy).toContain(name);
   });

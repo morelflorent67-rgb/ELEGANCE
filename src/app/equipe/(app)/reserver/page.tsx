@@ -70,12 +70,16 @@ async function Reserve({
         upcoming: file.appointments.filter((a) => a.status === "confirmed" && a.startsAt > now)
           .length,
         blocked: file.blocked,
+        hasAccount: file.hasAccount,
+        hasEmail: file.email !== "",
       };
     }
   }
 
   return (
     <ReserveFlow
+      // Une fiche choisie par lien (« Choisir cette fiche ») repart d'un parcours neuf.
+      key={client?.id ?? "nouveau"}
       catalog={catalog}
       team={team.map((m) => ({ id: m.id, firstName: m.firstName }))}
       today={parisDate(now)}

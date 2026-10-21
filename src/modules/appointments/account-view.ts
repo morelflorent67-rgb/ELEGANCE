@@ -21,7 +21,7 @@ export interface AccountAppointment {
   /** « Dans 18 jours » : seulement quand le RDV n'est ni aujourd'hui ni demain. */
   relative: string | null;
   items: { name: string; priceCents: number; durationMin: number }[];
-  /** « avec Orhan » */
+  /** « avec Orhan », ou « Pour Lina, avec Orhan » (D-80). */
   staffLabel: string;
   /** R-30 : encore modifiable et annulable en ligne. Sinon : « Contactez le salon » (R-31, R-32). */
   changeable: boolean;
@@ -76,7 +76,9 @@ export function upcomingView(
     time: formatTime(a.startsAt),
     relative: days >= 2 ? `Dans ${days} jours` : null,
     items: a.items,
-    staffLabel: `avec ${a.staffFirstName}`,
+    staffLabel: a.forName
+      ? `Pour ${a.forName}, avec ${a.staffFirstName}`
+      : `avec ${a.staffFirstName}`,
     changeable,
     deadlineLabel: changeable ? `${formatDay(deadline)}, ${formatTime(deadline)}` : null,
   };
@@ -88,7 +90,9 @@ export function pastView(a: AppointmentView): PastAccountAppointment {
   return {
     id: a.id,
     whenLabel: `${capitalize(formatDay(a.startsAt))} · ${formatTime(a.startsAt)}`,
-    summary: `${names} · ${formatPrice(a.totalPriceCents)} · avec ${a.staffFirstName}`,
+    summary: `${names} · ${formatPrice(a.totalPriceCents)} · avec ${a.staffFirstName}${
+      a.forName ? ` · pour ${a.forName}` : ""
+    }`,
     cancelled,
     statusLabel:
       a.status === "cancelled_by_customer"

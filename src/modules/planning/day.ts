@@ -22,7 +22,14 @@ export interface PlanningAppointment {
   startMinute: number;
   endMinute: number;
   customerId: string;
+  /** Le titulaire du RDV (R-28). */
   customerName: string;
+  /** « Pour qui ? » : le prénom du proche, ou null (D-80). */
+  forName: string | null;
+  /** Faux pour une fiche sans compte (D-70). */
+  hasAccount: boolean;
+  /** Faux pour une fiche sans email : aucun email ne part (D-81). */
+  hasEmail: boolean;
   /** Numéro complet : la tablette est réservée à l'équipe. */
   phone: string;
   /** « Coupe homme + Taillage barbe » */
@@ -83,7 +90,10 @@ const columns = {
   source: appointment.source,
   adjustedAmountCents: appointment.adjustedAmountCents,
   note: appointment.customerNote,
+  forName: appointment.forName,
   customerId: customer.id,
+  authUserId: customer.authUserId,
+  email: customer.email,
   firstName: customer.firstName,
   lastName: customer.lastName,
   phone: customer.phone,
@@ -151,6 +161,9 @@ async function hydrate(
       endMinute: minuteOf(row.endsAt),
       customerId: row.customerId,
       customerName: `${row.firstName ?? ""} ${row.lastName ?? ""}`.trim(),
+      forName: row.forName,
+      hasAccount: !!row.authUserId,
+      hasEmail: !!row.email,
       phone: row.phone ? formatPhone(row.phone) : "",
       summary: own.map((i) => i.name).join(" + "),
       items: own.map(({ name, priceCents, durationMin }) => ({ name, priceCents, durationMin })),

@@ -19,6 +19,11 @@ const MESSAGES: Partial<Record<TeamError, string>> = {
   no_services: "Choisissez au moins une prestation.",
   unknown_customer: "Ce client n'existe plus.",
   customer_has_no_account: "Cette fiche client a été supprimée.",
+  customer_has_account:
+    "Ce client a un compte : il modifie ses informations lui-même, dans « Mes informations ».",
+  customers_both_have_accounts:
+    "Ces deux fiches ont chacune un compte : elles ne se fusionnent pas. Supprimez celle qui ne sert plus.",
+  invalid_for_name: "« Pour qui ? » : un prénom de 40 caractères au plus.",
   appointment_not_found: "Ce rendez-vous n'existe plus.",
   appointment_over: "Ce rendez-vous est terminé : il ne se modifie plus.",
   not_modifiable: "Ce rendez-vous est déjà annulé ou signalé : il ne se modifie plus.",
