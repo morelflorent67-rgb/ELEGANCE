@@ -28,6 +28,9 @@ let customerId: string;
 beforeEach(async () => {
   await t.reset();
   customerId = await createCustomer(t.sql);
+  // Scénarios écrits avec les délais d'origine (48 h, 72 h) : ils vérifient que le délai vient du réglage. Les valeurs
+  // actuelles (1 h et 24 h, D-63 et D-64) ont leurs propres tests.
+  await t.sql`update salon_settings set change_cutoff_hours = 48, reminder_hours = 72`;
 });
 afterAll(() => t.close());
 
@@ -304,16 +307,16 @@ describe("R-33 : le salon modifie à tout moment (jour, heure, coiffeur : D-51)"
     expect(await outbox("modification")).toHaveLength(0);
   });
 
-  it("n'applique ni les délais de R-06 ni la grille de 30 minutes, mais refuse le passé (R-27)", async () => {
+  it("n'applique pas les délais de R-06, mais refuse le passé (R-27)", async () => {
     const created = await book();
     const now = paris(TUESDAY, "09:55");
-    // Dans 5 minutes, sur la grille de 15 minutes du salon.
+    // Dans 35 minutes : en ligne, R-06 l'interdirait.
     const result = await salonRescheduleAppointment(
       t.db,
       {
         appointmentId: created.id,
         staffId: ORHAN,
-        startsAt: paris(TUESDAY, "10:15"),
+        startsAt: paris(TUESDAY, "10:30"),
         authorStaffId: ENES,
       },
       now,
@@ -332,6 +335,25 @@ describe("R-33 : le salon modifie à tout moment (jour, heure, coiffeur : D-51)"
       ),
       "in_past",
     );
+  });
+
+  it("D-65 : le salon déplace aussi à l'heure pile ou à la demie, jamais à 15 ni à 45", async () => {
+    const created = await book();
+    for (const time of ["10:15", "10:45"]) {
+      await expectRefused(
+        salonRescheduleAppointment(
+          t.db,
+          {
+            appointmentId: created.id,
+            staffId: ORHAN,
+            startsAt: paris(TUESDAY, time),
+            authorStaffId: ENES,
+          },
+          paris(TUESDAY, "09:00"),
+        ),
+        "off_grid",
+      );
+    }
   });
 
   it("ne change rien et n'envoie rien quand le RDV reste au même créneau", async () => {

@@ -133,6 +133,46 @@ test.describe("planning du jour", () => {
     await expect(page.getByText("Touchez un rendez-vous pour ouvrir sa fiche.")).toBeVisible();
   });
 
+  test("D-68 : la couleur dit l'origine du RDV, le résumé du jour se replie et le reste", async ({
+    page,
+  }) => {
+    tabletOnly(page);
+    const day = openDay(3);
+    const thomas = await addCustomer("Thomas", "Durand");
+    const yanis = await addCustomer("Yanis", "Benali", "+33698765432");
+    await addAppointment(thomas.email, { startsAt: parisIso(day, "10:00") });
+    await addAppointment(yanis.email, { startsAt: parisIso(day, "11:00"), source: "salon" });
+
+    await loginTablet(page);
+    await page.goto(planningUrl(day));
+    const online = block(page, /Thomas Durand/);
+    const salon = block(page, /Yanis Benali/);
+    await expect(online).toHaveAccessibleName(/pris en ligne/);
+    await expect(salon).toHaveAccessibleName(/pris au salon/);
+    const accent = (locator: typeof online) =>
+      locator.evaluate((el) => getComputedStyle(el).borderLeftColor);
+    expect(await accent(online)).not.toBe(await accent(salon));
+
+    const summary = page.getByRole("complementary", { name: "Résumé du jour", exact: true });
+    const grid = page.getByRole("region", { name: /Planning du/ });
+    const wide = (await grid.boundingBox())!.width;
+    await summary.getByRole("button", { name: "Replier le résumé du jour" }).click();
+    await expect(summary).toHaveCount(0);
+    const open = page.getByRole("button", { name: "Afficher le résumé du jour" });
+    await expect(open).toBeVisible();
+    expect((await grid.boundingBox())!.width).toBeGreaterThan(wide + 200);
+
+    // Une fiche s'ouvre toujours ; fermée, le résumé reste replié, même après un rechargement.
+    await online.click();
+    await expect(panel(page).getByRole("link", { name: "Thomas Durand" })).toBeVisible();
+    await panel(page).getByRole("button", { name: "Fermer la fiche" }).click();
+    await expect(open).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole("button", { name: "Afficher le résumé du jour" })).toBeVisible();
+    await page.getByRole("button", { name: "Afficher le résumé du jour" }).click();
+    await expect(page.getByText("Touchez un rendez-vous pour ouvrir sa fiche.")).toBeVisible();
+  });
+
   test("les jours se changent d'un geste, un jour fermé est signalé", async ({ page }) => {
     tabletOnly(page);
     await loginTablet(page);
@@ -433,6 +473,7 @@ test.describe("R-26, R-27 : réserver pour un client par téléphone ou au compt
 
   test("un client qui a déjà le maximum de RDV à venir est signalé", async ({ page }) => {
     tabletOnly(page);
+    await sql`update salon_settings set max_upcoming_per_customer = 2`; // limite abaissée pour le scénario
     const thomas = await addCustomer("Thomas", "Durand");
     await addAppointment(thomas.email, { startsAt: parisIso(openDay(5), "10:00") });
     await addAppointment(thomas.email, { startsAt: parisIso(openDay(6), "11:00") });

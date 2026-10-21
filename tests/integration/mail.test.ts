@@ -26,6 +26,9 @@ let customerId: string;
 beforeEach(async () => {
   await t.reset();
   customerId = await createCustomer(t.sql, { name: "Thomas" });
+  // Scénarios écrits avec les délais d'origine (48 h, 72 h) : ils vérifient que le délai vient du réglage. Les valeurs
+  // actuelles (1 h et 24 h, D-63 et D-64) ont leurs propres tests.
+  await t.sql`update salon_settings set change_cutoff_hours = 48, reminder_hours = 72`;
 });
 afterAll(() => t.close());
 

@@ -303,8 +303,8 @@ test.describe("pages légales", () => {
     page,
   }) => {
     await page.goto("/conditions");
-    await expect(page.getByText("au maximum 2 rendez-vous à venir")).toBeVisible();
-    await expect(page.getByText(/jusqu'à 48 h avant son début/)).toBeVisible();
+    await expect(page.getByText("au maximum 5 rendez-vous à venir")).toBeVisible();
+    await expect(page.getByText(/jusqu'à une heure avant son début/)).toBeVisible();
     await sql`update salon_settings set change_cutoff_hours = 24, max_upcoming_per_customer = 3`;
     await refreshVitrine();
     await page.goto("/conditions");
@@ -315,9 +315,17 @@ test.describe("pages légales", () => {
   test("les mentions donnent l'adresse et le téléphone du salon", async ({ page }) => {
     await page.goto("/mentions-legales");
     await expect(
-      page.getByRole("article").getByText(/162 route de Bischwiller, 67300 Schiltigheim/).first(),
+      page
+        .getByRole("article")
+        .getByText(/162 route de Bischwiller, 67300 Schiltigheim/)
+        .first(),
     ).toBeVisible();
-    await expect(page.getByRole("article").getByText(/03 88 97 74 68/).first()).toBeVisible();
+    await expect(
+      page
+        .getByRole("article")
+        .getByText(/03 88 97 74 68/)
+        .first(),
+    ).toBeVisible();
   });
 });
 
@@ -442,5 +450,42 @@ test("sonde de santé : base et file d'envoi, sans donnée personnelle", async (
     status: "ok",
     database: "ok",
     emails: { overdue: 0, failedLastWeek: 0 },
+  });
+});
+
+test.describe("D-69 : application installable, icône E", () => {
+  test("le site et la tablette ont chacun leur manifeste, avec l'icône E et le nom Elegance", async ({
+    page,
+    request,
+  }) => {
+    await page.goto("/");
+    await expect(page.locator('link[rel="manifest"]')).toHaveAttribute("href", "/site.webmanifest");
+    await expect(page.locator('meta[name="apple-mobile-web-app-title"]')).toHaveAttribute(
+      "content",
+      "Elegance",
+    );
+    const touchIcon = await page.locator('link[rel="apple-touch-icon"]').getAttribute("href");
+    expect(touchIcon).toMatch(/^\/apple-icon/);
+
+    await page.goto("/equipe/connexion");
+    await expect(page.locator('link[rel="manifest"]')).toHaveAttribute(
+      "href",
+      "/equipe.webmanifest",
+    );
+    await expect(page.locator('meta[name="apple-mobile-web-app-title"]')).toHaveAttribute(
+      "content",
+      "Elegance",
+    );
+
+    const tablet = await (await request.get("/equipe.webmanifest")).json();
+    expect(tablet).toMatchObject({ start_url: "/equipe", short_name: "Elegance" });
+    const site = await (await request.get("/site.webmanifest")).json();
+    expect(site).toMatchObject({ start_url: "/", short_name: "Elegance" });
+
+    for (const src of [touchIcon!, ...site.icons.map((icon: { src: string }) => icon.src)]) {
+      const response = await request.get(src);
+      expect(response.status(), src).toBe(200);
+      expect(response.headers()["content-type"]).toBe("image/png");
+    }
   });
 });

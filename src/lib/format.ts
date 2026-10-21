@@ -58,6 +58,13 @@ export const formatDayWithYear = (date: Date): string => dayLongYear.format(date
 export const formatDayShort = (date: Date): string => dayShort.format(date);
 
 /** « Samedi 24 octobre » : première lettre en capitale, pour les titres. */
+/** Un délai en heures dans une phrase : « une heure », « 48 h » (« jusqu'à 1 h avant » se lirait comme une heure). */
+export const hoursPhrase = (hours: number): string => (hours === 1 ? "une heure" : `${hours} h`);
+
+/** « moins d'une heure », « moins de 48 h ». */
+export const lessThanHours = (hours: number): string =>
+  hours === 1 ? "moins d'une heure" : `moins de ${hours} h`;
+
 export const capitalize = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
 
 /** Jour de Paris d'un instant, « AAAA-MM-JJ ». */

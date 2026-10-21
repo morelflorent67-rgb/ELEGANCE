@@ -8,6 +8,7 @@ const base: ReviewInvitationData = {
   staffFirstName: "Orhan",
   reviewUrl: "https://share.google/abc",
   rebookUrl: "https://exemple.fr/reservation?reprendre=abc",
+  bookUrl: "https://exemple.fr/reservation",
   unsubscribeUrl: "https://exemple.fr/avis/desinscription?c=1&t=jeton",
   logoUrl: "https://exemple.fr/email/logo.png",
 };
@@ -33,6 +34,13 @@ describe("email d'invitation à un avis (R-64)", () => {
     expect(html).not.toContain("Décevant");
     expect(html).not.toContain("1 sur 5");
     expect(html.match(/href="https:\/\/share\.google\/abc"/g)).toHaveLength(1);
+  });
+
+  it("D-67 : propose aussi de prendre un nouveau RDV, en HTML et en texte", () => {
+    const { html, text } = renderReviewInvitationEmail(base);
+    expect(html).toContain("Prendre un nouveau RDV");
+    expect(html).toContain('href="https://exemple.fr/reservation"');
+    expect(text).toContain("Prendre un nouveau RDV : https://exemple.fr/reservation");
   });
 
   it("propose de ne plus recevoir ces invitations, avec un lien propre", () => {

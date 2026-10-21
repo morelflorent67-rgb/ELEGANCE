@@ -4,7 +4,7 @@ import { enqueueEmail } from "./outbox";
 const HOUR = 3_600_000;
 
 /**
- * R-61 : le rappel part `reminderHours` (72 h) avant le RDV, et seulement pour un RDV pris plus tôt. Renvoie l'instant
+ * R-61 : le rappel part `reminderHours` (24 h, D-64) avant le RDV, et seulement pour un RDV pris plus tôt. Renvoie l'instant
  * d'envoi, ou null si ce moment est déjà arrivé (RDV pris dans les 72 h : la confirmation suffit) ou si le rappel est
  * coupé dans les réglages (0).
  */

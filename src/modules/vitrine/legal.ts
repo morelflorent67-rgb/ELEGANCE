@@ -1,8 +1,9 @@
+import { hoursPhrase, lessThanHours } from "@/lib/format";
 import { SALON, salonAddressLine } from "@/lib/salon";
 import type { SalonRules } from "./load";
 
 // Pages légales : un gabarit à onglets, trois documents. Les textes décrivent ce que le site fait vraiment ; les
-// règles chiffrées (2 rendez-vous, 48 h, rappel) sont lues dans les réglages du salon, jamais écrites en dur.
+// règles chiffrées (rendez-vous à venir, délai de modification, rappel) sont lues dans les réglages du salon, jamais écrites en dur.
 // Ce qui n'est connu que du salon reste entre crochets : voir `placeholdersOf`. Le tout est à faire valider par
 // un professionnel avant l'ouverture (docs/design/README.md §8).
 
@@ -98,7 +99,7 @@ function conditions(rules: SalonRules): Raw[] {
     ],
     [
       "Modification et annulation",
-      `Un rendez-vous peut être modifié ou annulé en ligne jusqu'à ${rules.changeCutoffHours} h avant son début. Ensuite, ou pour un rendez-vous pris moins de ${rules.changeCutoffHours} h à l'avance, il faut appeler le salon au ${SALON.phoneDisplay}. Le salon peut lui-même modifier ou annuler un rendez-vous ; il vous prévient alors par téléphone et par email.`,
+      `Un rendez-vous peut être modifié ou annulé en ligne jusqu'à ${hoursPhrase(rules.changeCutoffHours)} avant son début. Ensuite, ou pour un rendez-vous pris ${lessThanHours(rules.changeCutoffHours)} à l'avance, il faut appeler le salon au ${SALON.phoneDisplay}. Le salon peut lui-même modifier ou annuler un rendez-vous ; il vous prévient alors par téléphone et par email.`,
     ],
     [
       "Rendez-vous non honorés",

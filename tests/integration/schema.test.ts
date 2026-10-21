@@ -118,18 +118,18 @@ describe("réglages du salon : une seule ligne", () => {
     });
   });
 
-  it("porte les valeurs du dossier projet et l'écart de pas décidé le 20 octobre 2026", async () => {
+  it("porte les valeurs du dossier projet, avec les demandes du salon du 21 octobre 2026 (D-63 à D-66)", async () => {
     const [s] = await t.sql`select * from salon_settings`;
     expect(s).toMatchObject({
       timezone: "Europe/Paris",
       min_notice_minutes: 60,
       max_horizon_days: 42,
       online_slot_step_minutes: 30,
-      salon_slot_step_minutes: 15,
-      change_cutoff_hours: 48,
-      max_upcoming_per_customer: 2,
+      salon_slot_step_minutes: 30,
+      change_cutoff_hours: 1,
+      max_upcoming_per_customer: 5,
       no_show_block_threshold: 2,
-      reminder_hours: 72,
+      reminder_hours: 24,
     });
   });
 });

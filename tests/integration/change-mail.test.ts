@@ -17,6 +17,9 @@ let customerId: string;
 beforeEach(async () => {
   await t.reset();
   customerId = await createCustomer(t.sql, { name: "Thomas" });
+  // Scénarios écrits avec les délais d'origine (48 h, 72 h) : ils vérifient que le délai vient du réglage. Les valeurs
+  // actuelles (1 h et 24 h, D-63 et D-64) ont leurs propres tests.
+  await t.sql`update salon_settings set change_cutoff_hours = 48, reminder_hours = 72`;
 });
 afterAll(() => t.close());
 
@@ -207,7 +210,7 @@ describe("R-33, R-63, D-52 : emails d'un changement décidé par le salon", () =
       {
         appointmentId: created.id,
         staffId: ENES,
-        startsAt: paris("2026-11-10", "14:15"),
+        startsAt: paris("2026-11-10", "14:30"),
         authorStaffId: ORHAN,
       },
       NOW,
@@ -217,7 +220,7 @@ describe("R-33, R-63, D-52 : emails d'un changement décidé par le salon", () =
     expect(sent[0].subject).toBe("Votre rendez-vous est déplacé au mardi 10 novembre");
     expect(sent[0].html).toContain("Suite à notre échange, nous avons déplacé votre rendez-vous");
     expect(sent[0].html).toContain("Mardi 10 novembre 2026"); // maintenant
-    expect(sent[0].html).toContain("14:15");
+    expect(sent[0].html).toContain("14:30");
     expect(sent[0].html).toContain("avec Enes");
   });
 

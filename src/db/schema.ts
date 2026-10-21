@@ -52,12 +52,12 @@ export const salonSettings = pgTable(
     timezone: text("timezone").notNull().default("Europe/Paris"),
     minNoticeMinutes: integer("min_notice_minutes").notNull().default(60), // R-06
     maxHorizonDays: integer("max_horizon_days").notNull().default(42), // R-06
-    onlineSlotStepMinutes: integer("online_slot_step_minutes").notNull().default(30), // R-04 (écart décidé le 20/10/2026)
-    salonSlotStepMinutes: integer("salon_slot_step_minutes").notNull().default(15), // R-04
-    changeCutoffHours: integer("change_cutoff_hours").notNull().default(48), // R-30
-    maxUpcomingPerCustomer: integer("max_upcoming_per_customer").notNull().default(2), // R-25
+    onlineSlotStepMinutes: integer("online_slot_step_minutes").notNull().default(30), // R-04, D-65
+    salonSlotStepMinutes: integer("salon_slot_step_minutes").notNull().default(30), // R-04, D-65 (15 avant le 21/10/2026)
+    changeCutoffHours: integer("change_cutoff_hours").notNull().default(1), // R-30, D-63
+    maxUpcomingPerCustomer: integer("max_upcoming_per_customer").notNull().default(5), // R-25, D-66
     noShowBlockThreshold: integer("no_show_block_threshold").notNull().default(2), // R-52
-    reminderHours: integer("reminder_hours").notNull().default(72), // R-61
+    reminderHours: integer("reminder_hours").notNull().default(24), // R-61, D-64
     /** Page d'avis externe vers laquelle mène l'invitation (R-64). Vide : aucune invitation n'est envoyée. */
     reviewUrl: text("review_url"),
     managerPinHash: text("manager_pin_hash"), // R-73

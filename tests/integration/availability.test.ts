@@ -71,13 +71,31 @@ describe("créneaux calculés par le serveur à partir de la base", () => {
     expect(list.at(-1)).toBe("18:00");
   });
 
-  it("R-04 : le salon voit des départs toutes les 15 minutes", async () => {
+  it("R-04, D-65 : le salon aussi ne voit que l'heure pile et la demie, quelle que soit la prestation", async () => {
     const list = times(await slots({ audience: "salon" }));
-    expect(list).toContain("10:15");
-    expect(list).toContain("18:15");
+    expect(list.slice(0, 3)).toEqual(["10:00", "10:30", "11:00"]);
+    expect(list.every((time) => time.endsWith(":00") || time.endsWith(":30"))).toBe(true);
     expect(list.at(-1)).toBe("18:30"); // une coupe de 30 min part au plus tard à 18 h 30
     const taillage = times(await slots({ audience: "salon", serviceIds: [TAILLAGE_BARBE] }));
-    expect(taillage.at(-1)).toBe("18:45"); // 15 min : dernier départ 18 h 45
+    expect(taillage.every((time) => time.endsWith(":00") || time.endsWith(":30"))).toBe(true);
+    expect(taillage.at(-1)).toBe("18:30"); // 15 min : plus de départ à 18 h 45
+  });
+
+  it("D-65 : après un RDV de 45 min à 10 h, le départ suivant au salon est 11 h", async () => {
+    const customerId = await createCustomer(t.sql);
+    await createAppointment(
+      t.db,
+      {
+        customerId,
+        serviceIds: [COUPE, TAILLAGE_BARBE], // 30 + 15 min : 10 h – 10 h 45
+        staffId: ORHAN,
+        startsAt: new Date("2026-11-03T09:00:00Z"),
+        source: "online",
+      },
+      NOW,
+    );
+    const list = times(await slots({ audience: "salon", staffId: ORHAN }));
+    expect(list.slice(0, 2)).toEqual(["11:00", "11:30"]);
   });
 
   it("R-03 : suit les fermetures et les réglages de la base", async () => {

@@ -37,8 +37,10 @@ let customerId: string;
 beforeEach(async () => {
   await t.reset();
   customerId = await createCustomer(t.sql, { name: "Thomas" });
-  // Le salon est limité à 2 rendez-vous à venir par client (D-41) : ces scénarios en posent davantage pour un seul client.
-  await t.sql`update salon_settings set max_upcoming_per_customer = 50`;
+  // Le salon est limité à 5 rendez-vous à venir par client (D-66) : ces scénarios en posent davantage pour un seul client.
+  // Ils posent aussi des RDV au quart d'heure pour fabriquer des chevauchements partiels : grille de 15 min réglée ici
+  // (D-65 la fixe à 30 min).
+  await t.sql`update salon_settings set max_upcoming_per_customer = 50, salon_slot_step_minutes = 15`;
 });
 afterAll(() => t.close());
 
@@ -76,7 +78,12 @@ const book = (
   );
 
 const absent = (staffId: string, startTime: string, endTime: string, date = TUESDAY) =>
-  declareAbsence(t.db, { staffId, startDate: date, endDate: date, startTime, endTime, reason: "Congé" }, AUTHOR, NOW);
+  declareAbsence(
+    t.db,
+    { staffId, startDate: date, endDate: date, startTime, endTime, reason: "Congé" },
+    AUTHOR,
+    NOW,
+  );
 
 const toHandle = () => listAppointmentsToHandle(t.db, NOW);
 const ids = async () => (await toHandle()).map((a) => a.id);
@@ -146,12 +153,22 @@ describe("R-42 : à la déclaration, l'app liste les rendez-vous concernés", ()
     const b = await book("10:30");
     await absent(ORHAN, "00:00", "23:45");
 
-    await salonCancelAppointment(t.db, { appointmentId: a.id, authorStaffId: AUTHOR, holdEmails: true }, NOW);
+    await salonCancelAppointment(
+      t.db,
+      { appointmentId: a.id, authorStaffId: AUTHOR, holdEmails: true },
+      NOW,
+    );
     expect(await ids()).toEqual([b.id]);
 
     await salonRescheduleAppointment(
       t.db,
-      { appointmentId: b.id, staffId: ENES, startsAt: paris(TUESDAY, "10:30"), authorStaffId: AUTHOR, holdEmails: true },
+      {
+        appointmentId: b.id,
+        staffId: ENES,
+        startsAt: paris(TUESDAY, "10:30"),
+        authorStaffId: AUTHOR,
+        holdEmails: true,
+      },
       NOW,
     );
     expect(await toHandle()).toEqual([]);
@@ -171,7 +188,12 @@ describe("D-57 : le même circuit pour une fermeture, de nouveaux horaires, un d
     const a = await book("10:00", ORHAN, { date: WEDNESDAY });
     const b = await book("10:00", ENES, { date: WEDNESDAY });
     await book("10:00", ORHAN, { date: "2026-11-05" });
-    await addClosure(t.db, { startsOn: WEDNESDAY, endsOn: WEDNESDAY, reason: "Jour férié" }, MANAGER, NOW);
+    await addClosure(
+      t.db,
+      { startsOn: WEDNESDAY, endsOn: WEDNESDAY, reason: "Jour férié" },
+      MANAGER,
+      NOW,
+    );
 
     const list = await toHandle();
     expect(list.map((x) => x.id).sort()).toEqual([a.id, b.id].sort());
@@ -182,7 +204,10 @@ describe("D-57 : le même circuit pour une fermeture, de nouveaux horaires, un d
     const late = await book("17:45"); // 17:45–18:15
     const morning = await book("11:15"); // 11:15–11:45
     const fine = await book("10:00");
-    const range = [{ opensAt: "10:00", closesAt: "12:00" }, { opensAt: "13:00", closesAt: "19:00" }];
+    const range = [
+      { opensAt: "10:00", closesAt: "12:00" },
+      { opensAt: "13:00", closesAt: "19:00" },
+    ];
     await setOpeningHours(
       t.db,
       {
@@ -207,8 +232,15 @@ describe("D-57 : le même circuit pour une fermeture, de nouveaux horaires, un d
 
   it("un jour devenu fermé dans les horaires : ses rendez-vous sont à traiter", async () => {
     const a = await book("10:00");
-    const range = [{ opensAt: "10:00", closesAt: "12:00" }, { opensAt: "13:00", closesAt: "19:00" }];
-    await setOpeningHours(t.db, { 1: [], 2: [], 3: range, 4: range, 5: range, 6: range, 7: [] }, MANAGER);
+    const range = [
+      { opensAt: "10:00", closesAt: "12:00" },
+      { opensAt: "13:00", closesAt: "19:00" },
+    ];
+    await setOpeningHours(
+      t.db,
+      { 1: [], 2: [], 3: range, 4: range, 5: range, 6: range, 7: [] },
+      MANAGER,
+    );
     expect(await ids()).toEqual([a.id]);
   });
 
@@ -297,14 +329,22 @@ describe("R-42 : confier à un collègue, seulement s'il est libre et habilité"
     await absent(ORHAN, "00:00", "23:45");
     const result = await salonRescheduleAppointment(
       t.db,
-      { appointmentId: a.id, staffId: ENES, startsAt: paris(TUESDAY, "10:00"), authorStaffId: AUTHOR, holdEmails: true },
+      {
+        appointmentId: a.id,
+        staffId: ENES,
+        startsAt: paris(TUESDAY, "10:00"),
+        authorStaffId: AUTHOR,
+        holdEmails: true,
+      },
       NOW,
     );
     expect(result).toMatchObject({ changed: true, staffId: ENES });
-    const [row] = await t.sql`select staff_id, starts_at, status from appointment where id = ${a.id}`;
+    const [row] =
+      await t.sql`select staff_id, starts_at, status from appointment where id = ${a.id}`;
     expect(row).toMatchObject({ staff_id: ENES, status: "confirmed" });
     expect(row.starts_at).toEqual(paris(TUESDAY, "10:00"));
-    const [item] = await t.sql`select price_cents, duration_min from appointment_item where appointment_id = ${a.id}`;
+    const [item] =
+      await t.sql`select price_cents, duration_min from appointment_item where appointment_id = ${a.id}`;
     expect(item).toMatchObject({ price_cents: 1800, duration_min: 30 });
   });
 });
@@ -334,10 +374,20 @@ describe("R-43 : aucun message ne part au client sans la confirmation du gérant
     const b = await book("11:00");
     await flush(); // les confirmations d'origine
     await absent(ORHAN, "00:00", "23:45");
-    await salonCancelAppointment(t.db, { appointmentId: a.id, authorStaffId: AUTHOR, holdEmails: true }, NOW);
+    await salonCancelAppointment(
+      t.db,
+      { appointmentId: a.id, authorStaffId: AUTHOR, holdEmails: true },
+      NOW,
+    );
     await salonRescheduleAppointment(
       t.db,
-      { appointmentId: b.id, staffId: ENES, startsAt: paris(TUESDAY, "11:00"), authorStaffId: AUTHOR, holdEmails: true },
+      {
+        appointmentId: b.id,
+        staffId: ENES,
+        startsAt: paris(TUESDAY, "11:00"),
+        authorStaffId: AUTHOR,
+        holdEmails: true,
+      },
       NOW,
     );
     return { a, b };
@@ -351,8 +401,12 @@ describe("R-43 : aucun message ne part au client sans la confirmation du gérant
     expect(moved.staff_id).toBe(ENES);
 
     expect(await flush()).toEqual([]); // ni l'envoi immédiat ni le cron ne les prennent
-    const held = await t.sql`select type, held_for_manager, status from email_outbox where held_for_manager`;
-    expect(held.map((r) => [r.type, r.status]).sort()).toEqual([["cancellation", "pending"], ["modification", "pending"]]);
+    const held =
+      await t.sql`select type, held_for_manager, status from email_outbox where held_for_manager`;
+    expect(held.map((r) => [r.type, r.status]).sort()).toEqual([
+      ["cancellation", "pending"],
+      ["modification", "pending"],
+    ]);
   });
 
   it("liste ce qui attend la confirmation : type, client et créneau", async () => {
@@ -385,7 +439,11 @@ describe("R-43 : aucun message ne part au client sans la confirmation du gérant
     await releaseHeldEmails(t.db, MANAGER, NOW);
     const [entry] = await t.sql`
       select actor_type, actor_id, action, entity, after from audit_log where action = 'emails.released'`;
-    expect(entry).toMatchObject({ actor_type: "manager", actor_id: MANAGER, entity: "email_outbox" });
+    expect(entry).toMatchObject({
+      actor_type: "manager",
+      actor_id: MANAGER,
+      entity: "email_outbox",
+    });
     expect(entry.after).toMatchObject({ count: 2 });
     expect(JSON.stringify(entry.after)).not.toMatch(/@|Thomas|\+33/);
   });
@@ -420,7 +478,13 @@ describe("R-43 : aucun message ne part au client sans la confirmation du gérant
     // Confié à un collègue : il n'est plus à traiter, mais son email attend encore le gérant.
     await salonRescheduleAppointment(
       t.db,
-      { appointmentId: a.id, staffId: ENES, startsAt: paris(TUESDAY, "10:00"), authorStaffId: AUTHOR, holdEmails: true },
+      {
+        appointmentId: a.id,
+        staffId: ENES,
+        startsAt: paris(TUESDAY, "10:00"),
+        authorStaffId: AUTHOR,
+        holdEmails: true,
+      },
       NOW,
     );
     expect(await toHandle()).toEqual([]);
@@ -438,7 +502,11 @@ describe("R-43 : aucun message ne part au client sans la confirmation du gérant
     const a = await book("10:00");
     await absent(ORHAN, "00:00", "23:45");
     await expectRefused(
-      salonCancelAppointment(t.db, { appointmentId: a.id, authorStaffId: "", holdEmails: true }, NOW),
+      salonCancelAppointment(
+        t.db,
+        { appointmentId: a.id, authorStaffId: "", holdEmails: true },
+        NOW,
+      ),
       "author_required",
     );
     expect(await t.sql`select 1 from email_outbox where held_for_manager`).toHaveLength(0);

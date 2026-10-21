@@ -17,7 +17,7 @@ import { AuthorPicker, type TeamMemberView } from "../_components/author-picker"
 import { SlotPicker, type PickedSalonSlot } from "../_components/slot-picker";
 
 // Réservation par le salon, par téléphone ou au comptoir (R-26, R-27). Seul un client qui a déjà un compte se
-// choisit ; les créneaux (pas de 15 minutes, sans délai de réservation) et tous les contrôles viennent du serveur.
+// choisit ; les créneaux (heure pile ou demie, D-65 ; sans délai de réservation) et tous les contrôles viennent du serveur.
 
 export interface ClientView {
   id: string;

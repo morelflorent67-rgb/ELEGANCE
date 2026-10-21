@@ -182,7 +182,7 @@ async function renderConfirmation(
       durationMinutes: appt.durationMinutes,
       staffFirstName: appt.staffFirstName,
       changeDeadline,
-      // R-32 : un RDV pris moins de 48 h avant ne se modifie pas en ligne.
+      // R-32 : un RDV pris dans le délai de modification ne se modifie pas en ligne.
       changeableOnline: appt.createdAt.getTime() <= changeDeadline.getTime(),
       manageUrl: `${options.baseUrl}/compte/rendez-vous`,
       calendarUrl: calendarUrl(appt, options),
@@ -343,6 +343,7 @@ async function renderReviewInvitation(
       staffFirstName: appt.staffFirstName,
       reviewUrl: appt.reviewUrl,
       rebookUrl: `${options.baseUrl}/reservation?reprendre=${appt.id}`,
+      bookUrl: `${options.baseUrl}/reservation`,
       unsubscribeUrl: `${options.baseUrl}/avis/desinscription?c=${appt.customerId}&t=${token}`,
       logoUrl: `${options.baseUrl}/email/logo.png`,
     }),

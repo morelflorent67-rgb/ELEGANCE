@@ -25,6 +25,9 @@ let customerId: string;
 beforeEach(async () => {
   await t.reset();
   customerId = await createCustomer(t.sql);
+  // Scénarios écrits avec les délais d'origine (48 h, 72 h) : ils vérifient que le délai vient du réglage. Les valeurs
+  // actuelles (1 h et 24 h, D-63 et D-64) ont leurs propres tests.
+  await t.sql`update salon_settings set change_cutoff_hours = 48, reminder_hours = 72`;
 });
 afterAll(() => t.close());
 
@@ -61,7 +64,39 @@ const status = async (id: string) =>
 const outbox = (type: string) => t.sql`select * from email_outbox where type = ${type}`;
 const audit = (action: string) => t.sql`select * from audit_log where action = ${action}`;
 
-describe("R-30 : annuler jusqu'à 48 h avant le début", () => {
+describe("R-30, D-63 : avec le réglage du salon, le client annule ou déplace jusqu'à 1 h avant", () => {
+  const ONE_HOUR_BEFORE = paris(DAY, "09:00");
+  const useSalonSetting = () => t.sql`update salon_settings set change_cutoff_hours = default`;
+
+  it("annule à 1 h pile, refuse une milliseconde après", async () => {
+    await useSalonSetting();
+    const late = await book();
+    await expectRefused(
+      cancelAppointment(
+        t.db,
+        { customerId, appointmentId: late.id },
+        new Date(ONE_HOUR_BEFORE.getTime() + 1),
+      ),
+      "change_too_late",
+    );
+    await expect(
+      cancelAppointment(t.db, { customerId, appointmentId: late.id }, ONE_HOUR_BEFORE),
+    ).resolves.toEqual({ alreadyCancelled: false });
+  });
+
+  it("déplace le jour même, jusqu'à 1 h avant", async () => {
+    await useSalonSetting();
+    const created = await book();
+    const moved = await rescheduleAppointment(
+      t.db,
+      { customerId, appointmentId: created.id, staffId: ORHAN, startsAt: paris(DAY, "15:00") },
+      paris(DAY, "08:30"),
+    );
+    expect(moved).toMatchObject({ changed: true });
+  });
+});
+
+describe("R-30 : annuler jusqu'à 48 h avant le début (délai réglé à 48 h)", () => {
   it("annule un RDV, libère le créneau, écrit au journal et met l'email d'annulation en file", async () => {
     const created = await book();
     const result = await cancelAppointment(t.db, { customerId, appointmentId: created.id }, NOW);
@@ -180,7 +215,8 @@ describe("R-30 : annuler jusqu'à 48 h avant le début", () => {
     expect(await audit("appointment.cancelled")).toHaveLength(1);
   });
 
-  it("R-25 : un RDV annulé ne compte plus parmi les 2 RDV à venir", async () => {
+  it("R-25 : un RDV annulé ne compte plus parmi les RDV à venir", async () => {
+    await t.sql`update salon_settings set max_upcoming_per_customer = 2`; // limite abaissée pour le scénario
     const first = await book({ startsAt: paris("2026-11-10", "10:00") });
     await book({ startsAt: paris("2026-11-11", "10:00") });
     await expectRefused(book({ startsAt: paris("2026-11-12", "10:00") }), "too_many_upcoming");
@@ -189,7 +225,7 @@ describe("R-30 : annuler jusqu'à 48 h avant le début", () => {
   });
 });
 
-describe("R-30 : déplacer un RDV jusqu'à 48 h avant le début", () => {
+describe("R-30 : déplacer un RDV jusqu'à 48 h avant le début (délai réglé à 48 h)", () => {
   it("change l'heure et le coiffeur, garde le même RDV, ses prestations et son prix", async () => {
     const created = await book();
     const moved = await rescheduleAppointment(

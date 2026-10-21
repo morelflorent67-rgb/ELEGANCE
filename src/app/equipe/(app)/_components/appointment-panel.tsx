@@ -47,6 +47,8 @@ export function AppointmentPanel({
   toast,
   onToast,
   onSelect,
+  summaryCollapsed,
+  onSummaryCollapsedChange,
   onBusy,
 }: {
   day: DayPlanning;
@@ -57,6 +59,9 @@ export function AppointmentPanel({
   toast: string | null;
   onToast: (message: string | null) => void;
   onSelect: (id: string | null) => void;
+  /** D-68 : le résumé du jour est replié ; une fiche ouverte s'affiche toujours. */
+  summaryCollapsed: boolean;
+  onSummaryCollapsedChange: (collapsed: boolean) => void;
   onBusy: (busy: boolean) => void;
 }) {
   const router = useRouter();
@@ -105,7 +110,9 @@ export function AppointmentPanel({
     setSlot(null);
     setMode(next);
     if (next === "amount" && appointment) {
-      setAmountText(centsToEuroInput(appointment.adjustedAmountCents ?? appointment.totalPriceCents));
+      setAmountText(
+        centsToEuroInput(appointment.adjustedAmountCents ?? appointment.totalPriceCents),
+      );
     }
     if (next === "move" && appointment && choices.length === 0) {
       fetchSalonStaffChoices({ appointmentId: appointment.id }).then((result) => {
@@ -183,21 +190,77 @@ export function AppointmentPanel({
   };
 
   // ------------------------------------------------------------------------------------------------ aucune fiche
+  if (!appointment && summaryCollapsed) {
+    return (
+      <>
+        <aside
+          aria-label="Résumé du jour, replié"
+          className="hidden w-14 shrink-0 flex-col items-center border-l border-line-subtle bg-charcoal py-4 lg:flex"
+        >
+          <button
+            type="button"
+            onClick={() => onSummaryCollapsedChange(false)}
+            aria-expanded={false}
+            aria-label="Afficher le résumé du jour"
+            className="flex h-12 w-12 items-center justify-center border border-line-strong"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              aria-hidden="true"
+            >
+              <path d="M15 5l-7 7 7 7" />
+            </svg>
+          </button>
+        </aside>
+        <Toast message={toast} onClose={() => onToast(null)} />
+      </>
+    );
+  }
+
   if (!appointment) {
     return (
       <>
-        <aside className="hidden w-[340px] shrink-0 flex-col gap-5 border-l border-line-subtle bg-charcoal px-6 py-7 lg:flex">
-          <div className="flex flex-col gap-1.5">
-            <span className="text-label uppercase tracking-[0.3em] text-stone">
-              {isToday ? "Aujourd’hui" : day.label}
-            </span>
-            <span className="text-[24px] font-light">
-              {day.count === 0
-                ? "Aucun rendez-vous"
-                : day.count === 1
-                  ? "1 rendez-vous"
-                  : `${day.count} rendez-vous`}
-            </span>
+        <aside
+          aria-label="Résumé du jour"
+          className="hidden w-[340px] shrink-0 flex-col gap-5 border-l border-line-subtle bg-charcoal px-6 py-7 lg:flex"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex flex-col gap-1.5">
+              <span className="text-label uppercase tracking-[0.3em] text-stone">
+                {isToday ? "Aujourd’hui" : day.label}
+              </span>
+              <span className="text-[24px] font-light">
+                {day.count === 0
+                  ? "Aucun rendez-vous"
+                  : day.count === 1
+                    ? "1 rendez-vous"
+                    : `${day.count} rendez-vous`}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => onSummaryCollapsedChange(true)}
+              aria-expanded={true}
+              aria-label="Replier le résumé du jour"
+              className="-mr-2 flex h-12 w-12 shrink-0 items-center justify-center border border-line-strong"
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                aria-hidden="true"
+              >
+                <path d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
           </div>
           {day.next.length > 0 ? (
             <div className="flex flex-col border-t border-line">
@@ -357,7 +420,9 @@ export function AppointmentPanel({
                 onClick={() => open("amount")}
                 className="h-[52px] text-[14px] text-ivory-soft underline underline-offset-4"
               >
-                {a.adjustedAmountCents !== null ? "Corriger le montant encaissé" : "Corriger le montant"}
+                {a.adjustedAmountCents !== null
+                  ? "Corriger le montant encaissé"
+                  : "Corriger le montant"}
               </button>
             ) : null}
             {canNoShow ? (
@@ -401,7 +466,8 @@ export function AppointmentPanel({
             </span>
             {mode === "cancel" ? (
               <p className="text-[13px] leading-normal text-stone">
-                Appelez d’abord le client. Un email d’annulation lui est ensuite envoyé ; pour un rendez-vous à traiter (absence, fermeture), il attend la confirmation du gérant.
+                Appelez d’abord le client. Un email d’annulation lui est ensuite envoyé ; pour un
+                rendez-vous à traiter (absence, fermeture), il attend la confirmation du gérant.
               </p>
             ) : null}
             {mode === "amount" ? (
@@ -418,8 +484,9 @@ export function AppointmentPanel({
                   className="h-[52px] w-full min-w-0 border border-line-strong bg-ink px-4 text-[16px] tabular-nums text-ivory"
                 />
                 <p className="text-[13px] leading-normal text-stone">
-                  Prix de la carte : {formatPrice(a.totalPriceCents)}. Chaque correction est inscrite au
-                  journal ; le chiffre d’affaires du Bilan n’est qu’un repère, la caisse fait foi.
+                  Prix de la carte : {formatPrice(a.totalPriceCents)}. Chaque correction est
+                  inscrite au journal ; le chiffre d’affaires du Bilan n’est qu’un repère, la caisse
+                  fait foi.
                 </p>
                 {a.adjustedAmountCents !== null ? (
                   <button
@@ -438,7 +505,8 @@ export function AppointmentPanel({
             {mode === "move" ? (
               <div className="flex flex-col gap-3.5">
                 <p className="text-[13px] leading-normal text-stone">
-                  Appelez d’abord le client. Un email lui confirme le nouveau créneau ; pour un rendez-vous à traiter, il attend la confirmation du gérant.
+                  Appelez d’abord le client. Un email lui confirme le nouveau créneau ; pour un
+                  rendez-vous à traiter, il attend la confirmation du gérant.
                 </p>
                 {choices.length > 0 ? (
                   <div role="group" aria-label="Coiffeur" className="grid grid-cols-2 gap-2">

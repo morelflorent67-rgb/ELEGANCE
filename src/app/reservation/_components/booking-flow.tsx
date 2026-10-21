@@ -71,7 +71,7 @@ export function BookingFlow({
   const [choices, setChoices] = useState<StaffChoice[] | null>(prefill?.choices ?? null);
   const [choicesFailed, setChoicesFailed] = useState(false);
   const [slot, setSlot] = useState<PickedSlot | null>(null);
-  // Instant où le créneau a été choisi, pour avertir si le RDV est à moins de 48 h (R-32, information seulement :
+  // Instant où le créneau a été choisi, pour avertir si le RDV tombe dans le délai de modification (R-32, information seulement :
   // le serveur décide, à la création, si le RDV se modifie en ligne).
   const [pickedAt, setPickedAt] = useState(0);
   const [notice, setNotice] = useState<"taken" | "gone" | null>(null);

@@ -19,7 +19,7 @@ export interface ConfirmationData {
   staffFirstName: string;
   /** Dernier instant pour modifier ou annuler en ligne (R-30). */
   changeDeadline: Date;
-  /** Faux si le RDV a été pris moins de 48 h avant : il ne se modifie pas en ligne (R-32). */
+  /** Faux si le RDV a été pris dans le délai de modification : il ne se modifie pas en ligne (R-32). */
   changeableOnline: boolean;
   manageUrl: string;
   calendarUrl: string;

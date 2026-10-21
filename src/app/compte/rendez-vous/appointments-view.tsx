@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Alert, CalendarIcon, CallButton, btnPrimary, btnSecondary } from "@/components/ui";
 import { Sheet } from "@/components/sheet";
-import { formatDuration, formatPrice } from "@/lib/format";
+import { capitalize, formatDuration, formatPrice, lessThanHours } from "@/lib/format";
 import { SALON } from "@/lib/salon";
 import type {
   AccountAppointment,
@@ -192,7 +192,8 @@ export function AppointmentsView({
                 ) : (
                   <>
                     <p className="text-body-sm leading-normal text-stone">
-                      Moins de {cutoffHours} h avant : pour modifier ou annuler, appelez le salon.
+                      {capitalize(lessThanHours(cutoffHours))} avant : pour modifier ou annuler,
+                      appelez le salon.
                     </p>
                     <CallButton />
                   </>

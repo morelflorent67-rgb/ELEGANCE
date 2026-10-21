@@ -160,8 +160,8 @@ Ces 52 règles fixent le comportement du moteur de réservation : toutes sont d�
 | R-01 | Le salon est ouvert du mardi au samedi, de 10 h à 12 h et de 13 h à 19 h. | Décidé |
 | R-02 | Tous les coiffeurs suivent ces horaires ; une exception individuelle passe par une absence (R-40). | Décidé |
 | R-03 | Le gérant modifie les horaires et déclare les fermetures exceptionnelles : jours fériés, congés annuels. | Décidé |
-| R-04 | En ligne, un créneau commence toutes les 30 minutes, comme sur Planity ; le salon, lui, réserve toutes les 15 minutes (D-39). Un RDV finit au plus tard à 19 h et ne chevauche jamais la pause. | Décidé |
-| R-05 | Le dernier départ possible découle de la durée, sur la grille du moment ; la règle « dernier créneau à 18 h 30 » disparaît. En ligne, une prestation de 45 min part au plus tard à 18 h. | Décidé |
+| R-04 | Un créneau commence à l'heure pile ou à la demie, en ligne comme au salon, pour toutes les prestations (D-65, remplace D-39). Un RDV finit au plus tard à 19 h et ne chevauche jamais la pause. | Décidé |
+| R-05 | Le dernier départ possible découle de la durée, sur la grille de 30 minutes ; la règle « dernier créneau à 18 h 30 » disparaît. Une prestation de 45 min part au plus tard à 18 h. | Décidé |
 | R-06 | En ligne, un client réserve au plus tard 1 h avant le RDV et au plus tôt 6 semaines avant. | Décidé |
 | R-07 | Le salon reçoit uniquement sur rendez-vous : pas de client sans RDV. | Décidé |
 
@@ -188,7 +188,7 @@ Ces 52 règles fixent le comportement du moteur de réservation : toutes sont d�
 | R-22 | Un créneau n'est proposé que si le coiffeur est libre sur toute la durée : ni RDV, ni absence, ni pause. | Décidé |
 | R-23 | Deux réservations sur le même créneau sont impossibles, même à la même seconde : la base refuse la seconde. | Décidé |
 | R-24 | Un RDV créé est immédiatement confirmé. | Décidé |
-| R-25 | Un client a au plus 2 RDV à venir en même temps. | Décidé |
+| R-25 | Un client a au plus 5 RDV à venir en même temps (D-66, réglage). | Décidé |
 | R-26 | Le salon réserve par téléphone ou au comptoir, uniquement pour un client qui a déjà un compte. | Décidé |
 | R-27 | Un client sans compte s'inscrit lui-même avant toute réservation ; le salon n'est pas soumis aux délais de R-06. | Décidé |
 | R-28 | Un RDV est toujours au nom du titulaire du compte, même pris pour quelqu'un d'autre ; la note au salon peut le préciser. | Décidé |
@@ -198,9 +198,9 @@ Ces 52 règles fixent le comportement du moteur de réservation : toutes sont d�
 
 | N° | Règle | Statut |
 | --- | --- | --- |
-| R-30 | Le client modifie ou annule son RDV en ligne jusqu'à 48 h avant son début. | Décidé |
+| R-30 | Le client modifie ou annule son RDV en ligne jusqu'à 1 h avant son début (D-63, réglage). | Décidé |
 | R-31 | Passé ce délai, l'app affiche « Contactez le salon » avec un bouton d'appel. | Décidé |
-| R-32 | Un RDV pris moins de 48 h avant ne se modifie pas en ligne : le client appelle le salon. | Décidé |
+| R-32 | Un RDV pris moins de 1 h avant ne se modifie pas en ligne : le client appelle le salon (D-63). | Décidé |
 | R-33 | Le salon modifie ou annule un RDV à tout moment, et le client en est prévenu. | Décidé |
 
 ### Absences
@@ -228,7 +228,7 @@ Ces 52 règles fixent le comportement du moteur de réservation : toutes sont d�
 | N° | Règle | Statut |
 | --- | --- | --- |
 | R-60 | Un email de confirmation part dès la réservation, avec un lien d'ajout à l'agenda. | Décidé |
-| R-61 | Un rappel par email part 72 h avant, pour les RDV pris plus tôt, avec la date limite de modification. | Décidé |
+| R-61 | Un rappel par email part 24 h avant (D-64, réglage), pour les RDV pris plus tôt, avec la date limite de modification. | Décidé |
 | R-62 | Pas de SMS en V1 : tous les messages partent par email ; le SMS pourra s'ajouter plus tard. | Décidé |
 | R-63 | Quand le salon modifie ou annule un RDV, il appelle le client ; un email confirme le changement. | Décidé |
 | R-64 | Le lendemain d'un RDV honoré, un email invite le client à laisser un avis. | Décidé |
@@ -247,7 +247,7 @@ Ces 52 règles fixent le comportement du moteur de réservation : toutes sont d�
 
 ## Journal des décisions
 
-Le 20 octobre 2026, 57 décisions ont fixé le cadre du projet ; on ne revient sur l'une d'elles qu'en l'écrivant ici.
+Le 20 octobre 2026, 57 décisions ont fixé le cadre du projet ; le 21 octobre 2026, les demandes du salon ont ajouté D-63 à D-75 ; on ne revient sur l'une d'elles qu'en l'écrivant ici.
 
 | N° | Décision | Raison |
 | --- | --- | --- |
@@ -256,7 +256,7 @@ Le 20 octobre 2026, 57 décisions ont fixé le cadre du projet ; on ne revient s
 | D-03 | Horaires communs : du mardi au samedi, 10 h–12 h et 13 h–19 h | Toute l'équipe travaille aux mêmes heures |
 | D-04 | Une prestation occupe le coiffeur toute sa durée, coloration comprise | Pas de second client pendant une pose ; moteur plus simple |
 | D-05 | Compte client complet, avec email et mot de passe | Un vrai compte, comme sur Planity ; connexion par code écartée |
-| D-06 | Modification et annulation en ligne jusqu'à 48 h avant | Au-delà, le client appelle le salon |
+| D-06 | Modification et annulation en ligne jusqu'à 48 h avant (remplacée par D-63) | Au-delà, le client appelle le salon |
 | D-07 | Paiement au salon uniquement | Pas de paiement en ligne en V1 |
 | D-08 | Chiffre d'affaires indicatif, sans comptabilité | La caisse existante reste l'outil d'encaissement |
 | D-09 | Aucun import de fichier clients, même s'il était possible | Tous les clients se réinscrivent sur l'app Elegance |
@@ -289,9 +289,9 @@ Le 20 octobre 2026, 57 décisions ont fixé le cadre du projet ; on ne revient s
 | D-36 | Soin du visage réservable en ligne, tribal sur appel | La carte de ce document fait foi ; la livraison design les avait inversés |
 | D-37 | Pages ordinateur dérivées du mobile par Claude Code | Non dessinées ; conteneur de 1 200 px, grilles de 2 à 3 colonnes dès 1 024 px |
 | D-38 | Avis développés mais masqués jusqu'à leur lancement | Prévu juste après la V1 ; aucun avis sur l'accueil |
-| D-39 | Créneaux de 30 minutes en ligne, de 15 minutes au salon (modifie R-04) | Parcours familier de Planity ; le salon garde la finesse pour combler les trous laissés par un RDV de 45 min |
+| D-39 | Créneaux de 30 minutes en ligne, de 15 minutes au salon (modifie R-04) (remplacée par D-65) | Parcours familier de Planity ; le salon garde la finesse pour combler les trous laissés par un RDV de 45 min |
 | D-40 | « Sans préférence » attribue le coiffeur qui a le moins de RDV ce jour-là ; à égalité, l'ordre d'affichage (précise R-20) | Répartition équitable de la charge, règle simple et prévisible |
-| D-41 | Le salon est limité à 2 RDV à venir par client (R-25) mais peut réserver pour un client bloqué en ligne (R-52) | Le blocage ne vise que la réservation en ligne |
+| D-41 | Le salon est limité à 2 RDV à venir par client (R-25) mais peut réserver pour un client bloqué en ligne (R-52) (limite portée à 5 par D-66) | Le blocage ne vise que la réservation en ligne |
 | D-42 | L'inscription ne bloque pas sur la vérification de l'email : l'email de confirmation en tient lieu (précise R-71) | Ne pas casser le parcours de réservation ; le mot de passe oublié passe par l'email |
 | D-43 | La suppression d'un compte efface le nom, le téléphone et l'email, et garde les RDV passés sans identité (précise R-75) | Le chiffre d'affaires et le journal restent justes |
 | D-44 | Le compte se crée à l'étape 4 du parcours (« Créer mon compte »), et non au clic sur « Confirmer » (précise R-71) | Parcours de la maquette ; un abandon laisse un compte sans RDV, sans conséquence |
@@ -309,10 +309,23 @@ Le 20 octobre 2026, 57 décisions ont fixé le cadre du projet ; on ne revient s
 | D-56 | Le traitement d'un RDV touché s'applique tout de suite au planning (déplacé ou annulé), mais ses emails restent en attente jusqu'à la confirmation du gérant, qui les envoie d'un coup ; l'équipe appelle les clients entre-temps (précise R-43, D-20, D-52) | Planning toujours vrai, créneaux libérés sans attendre, aucun message sans accord du gérant |
 | D-57 | Fermeture exceptionnelle, nouveaux horaires, départ d'un coiffeur ou habilitation retirée qui touchent des RDV déjà pris suivent le même circuit que les absences : liste des RDV touchés, déplacement ou annulation avec excuses, confirmation du gérant avant email ; « confier à un collègue » n'est proposé que si un collègue habilité est libre (précise R-03, R-13, R-42) | Un seul circuit à apprendre et à tester ; aucun RDV oublié un jour de fermeture |
 | D-58 | L'invitation à un avis (R-64) est un email avec un seul bouton « Laisser un avis », qui mène à la page d'avis externe du salon (lien dans les réglages, `review_url`). Pas de grille de notes dans l'email, aucun avis enregistré chez nous (précise R-64, D-38). Sans lien renseigné, aucune invitation ne part. Chaque email contient « Ne plus recevoir ces invitations » | Décidé par Florent le 20 octobre 2026 : une page externe ne reçoit pas la note choisie depuis un email ; le réglage évite d'envoyer un bouton qui ne mène nulle part |
-| D-59 | Le rappel (R-61) est programmé à la réservation et à chaque déplacement, 72 h avant (réglage). Il ne part pas pour un RDV annulé ou déplacé depuis ; il attend tant que le RDV est « à traiter » (absence, fermeture…), puis part si le RDV tient encore (précise R-61, R-43) | Le client ne reçoit jamais un rappel qui contredit ce que le salon lui a dit |
+| D-59 | Le rappel (R-61) est programmé à la réservation et à chaque déplacement, 72 h avant (réglage). Il ne part pas pour un RDV annulé ou déplacé depuis ; il attend tant que le RDV est « à traiter » (absence, fermeture…), puis part si le RDV tient encore (précise R-61, R-43) (délai porté à 24 h par D-64) | Le client ne reçoit jamais un rappel qui contredit ce que le salon lui a dit |
 | D-60 | Le tableau de bord (« Bilan ») est une fonction gérant : il demande le code (précise R-73, R-53). Il montre aujourd'hui, la semaine (lundi au dimanche) ou le mois, avec des flèches « précédent / suivant » pour revenir en arrière, jamais dans le futur | Le chiffre d'affaires par membre ne se lit pas sur une tablette partagée ; flèches décidées par Florent le 20 octobre 2026 |
 | D-61 | Au bilan, « Rendez-vous » compte les RDV non annulés de la période (honorés, en cours, à venir et lapins) ; le chiffre d'affaires compte seulement les honorés (R-51), au prix figé ou au montant corrigé (précise R-53) | Comme la maquette : la ligne d'un membre qui a un lapin le compte dans ses RDV, pas dans son chiffre |
 | D-62 | Toute l'équipe peut corriger le montant encaissé d'un RDV, en choisissant son nom (R-74), dès qu'il a commencé et tant qu'il n'est ni lapin ni annulé. Montant de 0 à 1 000 €, ou retour au prix de la carte. Chaque correction est inscrite au journal avec l'ancien et le nouveau montant (précise R-53, R-54) | Le coiffeur qui encaisse note l'écart sur le moment, sans le code gérant ; décidé par Florent le 20 octobre 2026 |
+| D-63 | Le client modifie ou annule son RDV en ligne jusqu'à **1 h** avant son début, au lieu de 48 h (modifie R-30, R-32, D-06 ; D-47 et D-48 suivent ce délai) | Demande du salon, 21 octobre 2026 ; la liste d'attente (D-73) reprendra les créneaux libérés tard |
+| D-64 | Le rappel part **24 h** avant le RDV, au lieu de 72 h (modifie R-61, D-59) | Demande du salon, 21 octobre 2026 : avec un délai de 1 h, un rappel la veille suffit |
+| D-65 | Un RDV commence **toujours à l'heure pile ou à la demie**, en ligne comme au salon, quelle que soit la prestation (modifie R-04, remplace D-39) | Demande du salon, 21 octobre 2026 ; après une prestation de 45 min, le quart d'heure suivant reste libre |
+| D-66 | Un client a au plus **5** RDV à venir, au lieu de 2 (modifie R-25, D-41) | Demande du salon, 21 octobre 2026 : un parent réserve aussi pour ses enfants |
+| D-67 | L'email d'avis mène au lien direct « Donner un avis » de Google et propose aussi « Prendre un nouveau RDV » (précise D-58) | Lien reçu le 21 octobre 2026 |
+| D-68 | Au planning, les RDV pris en ligne et ceux pris par le salon ont deux couleurs ; le panneau de droite se replie pour agrandir le planning | Demandes du salon et de Florent, 21 octobre 2026 |
+| D-69 | Icône de l'application : le « E » du logo, ivoire sur fond noir (exception à D-33). Le site s'installe sur l'écran d'accueil (tablette et téléphones) ; **pas d'App Store** pour l'instant | Florent, 21 octobre 2026 : publier un site emballé sur l'App Store est souvent refusé par Apple et coûte 99 $ par an |
+| D-70 | **À coder (lot 10).** Le salon réserve depuis la tablette pour une personne sans compte (nom et téléphone) ; le fichier clients du salon (CSV issu de Planity ou Treatwell) est importé en fiches sans compte, rattachées au compte si la personne s'inscrit ensuite (modifie R-26, D-09, D-18) | Florent, 21 octobre 2026 : fichier du salon lui-même ; le planning ne montre plus deux RDV au même nom |
+| D-71 | **À coder (lot 11).** Depuis la tablette, un RDV se répète : toutes les 1, 2, 3 ou 4 semaines, ou chaque mois (même date ou même jour, par exemple « 2e mardi »), jusqu'à une date ou un nombre de fois, 6 mois au plus. Les dates impossibles sont sautées et affichées ; la série échappe à la limite de R-25 ; on annule « ce RDV » ou « celui-ci et les suivants » ; un seul email liste les dates, chaque RDV a son rappel | Florent, 21 octobre 2026 : comme Planity, renouvelée au besoin |
+| D-72 | **À coder (lot 12).** L'interface client devient une seule page de réservation, sans photos ni onglets, en motion design poussé, avec les horaires et un plan animés ; les pages légales restent, en liens discrets ; sur ordinateur, la même page centrée (remplace la vitrine du lot 6, D-30, D-37) | Le salon trouve la vitrine trop « site internet » ; maquettes à refaire avec Claude Design |
+| D-73 | **À coder (lot 13).** Liste d'attente : quand rien n'est libre, le client s'inscrit pour un jour, un coiffeur ou « Sans préférence » et une plage (matin, après-midi, journée). Quand un créneau qui lui convient se libère, tous les inscrits concernés reçoivent un email ; le premier qui réserve l'obtient | Demande du salon, 21 octobre 2026 |
+| D-74 | **À coder (lot 13).** 15 jours après son dernier RDV honoré, un client sans RDV à venir reçoit une fois « Nous serions ravis de vous revoir », avec un bouton pour réserver et un lien de désinscription (délai en réglage) | Demande du salon, 21 octobre 2026 |
+| D-75 | **À coder (lot 14).** La fiche RDV envoie le montant au terminal SumUp Solo (Cloud API SumUp) ; le résultat revient tout seul et devient le montant encaissé (précise D-08, R-53) | Le salon tape aujourd'hui le montant dans l'application SumUp ; le Solo accepte les paiements lancés à distance |
 
 ## Documents liés
 

@@ -310,7 +310,7 @@ describe("R-25, R-52 : ce que le client peut faire en ligne", () => {
     expect(await customerBookingState(t.db, id, NOW)).toEqual({
       blocked: false,
       upcoming: 0,
-      maxUpcoming: 2,
+      maxUpcoming: 5, // D-66
     });
     await createAppointment(
       t.db,

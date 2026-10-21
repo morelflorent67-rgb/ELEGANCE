@@ -1,13 +1,13 @@
 "use client";
 
 import { Alert, CallButton, btnPrimary } from "@/components/ui";
-import { capitalize, formatDuration, formatPrice } from "@/lib/format";
+import { capitalize, formatDuration, formatPrice, hoursPhrase, lessThanHours } from "@/lib/format";
 import { SALON, salonAddressLine } from "@/lib/salon";
 import type { PickedSlot } from "./date-step";
 
 /**
  * Étape 5 : récapitulatif et confirmation. Paiement sur place uniquement (D-07, D-34).
- * R-32 : un RDV pris moins de 48 h avant ne se modifie pas en ligne, et le client en est averti ici.
+ * R-32 : un RDV pris dans le délai de modification ne se modifie pas en ligne, et le client en est averti ici.
  */
 export function RecapStep({
   services,
@@ -109,8 +109,8 @@ export function RecapStep({
         </svg>
         <span className="text-body-sm leading-normal text-ivory-soft">
           {changeableOnline
-            ? `Modifiable ou annulable jusqu'à ${cutoffHours} h avant. Ensuite, appelez le salon.`
-            : `Ce rendez-vous est dans moins de ${cutoffHours} h : pour le modifier ou l'annuler, appelez le salon au ${SALON.phoneDisplay}.`}
+            ? `Modifiable ou annulable jusqu'à ${hoursPhrase(cutoffHours)} avant. Ensuite, appelez le salon.`
+            : `Ce rendez-vous est dans ${lessThanHours(cutoffHours)} : pour le modifier ou l'annuler, appelez le salon au ${SALON.phoneDisplay}.`}
         </span>
       </div>
 

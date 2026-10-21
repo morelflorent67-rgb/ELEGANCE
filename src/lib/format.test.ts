@@ -7,6 +7,8 @@ import {
   formatDuration,
   formatPrice,
   formatTime,
+  hoursPhrase,
+  lessThanHours,
   parisDate,
 } from "./format";
 
@@ -37,5 +39,14 @@ describe("formats d'affichage", () => {
   it("le jour de Paris n'est pas celui d'UTC tard le soir", () => {
     expect(parisDate(new Date("2026-11-03T22:30:00Z"))).toBe("2026-11-03"); // 23 h 30 à Paris
     expect(parisDate(new Date("2026-11-03T23:30:00Z"))).toBe("2026-11-04"); // 0 h 30 à Paris
+  });
+});
+
+describe("délais en heures dans une phrase (D-63)", () => {
+  it("écrit « une heure » plutôt que « 1 h », qui se lirait comme une heure du jour", () => {
+    expect(hoursPhrase(1)).toBe("une heure");
+    expect(hoursPhrase(48)).toBe("48 h");
+    expect(lessThanHours(1)).toBe("moins d'une heure");
+    expect(lessThanHours(24)).toBe("moins de 24 h");
   });
 });

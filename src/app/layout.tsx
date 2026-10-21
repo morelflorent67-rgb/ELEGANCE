@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Sora } from "next/font/google";
 import { siteUrl } from "@/lib/env";
 import { photos } from "@/lib/photos";
+import { CLIENT_MANIFEST_PATH } from "@/lib/web-app";
 import "./globals.css";
 
 const sora = Sora({
@@ -34,6 +35,9 @@ export const metadata: Metadata = {
     ],
   },
   twitter: { card: "summary_large_image" },
+  // D-69 : installable sur l'écran d'accueil, avec le nom « Elegance » sous l'icône.
+  manifest: CLIENT_MANIFEST_PATH,
+  appleWebApp: { capable: true, title: "Elegance", statusBarStyle: "black" },
 };
 
 export const viewport: Viewport = {

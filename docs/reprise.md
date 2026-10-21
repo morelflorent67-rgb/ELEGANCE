@@ -1,7 +1,7 @@
 # Reprise du projet : où on en est
 
 Ce document permet de reprendre le travail dans une **nouvelle conversation**, sans rien perdre. Il se met à jour à la fin de chaque lot.
-À jour au **21 octobre 2026** (après-midi), lot 8 en cours. Les lots 0 à 7 sont validés.
+À jour au **21 octobre 2026** (soir). Les lots 0 à 7 sont validés. Le lot 8 (recette et bascule) est **en pause** : le salon a demandé des changements (lots 9 à 14, section « Demandes du salon »), et Florent ne retourne le voir, et ne met en ligne, qu'une fois tout terminé. **Lot 9 fait** (en attente de validation par Florent).
 
 ## Avancement
 
@@ -15,9 +15,17 @@ Ce document permet de reprendre le travail dans une **nouvelle conversation**, s
 | 5 | Gestion : carte et habilitations, équipe, horaires, fermetures, absences et RDV touchés | Validé |
 | 6 | Vitrine : accueil, prestations, le salon, pages légales, référencement local, animations, version ordinateur | Validé |
 | 7 | Emails (rappel, invitation à un avis) et tableau de bord, correction du montant encaissé | Validé (emails réels reçus) |
-| 8 | Recette et bascule | En cours : lenteur de la tablette corrigée (pooler en mode session), clignotement de la vitrine corrigé, surveillance des emails dans `/api/health`, visuels de lancement faits ; le reste du plan attend les réponses de Florent (voir « Lot 8 ») |
+| 8 | Recette et bascule | En pause jusqu'à la fin du lot 14. Fait : lenteur de la tablette corrigée (pooler en mode session), clignotement de la vitrine corrigé, surveillance des emails dans `/api/health`, visuels de lancement faits ; le reste du plan attend les réponses de Florent (voir « Lot 8 ») |
+| 9 | Réglages et petites demandes du salon : délai 1 h, rappel 24 h, créneaux à l'heure et à la demie partout, 5 RDV à venir, lien d'avis Google, couleurs en ligne/salon, résumé du planning repliable, icône E et application installable | Fait, à valider par Florent |
+| 10 | Clients sans compte : le salon réserve pour une personne sans compte, import du fichier clients (CSV) | À faire |
+| 11 | RDV répétés depuis la tablette | À faire |
+| 12 | Nouvelle interface client : une seule page de réservation, motion design poussé | À faire (maquettes Claude Design d'abord) |
+| 13 | Liste d'attente, email « Nous serions ravis de vous revoir » | À faire |
+| 14 | Encaissement SumUp Solo depuis la fiche RDV | À faire |
 
-Tests au 21 octobre 2026 (lot 8 en cours) : **719 Vitest** (213 unitaires et 506 d'intégration sur Postgres réel) et **288 parcours Playwright** (228 exécutés ; 60 réservés à la tablette ou au mobile sont sautés selon le profil), plus deux contrôles manuels sur les services en ligne : `pnpm smoke:auth` et `pnpm smoke:db`. Aucun ne doit casser. Lint, typecheck et build verts. Vérification visuelle du 21 octobre par captures à 390 × 844 (prestations, le salon) et 1194 × 834 (planning, prestations), pas sur appareil réel.
+Tests au 21 octobre 2026 (fin du lot 9) : **729 Vitest** (218 unitaires et 511 d'intégration sur Postgres réel) et **292 parcours Playwright** (231 exécutés ; 61 réservés à la tablette ou au mobile sont sautés selon le profil), plus `pnpm smoke:auth` et `pnpm smoke:db`. Aucun ne doit casser. Lint, typecheck et build verts. Vérification visuelle du lot 9 par captures à 1194 × 834 (planning déplié et replié, icône) et 390 × 844 (Mes RDV, « moins d'une heure »), pas sur appareil réel.
+
+Pour mémoire, au 21 octobre 2026 avant le lot 9 : **719 Vitest** (213 unitaires et 506 d'intégration sur Postgres réel) et **288 parcours Playwright** (228 exécutés ; 60 réservés à la tablette ou au mobile sont sautés selon le profil), plus deux contrôles manuels sur les services en ligne : `pnpm smoke:auth` et `pnpm smoke:db`. Aucun ne doit casser. Lint, typecheck et build verts. Vérification visuelle du 21 octobre par captures à 390 × 844 (prestations, le salon) et 1194 × 834 (planning, prestations), pas sur appareil réel.
 
 Pour mémoire, à la fin du lot 7 : **699 Vitest** (197 unitaires et 502 d'intégration sur Postgres réel) et **284 parcours Playwright** (224 exécutés ; 60 réservés à la tablette ou au mobile sont sautés selon le profil). Aucun ne doit casser. Lint, typecheck et build verts. Vérification visuelle du lot 7 par captures à 1194 × 834 et 390 × 844 (Bilan, fiche RDV, emails), pas sur appareil réel.
 
@@ -50,9 +58,40 @@ Pour mémoire, à la fin du lot 7 : **699 Vitest** (197 unitaires et 502 d'inté
 8. **Textes légaux** (lot 6, Florent les complétera quand il aura les informations) : rédigés d'après ce que le site fait réellement, mais **à faire valider par un professionnel** avant l'ouverture. À fournir par le salon (champs entre crochets visibles sur les pages ; `placeholdersOf` dans `src/modules/vitrine/legal.ts` les liste) : forme juridique, capital, SIRET, directeur de la publication, adresse de l'hébergeur (Vercel), email de contact, durée de conservation d'un compte inactif, modalités de réponse aux droits RGPD, conditions de suspension et responsabilité. L'invitation à donner son avis est citée automatiquement dans la confidentialité dès que `review_url` est renseigné.
 9. **Vérifier la vitrine sur un vrai téléphone** (site de test) : accueil (ouverture animée, menu), prestations, le salon (galerie), pages légales. Vérifiée par captures à 390 × 844, 1194 × 834 et 1440 × 900, pas sur appareil réel.
 10. **Vérifier sur la vraie tablette** (iPad, paysage ; tout a été vérifié par captures à 1194 × 834 et 390 × 844, pas sur l'appareil réel) : planning, réservation, espace gérant (carte, équipe, horaires) et absences.
-11. ~~Migration 0007 sur Supabase~~ : **appliquée le 21 octobre 2026** avec l'accord de Florent (colonnes `customer.review_opt_out` et `salon_settings.review_url` vérifiées), puis code poussé. **Lien d'avis provisoire** : `review_url` contient le lien de la **page Google** du salon (`https://share.google/YX65pWXAg7cuZyrT7`), pas le lien direct « Donner un avis ». À remplacer par le lien direct (Google Business Profile, « Demander des avis », forme `https://g.page/r/…/review`) : une ligne SQL `update salon_settings set review_url = '…'` sur Supabase, avec l'accord de Florent. Avec ce lien, les invitations sont déjà actives dès que Brevo envoie.
+11. ~~Migration 0007 sur Supabase~~ : **appliquée le 21 octobre 2026** avec l'accord de Florent (colonnes `customer.review_opt_out` et `salon_settings.review_url` vérifiées), puis code poussé. Le lien d'avis provisoire est remplacé par le lien direct dans la migration 0008 (lot 9).
 11 bis. **Brevo et Supabase branchés le 21 octobre 2026** : clé d'API, expéditeur (adresse Gmail de Florent, provisoire), `BREVO_API_KEY`, `EMAIL_FROM` et `CRON_SECRET` dans Vercel ; un email de confirmation réel est parti en 3 secondes. SMTP Brevo actif dans Supabase (« mot de passe oublié » reçu). Piège rencontré : Brevo refusait Supabase avec `525 5.7.1 Unauthorized IP address` tant que le blocage des adresses IP n'était pas désactivé (Brevo, Sécurité). Modèles d'emails de Supabase en français dans `docs/supabase-emails/` (à coller dans Authentication, Emails, Templates ; le logo y pointe vers l'adresse du site de test : **à changer avec le nom de domaine**). À la fin : remplacer l'expéditeur par une adresse du domaine et authentifier le domaine dans Brevo (DKIM, DMARC), puis mettre à jour Site URL et Redirect URLs de Supabase.
 12. **Après Brevo** : essayer un vrai rappel et une vraie invitation à soi-même (aucun email réel n'a été envoyé pendant le lot : les tests utilisent un faux transport et les modèles ont été vérifiés par captures). Vérifier l'affichage dans Gmail, Apple Mail et Outlook, mode sombre compris.
+13. **Migration 0008 sur Supabase** (lot 9 : nouveaux réglages du salon et lien d'avis Google) : **à appliquer avec l'accord de Florent** (`pnpm db:migrate:remote`). Le code du lot 9 ne lit aucune nouvelle colonne : tant qu'elle n'est pas passée, le site en ligne garde 48 h, 72 h, 2 RDV et la grille de 15 min de la tablette.
+
+## Demandes du salon (21 octobre 2026) : lots 9 à 14
+
+Florent a transmis en vrac les demandes du salon ; l'analyse et ses réponses ont fixé **D-63 à D-75** (`dossier-projet.md`). Ordre retenu : d'abord les réglages rapides, puis ce qui change le modèle de données (clients sans compte), puis la nouvelle page client, sur laquelle se greffe la liste d'attente.
+
+**Lot 9 (fait le 21 octobre 2026)**
+- Délai de modification et d'annulation en ligne : **1 h** (D-63 ; R-30, R-32, D-47, D-48 suivent). Les textes disent « jusqu'à une heure avant », « moins d'une heure » (`hoursPhrase`, `lessThanHours`).
+- Rappel **24 h** avant (D-64). Attention : tant que le cron est quotidien (Vercel Hobby, 7 h UTC), un rappel de la veille peut partir le matin même, voire être abandonné si le RDV est passé : **Vercel Pro (cron chaque minute) est indispensable à l'ouverture**.
+- Départs **à l'heure pile et à la demie seulement**, en ligne comme sur la tablette (D-65 ; `salon_slot_step_minutes = 30`). Horaires, absences et durées restent au quart d'heure.
+- **5 RDV à venir** par client (D-66).
+- Email d'avis : **lien direct Google** (`https://g.page/r/CV_HUH2O58tMEAE/review`, dans `review_url`) et bouton « Prendre un nouveau RDV » en plus de « Reprendre le même RDV » (D-67).
+- Planning : liseré **or = en ligne**, **ivoire = salon**, légende dans l'en-tête ; le **résumé du jour se replie** (bouton flèche), le choix reste sur la tablette (D-68).
+- **Icône « E »** (les trois barres du E du logo ; seule, elle rappelle un peu un menu « ≡ » : à faire valider par Florent, une variante reste possible) ivoire sur noir (iPad, iPhone, Android) et **application installable** : deux manifestes, la tablette s'ouvre sur le planning (D-69). Pas d'App Store. Pour Florent : sur l'iPad, **supprimer l'ancienne icône « P »** puis, depuis Safari sur `/equipe`, Partager, « Sur l'écran d'accueil ».
+- Migration `0008_salon_requests_oct21` : valeurs par défaut et mise à jour de la ligne de réglages (y compris `review_url`).
+
+**Lot 10 : clients sans compte (D-70)**
+- Sur la **tablette seulement** : réserver pour une personne sans compte (nom, téléphone ; email facultatif ?). Le planning affiche son nom : fini les deux RDV au même nom.
+- Import du **fichier CSV** du salon (Planity ou Treatwell, Florent ne sait plus) en fiches sans compte, rattachées au compte si la personne s'inscrit ensuite avec le même email ou téléphone. **Le dépôt est public : le fichier ne doit jamais y entrer** (script qui lit un chemin hors du dépôt, ou dossier ignoré par git). Premier email aux clients importés : dire d'où vient leur adresse (RGPD).
+- **Question ouverte (à poser en début de lot 10)** : Florent a répondu « uniquement tablette » à « la tablette doit-elle pouvoir réserver pour quelqu'un sans compte ? ». Reste à savoir si le **client en ligne** garde la possibilité d'indiquer « Pour qui ? (prénom) » quand il réserve pour un proche (demande initiale du salon) ou si tout passe par la tablette.
+- Autres questions : champs obligatoires d'une fiche sans compte ; emails (confirmation, rappel) à une fiche sans email ; colonnes du CSV (Florent doit montrer l'en-tête, sans données).
+
+**Lot 11 : RDV répétés (D-71)** : toutes les 1, 2, 3 ou 4 semaines, ou chaque mois (même date ou même rang de jour : « flexible »), jusqu'à une date ou N fois, 6 mois au plus ; dates impossibles sautées et listées ; hors limite de R-25 ; « ce RDV » ou « celui-ci et les suivants » ; un email unique qui liste les dates ; un rappel par RDV.
+
+**Lot 12 : nouvelle interface client (D-72)** : une seule page de réservation, pas de photos ni d'onglets, horaires et plan animés, légal en liens discrets, ordinateur = même page centrée. **Maquettes d'abord** : Florent les fait dans Claude Design avec les prompts de `docs/design/brief-lot12-claude-design.md`. Pas de projet de référence. Motion design « ultra poussé » : une bibliothèque d'animation pourra se justifier (`decisions.md`, aujourd'hui « pas de GSAP »). La vitrine du lot 6 (accueil, prestations, salon, galerie) disparaît ; garder les pages légales, le référencement local (données structurées) et `/compte`.
+
+**Lot 13 : liste d'attente et relance (D-73, D-74)** : inscription jour + coiffeur ou « Sans préférence » + plage (matin, après-midi, journée) ; email à tous les inscrits concernés dès qu'un créneau se libère, le premier qui réserve l'obtient. Relance « Nous serions ravis de vous revoir » 15 jours après le dernier RDV honoré, sans RDV à venir, une fois par visite, désinscription (réglage). Mettre à jour la confidentialité.
+
+**Lot 14 : SumUp (D-75)** : le terminal est un **SumUp Solo** (« SumUp One » est l'abonnement) : la Cloud API SumUp permet d'envoyer le montant au terminal depuis la fiche RDV, le résultat revient par webhook et devient le montant encaissé. À préparer avec Florent : clé d'API et code d'appairage du Solo depuis le compte SumUp du salon (il les tape lui-même), compte de test SumUp (« Virtual Solo ») pour développer sans le vrai terminal.
+
+**Écarté** : App Store (D-69). L'application installable couvre le besoin.
 
 ## Lot 8 : recette et bascule
 
@@ -166,20 +205,14 @@ Questions posées à Florent et encore ouvertes : ce qui lui déplaît dans le v
 
 ```text
 Tu es le développeur principal du site et de l'application de réservation d'Elegance Strasbourg.
-Lis CLAUDE.md, puis docs/reprise.md : les lots 0 à 7 sont validés et le lot 8 (recette et bascule) est en cours.
-La lenteur de la tablette a été corrigée le 21 octobre (pooler Supabase en mode session) : commence par mon retour sur la vraie tablette ci-dessous. S'il reste une lenteur, mesure d'abord (/api/diagnostic, pnpm smoke:db), puis corrige, tests d'abord.
-Ensuite, reprends le plan du lot 8 (section « Lot 8 ») avec mes réponses ci-dessous ; ne commence pas un point dont la réponse manque.
+Lis CLAUDE.md, puis docs/reprise.md : les lots 0 à 7 sont validés, le lot 8 (recette et bascule) est en pause, le lot 9 est fait.
+On attaque le lot 10 (clients sans compte, D-70 : réservation par la tablette pour une personne sans compte, import du fichier clients CSV). Commence par me poser les questions ouvertes du lot 10 (section « Demandes du salon ») et propose-moi le plan du lot ; ne code rien avant mon accord.
 Travaille comme avant : une règle R-xx = au moins un test, décisions notées dans docs/decisions.md, vérification sur mobile et sur tablette.
+Le fichier clients ne doit jamais entrer dans le dépôt (il est public).
 À la fin, mets à jour docs/reprise.md et prépare le message de la conversation suivante.
-Point de départ :
-- Tablette (planning, boutons, connexion) : [rapide maintenant / encore lent à tel endroit]
-- Mot de passe du compte équipe changé : [oui / non]
-- Ce qui me déplaît dans le visuel de la vitrine : [...]
-- Ouverture animée de l'accueil (logo tout de suite, moins de 1 s) : [d'accord / autre idée]
-- Base de production : [neuve / celle de test vidée]
-- Domaine : [...]
-- Date de bascule et nombre de RDV Planity à reprendre : [...]
-- Application installable sur la tablette et les téléphones : [oui / non]
-- Adresse email pour les alertes de surveillance : [...]
-- Appareils de recette (modèles de téléphones, iPad) : [...]
+Mon retour sur le lot 9 :
+- Tablette (couleurs en ligne / salon, résumé repliable, icône E) : [ok / à revoir : ...]
+- Le client peut-il encore indiquer « Pour qui ? » en ligne quand il réserve pour un proche, ou tout passe par la tablette : [...]
+- En-tête du fichier CSV (la première ligne seulement, sans données clients) : [...]
+- Maquettes du lot 12 dans Claude Design : [pas commencées / en cours / finies]
 ```

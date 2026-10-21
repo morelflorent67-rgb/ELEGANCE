@@ -57,7 +57,7 @@ async function loadOwn(
 }
 
 /**
- * R-30 : jusqu'à `cutoffHours` avant le début, inclus. R-32 en découle : un RDV pris moins de 48 h avant son début
+ * R-30 : jusqu'à `cutoffHours` avant le début, inclus. R-32 en découle : un RDV pris en deçà de ce délai
  * est déjà dans ce délai dès sa création. R-31 : passé ce délai, le client appelle le salon.
  */
 function assertChangeable(row: AppointmentRow, cutoffHours: number, now: Date): void {

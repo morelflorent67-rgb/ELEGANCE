@@ -24,7 +24,7 @@ export interface PickedSalonSlot {
 }
 
 /**
- * Jours et créneaux du salon (pas de 15 minutes, sans délai de réservation : R-04, R-27). Tout vient du serveur :
+ * Jours et créneaux du salon (heure pile ou demie, sans délai de réservation : R-04, D-65, R-27). Tout vient du serveur :
  * `load` demande les 7 jours d'une semaine, la tablette ne calcule aucun créneau.
  */
 export function SlotPicker({

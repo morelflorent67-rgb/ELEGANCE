@@ -194,7 +194,7 @@ export async function searchCustomersAction(
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// Créneaux au salon (R-04 : pas de 15 minutes ; R-27 : pas de délai de réservation)
+// Créneaux au salon (R-04, D-65 : heure pile ou demie ; R-27 : pas de délai de réservation)
 
 export interface SalonDayView {
   /** « AAAA-MM-JJ » */

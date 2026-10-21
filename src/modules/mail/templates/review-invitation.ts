@@ -11,6 +11,8 @@ export interface ReviewInvitationData {
   reviewUrl: string;
   /** « Reprendre le même RDV » (lot 3). */
   rebookUrl: string;
+  /** « Prendre un nouveau RDV » : la page de réservation (D-67). */
+  bookUrl: string;
   /** Lien signé pour ne plus recevoir ces invitations. */
   unsubscribeUrl: string;
   logoUrl: string;
@@ -19,7 +21,8 @@ export interface ReviewInvitationData {
 /**
  * Invitation à laisser un avis (R-64), d'après la maquette « Email — avis ». La grille de notes de 1 à 5 de la
  * maquette est supprimée (décision de Florent, 20 octobre 2026) : une page d'avis externe ne reçoit pas la note
- * choisie depuis un email, donc un seul bouton y mène.
+ * choisie depuis un email, donc un seul bouton y mène. D-67 : sous l'avis, deux façons de revenir, le même RDV ou un
+ * nouveau.
  */
 export function renderReviewInvitationEmail(data: ReviewInvitationData): RenderedEmail {
   const subject = data.firstName
@@ -40,6 +43,9 @@ export function renderReviewInvitationEmail(data: ReviewInvitationData): Rendere
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:32px;border-top:1px solid ${COLORS.line};"><tr>
 <td style="padding-top:22px;font-size:15px;line-height:1.5;color:${COLORS.ivorySoft};">Déjà envie de revenir ?</td>
 <td align="right" style="padding-top:22px;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;"><a href="${escapeHtml(data.rebookUrl)}" style="color:${COLORS.ivory};text-decoration:none;border-bottom:1px solid ${COLORS.gold};">Reprendre le même RDV</a></td>
+</tr><tr>
+<td style="padding-top:14px;font-size:15px;line-height:1.5;color:${COLORS.ivorySoft};">Autre envie ?</td>
+<td align="right" style="padding-top:14px;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;"><a href="${escapeHtml(data.bookUrl)}" style="color:${COLORS.ivory};text-decoration:none;border-bottom:1px solid ${COLORS.gold};">Prendre un nouveau RDV</a></td>
 </tr></table>
 
 <p style="margin:28px 0 0;font-size:12px;line-height:1.55;color:${COLORS.stone};"><a href="${escapeHtml(data.unsubscribeUrl)}" style="color:${COLORS.ivorySoft};">Ne plus recevoir ces invitations</a></p>`;
@@ -60,6 +66,7 @@ export function renderReviewInvitationEmail(data: ReviewInvitationData): Rendere
     `Laisser un avis : ${data.reviewUrl}`,
     "",
     `Déjà envie de revenir ? Reprendre le même RDV : ${data.rebookUrl}`,
+    `Autre envie ? Prendre un nouveau RDV : ${data.bookUrl}`,
     "",
     `Ne plus recevoir ces invitations : ${data.unsubscribeUrl}`,
     "",

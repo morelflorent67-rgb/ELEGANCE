@@ -217,9 +217,12 @@ describe("R-01 à R-06 : le créneau est revérifié à la réservation", () => 
     await expectRefused(book(), "closed");
   });
 
-  it("R-04 : en ligne, refuse un départ hors de la grille de 30 min ; le salon accepte 15 min", async () => {
-    await expectRefused(book({ startsAt: paris(TUESDAY, "10:15") }), "off_grid");
-    await book({ startsAt: paris(TUESDAY, "10:15"), source: "salon" });
+  it("R-04, D-65 : refuse un départ à 15 ou à 45, en ligne comme au salon", async () => {
+    for (const source of ["online", "salon"] as const) {
+      await expectRefused(book({ startsAt: paris(TUESDAY, "10:15"), source }), "off_grid");
+      await expectRefused(book({ startsAt: paris(TUESDAY, "10:45"), source }), "off_grid");
+    }
+    await book({ startsAt: paris(TUESDAY, "10:30"), source: "salon" });
   });
 
   it("R-04 : le pas vient des réglages", async () => {
@@ -272,7 +275,7 @@ describe("R-01 à R-06 : le créneau est revérifié à la réservation", () => 
   it("R-27 : le salon n'est pas soumis aux délais, sauf pour le passé", async () => {
     const now = paris(TUESDAY, "10:10");
     await expectRefused(book({ source: "salon" }, now), "in_past"); // 10 h est passé
-    await book({ source: "salon", startsAt: paris(TUESDAY, "10:15") }, now); // dans 5 min
+    await book({ source: "salon", startsAt: paris(TUESDAY, "10:30") }, now); // dans 20 min
     await book({ source: "salon", startsAt: paris("2027-01-12", "10:00") }, now); // dans 10 semaines
   });
 });
@@ -392,21 +395,26 @@ describe("R-23 : deux réservations simultanées, une seule aboutit", () => {
   });
 });
 
-describe("R-25 : au plus 2 RDV à venir", () => {
-  it("refuse un troisième RDV à venir", async () => {
-    await book({ startsAt: paris(TUESDAY, "10:00") });
-    await book({ startsAt: paris(TUESDAY, "11:00") });
-    await expectRefused(book({ startsAt: paris(TUESDAY, "14:00") }), "too_many_upcoming");
+// D-66 : cinq RDV à venir au plus. Six heures libres d'Orhan le même mardi.
+const FIVE = ["10:00", "11:00", "13:00", "14:00", "15:00"];
+const SIXTH = "16:00";
+const bookFive = (source: "online" | "salon" = "online") =>
+  Promise.all(FIVE.map((time) => book({ startsAt: paris(TUESDAY, time), source })));
+
+describe("R-25 : au plus 5 RDV à venir (D-66)", () => {
+  it("accepte un cinquième RDV à venir et refuse un sixième", async () => {
+    await bookFive();
+    await expectRefused(book({ startsAt: paris(TUESDAY, SIXTH) }), "too_many_upcoming");
   });
 
   it("l'annulation d'un RDV libère une place", async () => {
-    const first = await book({ startsAt: paris(TUESDAY, "10:00") });
-    await book({ startsAt: paris(TUESDAY, "11:00") });
+    const [first] = await bookFive();
     await t.sql`update appointment set status = 'cancelled_by_customer' where id = ${first.id}`;
-    await book({ startsAt: paris(TUESDAY, "14:00") });
+    await book({ startsAt: paris(TUESDAY, SIXTH) });
   });
 
   it("un RDV passé ou honoré ne compte pas", async () => {
+    await t.sql`update salon_settings set max_upcoming_per_customer = 2`; // limite abaissée pour le scénario
     await insertAppointment(t.sql, {
       customerId,
       staffId: ORHAN,
@@ -426,23 +434,21 @@ describe("R-25 : au plus 2 RDV à venir", () => {
   });
 
   it("vaut aussi pour le salon (décision du 20 octobre 2026)", async () => {
-    await book({ startsAt: paris(TUESDAY, "10:00"), source: "salon" });
-    await book({ startsAt: paris(TUESDAY, "11:00"), source: "salon" });
+    await bookFive("salon");
     await expectRefused(
-      book({ startsAt: paris(TUESDAY, "14:00"), source: "salon" }),
+      book({ startsAt: paris(TUESDAY, SIXTH), source: "salon" }),
       "too_many_upcoming",
     );
   });
 
-  it("tient bon quand le même client envoie trois demandes en même temps", async () => {
-    const times = ["10:00", "11:00", "14:00"];
+  it("tient bon quand le même client envoie six demandes en même temps", async () => {
     const results = await Promise.allSettled(
-      times.map((time) => book({ startsAt: paris(TUESDAY, time) })),
+      [...FIVE, SIXTH].map((time) => book({ startsAt: paris(TUESDAY, time) })),
     );
-    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(2);
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(5);
     const refused = results.filter((r) => r.status === "rejected") as PromiseRejectedResult[];
     expect(refused[0].reason).toMatchObject({ code: "too_many_upcoming" });
-    expect(await countAppointments()).toBe(2);
+    expect(await countAppointments()).toBe(5);
   });
 
   it("lit le plafond dans les réglages", async () => {

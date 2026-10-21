@@ -57,6 +57,13 @@
       "when": 1792527149136,
       "tag": "0007_reminders_reviews",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792608707998,
+      "tag": "0008_salon_requests_oct21",
+      "breakpoints": true
     }
   ]
 }

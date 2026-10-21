@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { DayPlanning, PlanningAppointment } from "@/modules/planning";
 import { formatTime } from "@/lib/format";
 import { AppointmentPanel } from "./appointment-panel";
@@ -39,11 +39,41 @@ const STATUS_TAG: Partial<
   honored: { word: "Honoré", className: "border-line-strong text-stone" },
 };
 
-function blockTag(appt: PlanningAppointment) {
-  const status = STATUS_TAG[appt.status];
-  if (status) return status;
-  if (appt.source === "salon") return { word: "Salon", className: "border-line-strong text-stone" };
-  return null;
+const blockTag = (appt: PlanningAppointment) => STATUS_TAG[appt.status] ?? null;
+
+// D-68 : chaque RDV porte la couleur de son origine, en ligne ou salon (légende dans l'en-tête).
+const SOURCE_ACCENT: Record<PlanningAppointment["source"], string> = {
+  online: "border-l-gold",
+  salon: "border-l-ivory",
+};
+const SOURCE_WORD: Record<PlanningAppointment["source"], string> = {
+  online: "Pris en ligne",
+  salon: "Pris au salon",
+};
+
+// D-68 : le résumé du jour, à droite, se replie. Le choix est gardé sur la tablette (rien en base).
+const SUMMARY_KEY = "planning-summary-collapsed";
+const summaryListeners = new Set<() => void>();
+function readSummaryCollapsed() {
+  try {
+    return window.localStorage.getItem(SUMMARY_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+function writeSummaryCollapsed(value: boolean) {
+  try {
+    window.localStorage.setItem(SUMMARY_KEY, value ? "1" : "0");
+  } catch {
+    // Stockage indisponible : le choix vaut jusqu'au prochain chargement.
+    fallbackCollapsed = value;
+  }
+  summaryListeners.forEach((listener) => listener());
+}
+let fallbackCollapsed = false;
+function subscribeSummary(listener: () => void) {
+  summaryListeners.add(listener);
+  return () => summaryListeners.delete(listener);
 }
 
 export function PlanningBoard({
@@ -67,6 +97,11 @@ export function PlanningBoard({
   const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId);
   const [toast, setToast] = useState<string | null>(null);
   const busy = useRef(false);
+  const summaryCollapsed = useSyncExternalStore(
+    subscribeSummary,
+    () => readSummaryCollapsed() || fallbackCollapsed,
+    () => false,
+  );
 
   // Rafraîchissement automatique : jamais pendant une action en cours, jamais écran caché.
   useEffect(() => {
@@ -193,7 +228,19 @@ export function PlanningBoard({
               Aller
             </button>
           </form>
-          <span className="ml-auto text-[13px] text-stone">{countLabel(day.count)}</span>
+          <span className="ml-auto flex items-center gap-4 text-[13px] text-stone">
+            <span className="flex items-center gap-3 text-[12px]" aria-hidden="true">
+              <span className="flex items-center gap-1.5">
+                <span className="h-3.5 w-1 bg-gold" />
+                En ligne
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-3.5 w-1 bg-ivory" />
+                Salon
+              </span>
+            </span>
+            {countLabel(day.count)}
+          </span>
           <Link
             href="/equipe/reserver"
             className="flex h-12 items-center gap-2.5 bg-ivory px-5 text-[12px] font-medium uppercase tracking-[0.22em] text-ink"
@@ -310,8 +357,9 @@ export function PlanningBoard({
                         type="button"
                         onClick={() => setSelectedId(on ? null : appt.id)}
                         aria-pressed={on}
-                        aria-label={`${formatTime(appt.startsAt)}, ${appt.customerName}, ${appt.summary}, avec ${col.staff.firstName}${tag ? `, ${tag.word}` : ""}`}
-                        className={`absolute inset-x-1 flex flex-col justify-center gap-0.5 overflow-hidden border px-2.5 text-left ${tone} ${
+                        aria-label={`${formatTime(appt.startsAt)}, ${appt.customerName}, ${appt.summary}, avec ${col.staff.firstName}, ${SOURCE_WORD[appt.source].toLowerCase()}${tag ? `, ${tag.word}` : ""}`}
+                        data-source={appt.source}
+                        className={`absolute inset-x-1 flex flex-col justify-center gap-0.5 overflow-hidden border border-l-4 px-2.5 text-left ${tone} ${SOURCE_ACCENT[appt.source]} ${
                           on ? "outline outline-2 outline-offset-2 outline-ivory" : ""
                         }`}
                         style={{ top: top(appt.startMinute) + 8, height }}
@@ -398,6 +446,8 @@ export function PlanningBoard({
         toast={toast}
         onToast={setToast}
         onSelect={setSelectedId}
+        summaryCollapsed={summaryCollapsed}
+        onSummaryCollapsedChange={writeSummaryCollapsed}
         onBusy={(value) => {
           busy.current = value;
         }}

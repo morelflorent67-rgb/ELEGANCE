@@ -7,7 +7,14 @@ import { z } from "zod";
 import { CalendarIcon, btnSecondary } from "@/components/ui";
 import { db } from "@/db/client";
 import { appSecret } from "@/lib/env";
-import { capitalize, formatDay, formatDuration, formatPrice, formatTime } from "@/lib/format";
+import {
+  capitalize,
+  formatDay,
+  formatDuration,
+  formatPrice,
+  formatTime,
+  hoursPhrase,
+} from "@/lib/format";
 import { SALON } from "@/lib/salon";
 import { loadCustomerAppointment } from "@/modules/appointments/queries";
 import { getAuthDriver } from "@/modules/auth";
@@ -51,7 +58,7 @@ async function Confirmation({
   if (!appointment) notFound();
   const settings = await loadSettings(database);
 
-  // R-30, R-32 : modifiable en ligne jusqu'à 48 h avant son début. Un RDV pris (ou déplacé) à moins de 48 h
+  // R-30, R-32 : modifiable en ligne jusqu'au délai réglé avant son début. Un RDV pris (ou déplacé) en deçà
   // ne l'est donc plus dès maintenant.
   const deadline = new Date(
     appointment.startsAt.getTime() - settings.changeCutoffHours * 3_600_000,
@@ -143,7 +150,7 @@ async function Confirmation({
         </Link>
         <p className="mt-1.5 text-body-sm leading-normal text-stone">
           {changeableOnline
-            ? `Modifiable ou annulable jusqu'à ${settings.changeCutoffHours} h avant, depuis Mes RDV.`
+            ? `Modifiable ou annulable jusqu'à ${hoursPhrase(settings.changeCutoffHours)} avant, depuis Mes RDV.`
             : `Ce rendez-vous ne peut pas être modifié en ligne : pour un changement, appelez le salon au ${SALON.phoneDisplay}.`}
         </p>
         <Link

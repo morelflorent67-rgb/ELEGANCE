@@ -87,7 +87,7 @@ function failure(
         status: "error",
         values,
         message:
-          "Vous avez un rendez-vous dans moins de 48 h : pour supprimer votre compte, appelez le salon.",
+          "Votre prochain rendez-vous est trop proche pour être annulé en ligne : pour supprimer votre compte, appelez le salon.",
       };
     default:
       return {

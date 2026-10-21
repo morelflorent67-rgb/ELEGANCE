@@ -19,6 +19,9 @@ let customerId: string;
 beforeEach(async () => {
   await t.reset();
   customerId = await createCustomer(t.sql, { name: "Thomas" });
+  // Scénarios écrits avec les délais d'origine (48 h, 72 h) : ils vérifient que le délai vient du réglage. Les valeurs
+  // actuelles (1 h et 24 h, D-63 et D-64) ont leurs propres tests.
+  await t.sql`update salon_settings set change_cutoff_hours = 48, reminder_hours = 72`;
 });
 afterAll(() => t.close());
 
@@ -61,7 +64,18 @@ async function run(now: Date) {
   return { result, sent: sent.filter((m) => m.subject.startsWith("Rappel")) };
 }
 
-describe("R-61 : un rappel est programmé 72 h avant le rendez-vous", () => {
+describe("R-61, D-64 : avec le réglage du salon, le rappel part 24 h avant", () => {
+  it("programme le rappel la veille, à l'heure du RDV", async () => {
+    await t.sql`update salon_settings set reminder_hours = default`;
+    const created = await book();
+    const rows = await reminders();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ appointment_id: created.id });
+    expect(rows[0].next_attempt_at.getTime()).toBe(paris(SATURDAY, "10:00").getTime() - 24 * HOUR);
+  });
+});
+
+describe("R-61 : un rappel est programmé 72 h avant le rendez-vous (délai réglé à 72 h)", () => {
   it("quand le RDV est pris plus de 72 h à l'avance, met un rappel en file pour J-72 h, sans rien envoyer", async () => {
     const created = await book();
     const rows = await reminders();

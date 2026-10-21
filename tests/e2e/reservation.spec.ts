@@ -114,7 +114,7 @@ test.describe("parcours complet", () => {
 });
 
 test.describe("délai de modification (R-30, R-32)", () => {
-  test("un RDV pris longtemps à l'avance annonce qu'il est modifiable jusqu'à 48 h avant", async ({
+  test("un RDV pris longtemps à l'avance annonce qu'il est modifiable jusqu'à une heure avant", async ({
     page,
   }) => {
     // Un jour ouvré (mardi à samedi) dans 8 jours ou plus, compté en heure de Paris : plus de 48 h, et dans les
@@ -134,13 +134,13 @@ test.describe("délai de modification (R-30, R-32)", () => {
     await page.getByRole("button", { name: "Continuer", exact: true }).click();
 
     await expect(
-      page.getByText("Modifiable ou annulable jusqu'à 48 h avant. Ensuite, appelez le salon."),
+      page.getByText("Modifiable ou annulable jusqu'à une heure avant. Ensuite, appelez le salon."),
     ).toBeVisible();
     await page.getByRole("button", { name: "Confirmer" }).click();
     await expect(page.getByRole("heading", { name: "Rendez-vous confirmé" })).toBeVisible();
     await expect(
       page
-        .getByText("Modifiable ou annulable jusqu'à 48 h avant, depuis Mes RDV.")
+        .getByText("Modifiable ou annulable jusqu'à une heure avant, depuis Mes RDV.")
         .filter({ visible: true }),
     ).toBeVisible();
   });
@@ -289,7 +289,7 @@ test.describe("cas particuliers de la maquette", () => {
     await expect(page.getByRole("button", { name: "Continuer", exact: true })).toHaveCount(0);
   });
 
-  test("R-25 : deux rendez-vous à venir déjà atteints", async ({ page }) => {
+  test("R-25 : cinq rendez-vous à venir déjà atteints (D-66)", async ({ page }) => {
     const client = newClient();
     await page.goto("/inscription");
     await fillSignUp(page, client, "signup");
@@ -299,10 +299,10 @@ test.describe("cas particuliers de la maquette", () => {
       insert into appointment (customer_id, staff_id, starts_at, ends_at, source)
       select c.id, '00000000-0000-4000-8000-0000000000a1', now() + (d || ' days')::interval,
              now() + (d || ' days')::interval + interval '30 minutes', 'salon'
-      from customer c, (values (5), (6)) as v(d) where c.email = ${client.email.toLowerCase()}`;
+      from customer c, (values (5), (6), (7), (8), (9)) as v(d) where c.email = ${client.email.toLowerCase()}`;
 
     await reachIdentityStep(page);
-    await expect(page.getByText("Vous avez déjà 2 rendez-vous à venir")).toBeVisible();
+    await expect(page.getByText("Vous avez déjà 5 rendez-vous à venir")).toBeVisible();
     await expect(page.getByRole("link", { name: "Voir mes rendez-vous" })).toHaveAttribute(
       "href",
       "/compte/rendez-vous",

@@ -17,7 +17,7 @@ test.beforeEach(async () => {
 // La connexion à la base est partagée par tous les fichiers de test (helpers.ts) : Playwright la ferme avec le worker.
 
 const phoneLink = "tel:+33388977468";
-const soon = () => DateTime.now().plus({ hours: 20 }).toUTC().toISO()!; // dans le délai de 48 h
+const soon = () => DateTime.now().plus({ minutes: 40 }).toUTC().toISO()!; // dans le délai d'une heure (D-63)
 
 /** Une carte de RDV de « Mes rendez-vous », retrouvée par son heure. */
 const card = (page: Page, text: string | RegExp) =>
@@ -57,7 +57,7 @@ test.describe("Mes rendez-vous (R-76)", () => {
     // Le RDV proche : « Contactez le salon » (R-31, R-32), ni Modifier ni Annuler
     const near = card(page, "avec Enes");
     await expect(
-      near.getByText("Moins de 48 h avant : pour modifier ou annuler, appelez le salon."),
+      near.getByText("Moins d'une heure avant : pour modifier ou annuler, appelez le salon."),
     ).toBeVisible();
     await expect(near.getByRole("link", { name: "Appeler le salon" })).toHaveAttribute(
       "href",
@@ -456,7 +456,7 @@ test.describe("Supprimer mon compte (R-75, D-43)", () => {
     await expect(page).toHaveURL(/\/connexion/);
   });
 
-  test("R-30 : avec un RDV dans les 48 h, la suppression renvoie au salon et ne change rien", async ({
+  test("R-30 : avec un RDV dans l'heure, la suppression renvoie au salon et ne change rien", async ({
     page,
   }) => {
     const client = newClient();
@@ -465,7 +465,7 @@ test.describe("Supprimer mon compte (R-75, D-43)", () => {
     await page.goto("/compte/informations");
     await page.getByRole("button", { name: "Supprimer mon compte" }).click();
     const sheet = page.getByRole("dialog", { name: "Supprimer votre compte ?" });
-    await expect(sheet.getByText("Vous avez un rendez-vous dans moins de 48 h")).toBeVisible();
+    await expect(sheet.getByText("Votre prochain rendez-vous est trop proche")).toBeVisible();
     await expect(sheet.getByRole("link", { name: "Appeler le salon" })).toHaveAttribute(
       "href",
       phoneLink,

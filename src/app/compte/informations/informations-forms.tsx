@@ -290,7 +290,7 @@ export function AccountActions({ imminentAppointment }: { imminentAppointment: b
         </h2>
         {imminentAppointment ? (
           <>
-            <Alert kind="info" title="Vous avez un rendez-vous dans moins de 48 h">
+            <Alert kind="info" title="Votre prochain rendez-vous est trop proche">
               Pour le modifier, l&rsquo;annuler ou supprimer votre compte, appelez le salon.
             </Alert>
             <CallButton kind="primary" />

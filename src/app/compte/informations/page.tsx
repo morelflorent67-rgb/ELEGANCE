@@ -29,7 +29,7 @@ export default function MesInformationsPage() {
   );
 }
 
-// R-76 : les informations du client. Les contrôles (mot de passe, unicité de l'email, délai des 48 h avant de
+// R-76 : les informations du client. Les contrôles (mot de passe, unicité de l'email, délai de modification (R-30) avant de
 // supprimer un compte) sont refaits côté serveur à chaque action.
 async function Informations() {
   await connection();
