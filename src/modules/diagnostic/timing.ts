@@ -29,13 +29,24 @@ export async function timeOnce(
   task: () => Promise<unknown>,
   timeoutMs: number = STEP_TIMEOUT_MS,
 ): Promise<number> {
+  return (await measure(task, timeoutMs)).ms;
+}
+
+async function measure(
+  task: () => Promise<unknown>,
+  timeoutMs: number,
+): Promise<{ ms: number; timedOut: boolean }> {
   const start = performance.now();
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let timedOut = false;
   try {
     await Promise.race([
       task(),
       new Promise((resolve) => {
-        timer = setTimeout(resolve, timeoutMs);
+        timer = setTimeout(() => {
+          timedOut = true;
+          resolve(null);
+        }, timeoutMs);
       }),
     ]);
   } catch {
@@ -43,7 +54,7 @@ export async function timeOnce(
   } finally {
     clearTimeout(timer);
   }
-  return performance.now() - start;
+  return { ms: performance.now() - start, timedOut };
 }
 
 /** `times` exécutions l'une après l'autre ; on s'arrête au premier dépassement du délai. */
@@ -54,9 +65,9 @@ export async function timeRuns(
 ): Promise<Timing> {
   const durations: number[] = [];
   for (let i = 0; i < times; i++) {
-    const ms = await timeOnce(task, timeoutMs);
+    const { ms, timedOut } = await measure(task, timeoutMs);
     durations.push(ms);
-    if (ms >= timeoutMs) break;
+    if (timedOut) break;
   }
   return summarize(durations);
 }
