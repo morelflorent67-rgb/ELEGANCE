@@ -1,7 +1,7 @@
 # Reprise du projet : où on en est
 
 Ce document permet de reprendre le travail dans une **nouvelle conversation**, sans rien perdre. Il se met à jour à la fin de chaque lot.
-À jour au **20 octobre 2026**, fin du lot 7 (terminé, **à valider par Florent**). Les lots 0 à 6 sont validés.
+À jour au **21 octobre 2026**, lot 8 commencé. Les lots 0 à 7 sont validés.
 
 ## Avancement
 
@@ -14,8 +14,8 @@ Ce document permet de reprendre le travail dans une **nouvelle conversation**, s
 | 4 | Planning tablette : 4 colonnes, fiche RDV, réservation par le salon, lapins, code gérant, choix de l'auteur | Validé |
 | 5 | Gestion : carte et habilitations, équipe, horaires, fermetures, absences et RDV touchés | Validé |
 | 6 | Vitrine : accueil, prestations, le salon, pages légales, référencement local, animations, version ordinateur | Validé |
-| 7 | Emails (rappel, invitation à un avis) et tableau de bord, correction du montant encaissé | Terminé, à valider (migration 0007 à appliquer sur Supabase avant de pousser) |
-| 8 | Recette | À venir (voir `transmission-code.md`) |
+| 7 | Emails (rappel, invitation à un avis) et tableau de bord, correction du montant encaissé | Validé (emails réels reçus) |
+| 8 | Recette et bascule | En cours : fonctions à Dublin et visuels de lancement faits ; le reste du plan attend Florent (voir « Lot 8 ») |
 
 Tests à la fin du lot 7 : **699 Vitest** (197 unitaires et 502 d'intégration sur Postgres réel) et **284 parcours Playwright** (224 exécutés ; 60 réservés à la tablette ou au mobile sont sautés selon le profil). Aucun ne doit casser. Lint, typecheck et build verts. Vérification visuelle du lot 7 par captures à 1194 × 834 et 390 × 844 (Bilan, fiche RDV, emails), pas sur appareil réel.
 
@@ -42,7 +42,7 @@ Tests à la fin du lot 7 : **699 Vitest** (197 unitaires et 502 d'intégration s
 2. ~~Compte équipe de la tablette~~ et ~~code gérant~~ : faits le 20 octobre 2026. Pour les changer : `pnpm staff:account`, `pnpm manager:set-code` (base locale) ou `pnpm manager:set-code:remote` (base Supabase, modifie la base en ligne). Florent tape lui-même ses secrets dans le terminal, jamais dans le chat.
 3. **Brevo** (compte ouvert) : créer une clé d'API, faire vérifier une adresse d'expéditeur, puis ajouter `BREVO_API_KEY`, `EMAIL_FROM` et `CRON_SECRET` dans Vercel (Settings, Environment Variables). Tant que ce n'est pas fait, les emails restent en file en production (confirmations, **rappels**, **invitations à un avis**, annulations, déplacements, et ceux que le gérant libère). Les rappels et invitations partent au passage du cron : en Hobby, une fois par jour (7 h UTC) ; avec Vercel Pro, `* * * * *`.
 4. **Supabase** : Authentication, URL Configuration (Site URL et adresse de redirection `…/auth/callback`), puis SMTP Brevo pour le mot de passe oublié.
-5. **Vercel Pro et région** : à prendre avec le client juste avant la livraison (c'est lui qui paie). Passer alors le cron de `vercel.json` à `* * * * *`. D'ici là, l'envoi immédiat des emails couvre le cas normal. **Lenteur des pages de la tablette sur le site de test** : probablement la région des fonctions Vercel (par défaut les États-Unis) loin de la base Supabase (Irlande). Florent a décidé de reporter : à ce moment-là, ajouter `"regions": ["fra1"]` dans `vercel.json`, mesurer avant et après, et réduire au besoin les requêtes par page (le nombre de RDV à traiter de la barre est recalculé à chaque écran). La vitrine, elle, est mise en cache (lot 6) : elle n'appelle pas la base à chaque affichage.
+5. **Vercel Pro** : à prendre avec le client juste avant la livraison (c'est lui qui paie). Passer alors le cron de `vercel.json` à `* * * * *`. D'ici là, l'envoi immédiat des emails couvre le cas normal. **Région : faite le 21 octobre 2026** (`"regions": ["dub1"]`, Dublin, à côté de la base Supabase `eu-west-1`), possible dès l'offre Hobby. Avant, les fonctions tournaient à Washington (`iad1`). Mesures depuis la France : `/api/health` 0,25 s → 0,10 s ; `/reservation` 0,36 s → 0,16 s. **Reste à faire** : l'avis de Florent sur la vraie tablette ; si c'est encore lent, réduire les requêtes par écran (le nombre de RDV à traiter de la barre est recalculé à chaque écran).
 6. Les clés Supabase et le mot de passe de la base, passés dans le chat, sont laissés tels quels par décision de Florent.
 7. Domaine définitif : à poser dans `SITE_URL` (Vercel) ; ensuite `ALLOW_INDEXING=true` ouvre l'indexation (robots, plan du site et données structurées suivent tout seuls).
 8. **Textes légaux** (lot 6, Florent les complétera quand il aura les informations) : rédigés d'après ce que le site fait réellement, mais **à faire valider par un professionnel** avant l'ouverture. À fournir par le salon (champs entre crochets visibles sur les pages ; `placeholdersOf` dans `src/modules/vitrine/legal.ts` les liste) : forme juridique, capital, SIRET, directeur de la publication, adresse de l'hébergeur (Vercel), email de contact, durée de conservation d'un compte inactif, modalités de réponse aux droits RGPD, conditions de suspension et responsabilité. L'invitation à donner son avis est citée automatiquement dans la confidentialité dès que `review_url` est renseigné.
@@ -51,6 +51,23 @@ Tests à la fin du lot 7 : **699 Vitest** (197 unitaires et 502 d'intégration s
 11. ~~Migration 0007 sur Supabase~~ : **appliquée le 21 octobre 2026** avec l'accord de Florent (colonnes `customer.review_opt_out` et `salon_settings.review_url` vérifiées), puis code poussé. **Lien d'avis provisoire** : `review_url` contient le lien de la **page Google** du salon (`https://share.google/YX65pWXAg7cuZyrT7`), pas le lien direct « Donner un avis ». À remplacer par le lien direct (Google Business Profile, « Demander des avis », forme `https://g.page/r/…/review`) : une ligne SQL `update salon_settings set review_url = '…'` sur Supabase, avec l'accord de Florent. Avec ce lien, les invitations sont déjà actives dès que Brevo envoie.
 11 bis. **Brevo et Supabase branchés le 21 octobre 2026** : clé d'API, expéditeur (adresse Gmail de Florent, provisoire), `BREVO_API_KEY`, `EMAIL_FROM` et `CRON_SECRET` dans Vercel ; un email de confirmation réel est parti en 3 secondes. SMTP Brevo actif dans Supabase (« mot de passe oublié » reçu). Piège rencontré : Brevo refusait Supabase avec `525 5.7.1 Unauthorized IP address` tant que le blocage des adresses IP n'était pas désactivé (Brevo, Sécurité). Modèles d'emails de Supabase en français dans `docs/supabase-emails/` (à coller dans Authentication, Emails, Templates ; le logo y pointe vers l'adresse du site de test : **à changer avec le nom de domaine**). À la fin : remplacer l'expéditeur par une adresse du domaine et authentifier le domaine dans Brevo (DKIM, DMARC), puis mettre à jour Site URL et Redirect URLs de Supabase.
 12. **Après Brevo** : essayer un vrai rappel et une vraie invitation à soi-même (aucun email réel n'a été envoyé pendant le lot : les tests utilisent un faux transport et les modèles ont été vérifiés par captures). Vérifier l'affichage dans Gmail, Apple Mail et Outlook, mode sombre compris.
+
+## Lot 8 : recette et bascule
+
+**Retour de Florent sur le lot 7 (21 octobre 2026)** : fonctions et visuel bons dans l'ensemble, tests d'emails réels réussis. La **tablette** est lente (affichage des RDV, chaque bouton) ; la vitrine lui paraît fluide. Il n'est pas entièrement satisfait du visuel de la vitrine : **détails à lui demander**.
+
+**Fait**
+- Fonctions Vercel à Dublin (action 5).
+- **Visuels de lancement** (`communication/lancement/`, outillage à part, voir `decisions.md`) : vidéo story 19 s, 1080 × 1920, 60 images/s, muette (Florent ajoute une musique dans Instagram) ; affiche A4 en PDF et PNG. Commandes, dans ce dossier : `npm install` une fois, puis `node render.mjs video`, `node render.mjs poster https://<domaine>` (QR code vers `/reservation`), `node render.mjs serve` pour l'aperçu. Fichiers produits dans `export/`. **L'affiche actuelle pointe vers le site de test : à régénérer avec le domaine avant impression.**
+
+**Plan proposé, à confirmer avec Florent** (ses réponses aux questions du 21 octobre sont attendues)
+1. Vitesse : avis sur la tablette après Dublin ; réduire les requêtes par écran si besoin. Défauts relevés sur la vitrine : un **clignotement** (le texte `[data-reveal]` visible au premier affichage se masque quand `html.js-reveal` est posé après l'hydratation, puis revient en fondu) et l'**ouverture animée** de l'accueil (plaque ivoire vide pendant environ 1 s). Proposition : logo visible tout de suite, animation de moins de 1 s.
+2. Retouches visuelles de la vitrine, selon les remarques de Florent.
+3. Mise en ligne côté code : application installable (manifeste et icônes, sans hors-ligne), surveillance (`/api/health` étendu aux emails bloqués, service de surveillance externe gratuit), sauvegardes (Supabase Pro et export complet), liste de contrôle avant l'ouverture, guide d'exploitation.
+4. Recette réelle par Florent, avec une fiche à cocher (téléphone, tablette, emails).
+5. Bascule : Vercel Pro, Supabase Pro, domaine, Brevo sur le domaine, changement des clés passées dans le chat, saisie des RDV Planity à venir, jour J, une semaine sans incident, fermeture de Planity.
+
+Questions posées à Florent et encore ouvertes : ce qui lui déplaît dans le visuel, le choix pour l'ouverture animée, une base de production neuve ou celle de test vidée, le domaine, la date de bascule et le nombre de RDV Planity à reprendre, l'application installable, l'adresse des alertes, les appareils de recette.
 
 ## Ce que le lot 7 a ajouté
 
@@ -115,9 +132,9 @@ Tests à la fin du lot 7 : **699 Vitest** (197 unitaires et 502 d'intégration s
 
 ```text
 Tu es le développeur principal du site et de l'application de réservation d'Elegance Strasbourg.
-Lis CLAUDE.md, puis docs/reprise.md : les lots 0, 1, 2, 3, 4, 5, 6 et 7 sont validés.
-Prépare le plan du lot 8, la recette (voir docs/transmission-code.md et la liste « Actions en attente » de docs/reprise.md : Brevo, Supabase, domaine, vraie tablette, vrai téléphone, textes légaux), pose-moi les questions nécessaires, puis attends ma validation avant d'écrire du code.
+Lis CLAUDE.md, puis docs/reprise.md : les lots 0 à 7 sont validés et le lot 8 (recette et bascule) est commencé.
+Reprends le plan du lot 8 décrit dans docs/reprise.md (section « Lot 8 ») avec mes réponses ci-dessous, puis attends ma validation avant d'écrire du code.
 Travaille ensuite comme avant : tests d'abord, une règle R-xx = au moins un test, décisions notées dans docs/decisions.md, vérification sur mobile et sur tablette.
 À la fin du lot, mets à jour docs/reprise.md et prépare le message de la conversation suivante.
-Point de départ : [Ajoutez ici le résultat de l'essai du lot 7 : le Bilan et la correction du montant sur la vraie tablette, et, si Brevo est branché, les emails de rappel et d'avis reçus, ou le message d'erreur s'il y en a un.]
+Point de départ : [Ajoutez ici votre avis sur la vitesse de la tablette depuis le passage à Dublin, ce qui vous déplaît dans le visuel du site, et vos réponses aux questions encore ouvertes.]
 ```

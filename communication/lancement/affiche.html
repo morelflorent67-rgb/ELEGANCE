@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Elegance · affiche</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@200;300;400;500&display=block" rel="stylesheet">
+<style>
+/* Affiche A4 (794 × 1123 px à 96 ppp). Tout est vectoriel (plafond, logo, QR code) : net à l'impression. */
+@page { size: 210mm 297mm; margin: 0; }
+:root { --ink: #0b0a09; --graphite: #1a1816; --ivory: #efe9dd; --ivory-soft: #c9c3b7; --stone: #a8a297; --gold: #b8935a; --line: rgba(239,233,221,.22); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+#page { position: relative; width: 794px; height: 1123px; overflow: hidden; background: var(--ink); color: var(--ivory);
+  font-family: Sora, sans-serif; font-weight: 300; -webkit-font-smoothing: antialiased; }
+#ceiling { position: absolute; left: 0; top: 0; width: 794px; height: 440px; }
+#fade { position: absolute; left: 0; right: 0; top: 200px; height: 241px; background: linear-gradient(180deg, rgba(11,10,9,0), var(--ink)); }
+.caps { text-transform: uppercase; letter-spacing: .34em; font-weight: 500; }
+.node { display: inline-block; width: 9px; height: 10px; margin-right: 12px; background: var(--gold);
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
+#new { position: absolute; left: 0; right: 0; top: 52px; text-align: center; font-size: 12px; }
+#plaque { position: absolute; left: 217px; top: 214px; width: 360px; height: 214px; background: var(--ivory); color: var(--ink);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; }
+#plaqueFrame { position: absolute; left: 207px; top: 204px; width: 380px; height: 234px; border: 1px solid rgba(255,255,255,.75); }
+#plaque .logo { width: 262px; }
+#plaque .logo svg { display: block; width: 100%; height: auto; }
+#plaque i { width: 140px; height: 1px; background: rgba(11,10,9,.45); }
+#plaque p { font-size: 10.5px; padding-left: .34em; }
+#title { position: absolute; left: 0; right: 0; top: 468px; text-align: center; font-size: 66px; line-height: 1.04; letter-spacing: -.02em; }
+#sub { position: absolute; left: 0; right: 0; top: 628px; text-align: center; font-size: 16px; color: var(--ivory-soft); letter-spacing: .01em; }
+#book { position: absolute; left: 82px; right: 82px; top: 688px; display: flex; gap: 40px; align-items: center;
+  padding: 30px; border: 1px solid var(--line); background: rgba(26,24,22,.6); }
+#qr { flex: none; width: 196px; height: 196px; padding: 14px; background: var(--ivory); }
+#qr svg { display: block; width: 100%; height: 100%; }
+#bookText h2 { font-weight: 300; font-size: 30px; line-height: 1.15; letter-spacing: -.01em; }
+#bookText .url { margin-top: 10px; font-size: 11.5px; color: var(--stone); word-break: break-all; }
+#bookText ul { list-style: none; margin-top: 22px; border-top: 1px solid var(--line); }
+#bookText li { font-size: 14px; line-height: 1.35; padding: 11px 0; border-bottom: 1px solid var(--line); color: var(--ivory-soft); }
+#bookText li .node { width: 8px; height: 9px; margin-right: 12px; }
+#foot { position: absolute; left: 82px; right: 82px; bottom: 54px; display: flex; justify-content: space-between; align-items: flex-end;
+  font-size: 12.5px; color: var(--stone); line-height: 1.7; }
+#foot b { color: var(--ivory); font-weight: 400; }
+#foot .r { text-align: right; }
+</style>
+</head>
+<body>
+<div id="page">
+  <svg id="ceiling" viewBox="0 0 794 440"></svg>
+  <div id="fade"></div>
+  <div id="new" class="caps"><i class="node"></i>Nouveau</div>
+  <div id="plaqueFrame"></div>
+  <div id="plaque">
+    <div class="logo"></div>
+    <i></i>
+    <p class="caps">Bien plus qu'une coupe</p>
+  </div>
+  <div id="title">Réservez<br>en ligne.</div>
+  <div id="sub">Votre rendez-vous en une minute, 24 h/24.</div>
+  <div id="book">
+    <div id="qr"></div>
+    <div id="bookText">
+      <h2>Scannez<br>pour réserver</h2>
+      <div class="url" id="url"></div>
+      <ul>
+        <li><i class="node"></i>Choisissez votre coiffeur et votre créneau</li>
+        <li><i class="node"></i>Modifiez ou annulez jusqu'à 48 h avant</li>
+        <li><i class="node"></i>Rappel par email 3 jours avant</li>
+      </ul>
+    </div>
+  </div>
+  <div id="foot">
+    <div><b>Elegance Strasbourg</b><br>162 route de Bischwiller, Schiltigheim</div>
+    <div class="r"><b>03 88 97 74 68</b><br>Instagram @elegance_strasbourg</div>
+  </div>
+</div>
+<script>
+// Plafond de lumière du salon, projeté en perspective et tracé en vecteurs (pas de rendu 3D, qui serait pixellisé).
+function ceiling() {
+  const W = 794, f = 430, horizon = 500, height = 1.6, R = .42, cx = W / 2;
+  const project = ([x, z]) => [cx + f * x / z, horizon - f * height / z];
+  const lines = [];
+  const key = (p) => p.map((v) => v.toFixed(3)).join(":");
+  const seen = new Set();
+  for (let c = -34; c <= 34; c++) {
+    for (let r = 0; r <= 100; r++) {
+      const x = c * 1.5 * R, z = .35 + (r + (Math.abs(c) % 2) * .5) * Math.sqrt(3) * R;
+      const pts = [...Array(6)].map((_, i) => [x + R * Math.cos(i * Math.PI / 3), z + R * Math.sin(i * Math.PI / 3)]);
+      pts.forEach((p, i) => {
+        const q = pts[(i + 1) % 6];
+        if (p[1] < .3 || q[1] < .3) return;
+        const [a, b] = [project(p), project(q)];
+        if ((a[1] < -40 && b[1] < -40) || (Math.abs(a[0] - cx) > 900 && Math.abs(b[0] - cx) > 900)) return;
+        const k = [key(p), key(q)].sort().join("|");
+        if (seen.has(k)) return;
+        seen.add(k);
+        lines.push([project(p), project(q), Math.min(p[1], q[1])]);
+      });
+    }
+  }
+  const d = (s) => lines.filter(([, , z]) => s(z)).map(([a, b]) => `M${a[0].toFixed(2)} ${a[1].toFixed(2)}L${b[0].toFixed(2)} ${b[1].toFixed(2)}`).join("");
+  // Halo large et pâle, puis trait fin : la lueur des LED sans filtre (qui serait pixellisé dans le PDF).
+  document.querySelector("#ceiling").innerHTML = `
+    <path d="${d(() => true)}" fill="none" stroke="#fff" stroke-opacity=".07" stroke-width="9" stroke-linecap="round"/>
+    <path d="${d(() => true)}" fill="none" stroke="#fff" stroke-opacity=".16" stroke-width="4" stroke-linecap="round"/>
+    <path d="${d(() => true)}" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/>`;
+}
+
+(async () => {
+  const [logo, qr] = await Promise.all(["assets/logo.svg", "qr.svg"].map(async (u) => (await fetch(u)).text()));
+  document.querySelector("#plaque .logo").innerHTML = logo;
+  document.querySelector("#qr").innerHTML = qr;
+  document.querySelector("#url").textContent = new URLSearchParams(location.search).get("url") ?? "";
+  ceiling();
+  await document.fonts.ready;
+  window.__ready = true;
+})();
+</script>
+</body>
+</html>

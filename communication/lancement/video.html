@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Elegance · lancement</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@200;300;400;500;600&display=block" rel="stylesheet">
+<style>
+/* Vidéo de lancement, format story 1080 × 1920. Chaque animation passe par l'API Web Animations :
+   en lecture normale elle joue ; au rendu (render.mjs, ?render) on la fige image par image avec __seek(t). */
+:root {
+  --ink: #0b0a09; --charcoal: #141210; --graphite: #1a1816; --graphite-l: #221f1c; --disabled: #2a2723;
+  --ivory: #efe9dd; --ivory-soft: #c9c3b7; --stone: #a8a297; --stone-d: #8f897e;
+  --gold: #b8935a; --gold-shine: #f0d39a; --sage: #9bb58c;
+  --line: rgba(239, 233, 221, .16); --line-strong: rgba(239, 233, 221, .28);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: #000; }
+body { min-height: 100vh; display: grid; place-items: center; overflow: hidden; }
+body.render { display: block; }
+#stage {
+  position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--ink);
+  font-family: Sora, sans-serif; font-weight: 300; color: var(--ivory); -webkit-font-smoothing: antialiased;
+}
+body:not(.render) #stage { transform: scale(var(--fit, .4)); }
+.layer { position: absolute; inset: 0; }
+.mask { display: block; overflow: hidden; padding-bottom: .08em; }
+.mask > span { display: block; }
+.caps { text-transform: uppercase; letter-spacing: .34em; font-weight: 500; }
+.node { display: inline-block; width: 18px; height: 20px; margin-right: 20px; vertical-align: -1px;
+  background: var(--gold); clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
+.led { position: absolute; height: 2px; background: #fff;
+  box-shadow: 0 0 10px 2px rgba(255, 255, 255, .55), 0 0 36px 4px rgba(255, 255, 255, .22); }
+.shine {
+  background: linear-gradient(100deg, var(--ivory) 0%, var(--ivory) 40%, var(--gold-shine) 50%, var(--ivory) 60%, var(--ivory) 100%);
+  background-size: 300% 100%; background-position: 100% 0;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.logo svg { display: block; width: 100%; height: auto; }
+
+/* ---------- 1. Allumage : le plafond de lumière ---------- */
+#ceilingWrap {
+  position: absolute; left: 50%; top: -60px; width: 3000px; height: 3400px; margin-left: -1500px;
+  transform-origin: 50% 0; transform: perspective(1100px) rotateX(-50deg);
+  -webkit-mask-image: linear-gradient(180deg, #000 40%, transparent 92%); mask-image: linear-gradient(180deg, #000 40%, transparent 92%);
+}
+#ceiling { width: 100%; height: 100%; overflow: visible; }
+#ceiling path { fill: none; stroke: #fff; stroke-width: 7; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
+#ledH { left: 90px; width: 900px; top: 1080px; transform: scaleX(0); }
+#s1label { position: absolute; left: 0; right: 0; top: 1380px; text-align: center; }
+#s1label .caps { font-size: 24px; color: var(--ivory); }
+#s1label p { margin-top: 26px; font-size: 28px; color: var(--stone); letter-spacing: .02em; }
+
+/* ---------- 2. Le salon ---------- */
+#photo { position: absolute; left: -60px; top: -40px; width: 1200px; height: 1600px; object-fit: cover; object-position: 50% 0; opacity: 0; }
+#photoShade { background: linear-gradient(180deg, rgba(11,10,9,.55) 0%, rgba(11,10,9,0) 18%, rgba(11,10,9,0) 46%, rgba(11,10,9,.86) 66%, var(--ink) 80%); opacity: 0; }
+#s2text { position: absolute; left: 84px; right: 84px; top: 1240px; }
+#s2text .caps { font-size: 24px; color: var(--ivory); }
+#s2text > .mask { margin-bottom: 34px; }
+#s2text h1 { font-weight: 300; font-size: 132px; line-height: 1.02; letter-spacing: -.02em; }
+
+/* ---------- 3. La plaque ---------- */
+#plaqueWrap { position: absolute; left: 160px; top: 700px; width: 760px; height: 500px; transform-origin: 50% 50%; }
+#plaqueTrace { position: absolute; inset: -22px; width: calc(100% + 44px); height: calc(100% + 44px); overflow: visible; }
+#plaqueTrace path { fill: none; stroke: #fff; stroke-width: 2; stroke-dasharray: 1; stroke-dashoffset: 1;
+  filter: drop-shadow(0 0 6px rgba(255,255,255,.8)); }
+#plaque { position: absolute; inset: 0; background: var(--ivory); color: var(--ink); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 40px; clip-path: inset(50% 0 50% 0); }
+#plaque .logo { width: 560px; clip-path: inset(0 100% 0 0); }
+#plaqueLine { width: 300px; height: 2px; background: rgba(11,10,9,.45); transform: scaleX(0); }
+#plaqueTag { font-size: 24px; padding-left: .34em; color: var(--ink); opacity: 0; }
+
+/* ---------- 4. La réservation ---------- */
+#glow { position: absolute; left: 90px; top: 700px; width: 900px; height: 1100px; opacity: 0;
+  background: radial-gradient(closest-side, rgba(239,233,221,.13), rgba(239,233,221,0)); }
+#s4head { position: absolute; left: 0; right: 0; top: 330px; text-align: center; }
+#s4head h2 { font-weight: 300; font-size: 104px; line-height: 1.04; letter-spacing: -.02em; }
+#phone { position: absolute; left: 260px; top: 640px; width: 560px; height: 1150px; border-radius: 76px; padding: 16px;
+  background: linear-gradient(160deg, #2a2723, #0d0c0b 40%, #1d1b18); transform-origin: 50% 100%;
+  box-shadow: 0 0 0 2px rgba(239,233,221,.16), 0 60px 140px rgba(0,0,0,.85), 0 0 90px rgba(255,255,255,.07); }
+#screen { position: relative; width: 100%; height: 100%; border-radius: 60px; overflow: hidden; background: var(--ink); }
+#island { position: absolute; top: 18px; left: 50%; width: 150px; height: 44px; margin-left: -75px; border-radius: 22px; background: #000; }
+#status { position: absolute; top: 26px; left: 52px; right: 52px; display: flex; justify-content: space-between; font-size: 22px; font-weight: 500; }
+#status i { display: inline-block; width: 40px; height: 18px; border: 2px solid var(--ivory); border-radius: 6px; vertical-align: -2px; position: relative; }
+#status i::after { content: ""; position: absolute; inset: 2px 8px 2px 2px; background: var(--ivory); border-radius: 2px; }
+.ui { position: absolute; left: 30px; right: 30px; }
+#uiHead { top: 96px; display: flex; justify-content: space-between; align-items: center; }
+#uiHead .logo { width: 170px; }
+#uiHead b { width: 40px; height: 40px; border: 2px solid var(--ivory-soft); border-radius: 50%; }
+#uiTitle { top: 168px; font-size: 54px; font-weight: 300; letter-spacing: -.01em; }
+#uiRule { position: absolute; left: 30px; right: 30px; top: 248px; height: 1px; background: var(--line-strong); }
+.lbl { font-size: 15px; letter-spacing: .3em; text-transform: uppercase; color: var(--stone); font-weight: 500; }
+#step1 { top: 276px; background: var(--graphite); padding: 22px 24px; display: flex; justify-content: space-between; align-items: center; }
+#step1 .n { font-size: 29px; font-weight: 400; margin-top: 10px; }
+#step1 .p { font-size: 21px; color: var(--stone); margin-top: 8px; }
+#step1 svg { width: 40px; height: 40px; }
+#step2 { top: 430px; }
+.chips { display: flex; gap: 12px; margin-top: 16px; }
+.chip { position: relative; height: 60px; padding: 0 22px; border: 1px solid var(--line-strong); display: flex; align-items: center; font-size: 22px; font-weight: 400; }
+.chip .on, .day .on, .slot .on { position: absolute; inset: -1px; background: var(--ivory); color: var(--ink); display: flex; align-items: center; justify-content: center; flex-direction: column; opacity: 0; }
+#step3 { top: 556px; }
+.days { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 16px; }
+.day { position: relative; height: 100px; border: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+.day small, .day .on small { font-size: 14px; letter-spacing: .2em; font-weight: 500; }
+.day small { color: var(--stone); }
+.day .on small { color: var(--ink); }
+.day span { font-size: 32px; }
+.slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+.slot { position: relative; height: 62px; border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 400; }
+.slot.off { color: var(--stone-d); text-decoration: line-through; border-color: transparent; background: var(--charcoal); }
+#cta { top: 1006px; height: 84px; background: var(--disabled); color: var(--stone-d); display: flex; align-items: center; justify-content: center; font-size: 21px; letter-spacing: .24em; font-weight: 500; text-transform: uppercase; }
+#ctaOn { position: absolute; inset: 0; background: var(--ivory); color: var(--ink); display: flex; align-items: center; justify-content: center; opacity: 0; }
+.tap { position: absolute; width: 96px; height: 96px; margin: -48px 0 0 -48px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(239,233,221,.55), rgba(239,233,221,.12) 60%, rgba(239,233,221,0) 70%); opacity: 0; transform: scale(.3); }
+#confirm { position: absolute; inset: 0; background: var(--ink); opacity: 0; text-align: center; }
+#hexSig { position: absolute; left: 50%; top: 200px; width: 230px; height: 260px; margin-left: -115px; overflow: visible; }
+#hexSig path { fill: none; stroke-dasharray: 1; stroke-dashoffset: 1; }
+#confirmTitle { position: absolute; left: 0; right: 0; top: 530px; font-size: 56px; line-height: 1.08; letter-spacing: -.01em; }
+#confirmRule { position: absolute; left: 110px; right: 110px; top: 712px; height: 1px; background: var(--line-strong); transform: scaleX(0); }
+#confirmInfo { position: absolute; left: 0; right: 0; top: 752px; font-size: 25px; line-height: 1.7; color: var(--ivory-soft); }
+#confirmInfo b { color: var(--ivory); font-weight: 400; }
+#confirmMail { position: absolute; left: 0; right: 0; top: 960px; font-size: 19px; color: var(--sage); }
+
+/* ---------- 5. Les avantages ---------- */
+#band { position: absolute; left: -40px; top: 1180px; width: 1160px; height: 700px; object-fit: cover; opacity: 0; }
+#bandShade { position: absolute; left: 0; right: 0; top: 1160px; height: 760px;
+  background: linear-gradient(180deg, var(--ink) 0%, rgba(11,10,9,.35) 30%, rgba(11,10,9,.35) 70%, var(--ink) 100%); }
+#feats { position: absolute; left: 110px; right: 110px; top: 520px; }
+.feat { position: relative; padding: 46px 0 40px; }
+.feat p { font-size: 58px; line-height: 1.1; letter-spacing: -.01em; }
+.feat small { display: block; margin-top: 14px; font-size: 25px; color: var(--stone); letter-spacing: .02em; }
+.feat .rule { position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--line-strong); transform-origin: 0 50%; transform: scaleX(0); }
+
+/* ---------- 6. Fin ---------- */
+#endHex { position: absolute; left: 50%; top: 330px; width: 640px; height: 720px; margin-left: -320px; overflow: visible; }
+#endHex path { fill: none; stroke: #fff; stroke-width: 3; stroke-dasharray: 1; stroke-dashoffset: 1; stroke-linejoin: round;
+  filter: drop-shadow(0 0 8px rgba(255,255,255,.85)) drop-shadow(0 0 30px rgba(255,255,255,.35)); }
+#endLogo { position: absolute; left: 50%; top: 645px; width: 470px; margin-left: -235px; clip-path: inset(0 100% 0 0); }
+#endTag { position: absolute; left: 0; right: 0; top: 770px; text-align: center; font-size: 20px; color: var(--stone); padding-left: .34em; opacity: 0; }
+#endCta { position: absolute; left: 0; right: 0; top: 1200px; text-align: center; }
+#endCta h3 { font-weight: 300; font-size: 118px; line-height: 1.04; letter-spacing: -.02em; }
+#endRule { left: 290px; width: 500px; top: 1490px; transform: scaleX(0); }
+#endBio { position: absolute; left: 0; right: 0; top: 1548px; text-align: center; font-size: 28px; padding-left: .34em; opacity: 0; }
+#endAddr { position: absolute; left: 0; right: 0; top: 1720px; text-align: center; font-size: 25px; color: var(--stone); letter-spacing: .02em; line-height: 1.6; opacity: 0; }
+
+/* ---------- Finition : vignettage et grain ---------- */
+#vignette { pointer-events: none; background: radial-gradient(ellipse 85% 70% at 50% 48%, rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%); }
+#grain { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .085; mix-blend-mode: overlay; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <!-- 1 -->
+  <div class="layer" id="s1">
+    <div id="ceilingWrap"><svg id="ceiling" viewBox="0 0 3000 3400"></svg></div>
+  </div>
+  <!-- 2 -->
+  <div class="layer" id="s2">
+    <img id="photo" src="assets/hero-hex-v.jpg" alt="">
+    <div class="layer" id="photoShade"></div>
+  </div>
+  <div id="ledH" class="led"></div>
+  <div id="s1label">
+    <div class="mask"><span class="caps"><i class="node"></i>Elegance Strasbourg</span></div>
+    <div class="mask"><span><p>Barbier sur rendez-vous · Schiltigheim</p></span></div>
+  </div>
+  <div id="s2text">
+    <div class="mask"><span class="caps"><i class="node"></i>Nouveau</span></div>
+    <h1>
+      <span class="mask"><span>Votre salon,</span></span>
+      <span class="mask"><span>désormais</span></span>
+      <span class="mask"><span>en ligne.</span></span>
+    </h1>
+  </div>
+  <!-- 3 -->
+  <div id="glow"></div>
+  <div id="plaqueWrap">
+    <svg id="plaqueTrace" viewBox="0 0 804 544" preserveAspectRatio="none"><path pathLength="1" d="M402 1 H803 V543 H1 V1 Z"/></svg>
+    <div id="plaque">
+      <div class="logo" data-logo="#0b0a09"></div>
+      <div id="plaqueLine"></div>
+      <div id="plaqueTag" class="caps">Bien plus qu'une coupe</div>
+    </div>
+  </div>
+  <!-- 4 -->
+  <div id="s4head">
+    <h2>
+      <span class="mask"><span>Réservez</span></span>
+      <span class="mask"><span>en une minute.</span></span>
+    </h2>
+  </div>
+  <div id="phone">
+    <div id="screen">
+      <div id="island"></div>
+      <div id="status"><span>10:24</span><span><i></i></span></div>
+      <div class="ui" id="uiHead"><div class="logo" data-logo="#efe9dd"></div><b></b></div>
+      <div class="ui" id="uiTitle">Réserver</div>
+      <div id="uiRule"></div>
+      <div class="ui" id="step1">
+        <div><div class="lbl">1 · Prestation</div><div class="n">Coupe homme</div><div class="p">30 min · 18 €</div></div>
+        <svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="none" stroke="#9bb58c" stroke-width="2"/><path d="M12 20.5l5.5 5.5L28.5 14" fill="none" stroke="#9bb58c" stroke-width="2.4"/></svg>
+      </div>
+      <div class="ui" id="step2">
+        <div class="lbl">2 · Coiffeur</div>
+        <div class="chips">
+          <div class="chip" id="chipAny">Sans préférence</div>
+          <div class="chip" id="chipOrhan">Orhan<div class="on">Orhan</div></div>
+          <div class="chip">Enes</div>
+        </div>
+      </div>
+      <div class="ui" id="step3">
+        <div class="lbl">3 · Créneau</div>
+        <div class="days">
+          <div class="day"><small>MAR</small><span>17</span></div>
+          <div class="day"><small>MER</small><span>18</span></div>
+          <div class="day"><small>JEU</small><span>19</span></div>
+          <div class="day"><small>VEN</small><span>20</span></div>
+          <div class="day" id="daySat"><small>SAM</small><span>21</span><div class="on"><small>SAM</small><span>21</span></div></div>
+        </div>
+        <div class="slots">
+          <div class="slot off">10:00</div>
+          <div class="slot" id="slot1030">10:30<div class="on">10:30</div></div>
+          <div class="slot">11:00</div>
+          <div class="slot off">11:30</div>
+          <div class="slot">13:00</div>
+          <div class="slot">13:30</div>
+          <div class="slot off">14:00</div>
+          <div class="slot">15:30</div>
+          <div class="slot">16:00</div>
+        </div>
+      </div>
+      <div class="ui" id="cta">Confirmer<div id="ctaOn">Confirmer</div></div>
+      <div class="tap" id="tap1"></div>
+      <div class="tap" id="tap2"></div>
+      <div class="tap" id="tap3"></div>
+      <div class="tap" id="tap4"></div>
+      <div id="confirm">
+        <svg id="hexSig" viewBox="0 0 230 260">
+          <path id="hexGold" pathLength="1" d="M115 4 L226 68 V192 L115 256 L4 192 V68 Z" stroke="#b8935a" stroke-width="2.5"/>
+          <path id="hexCheck" pathLength="1" d="M78 132 L104 158 L154 104" stroke="#efe9dd" stroke-width="3"/>
+        </svg>
+        <div id="confirmTitle"><span class="mask"><span class="shine" id="shine1">Rendez-vous</span></span><span class="mask"><span class="shine" id="shine2">confirmé</span></span></div>
+        <div id="confirmRule"></div>
+        <div id="confirmInfo"><b>Samedi 21 · 10:30</b><br>Coupe homme avec Orhan<br>30 min · 18 €</div>
+        <div id="confirmMail">Email de confirmation envoyé</div>
+      </div>
+    </div>
+  </div>
+  <!-- 5 -->
+  <img id="band" src="assets/neon-full.jpg" alt="">
+  <div id="bandShade" style="opacity:0"></div>
+  <div id="feats">
+    <div class="feat"><div class="mask"><span><p>Réservez 24 h/24</p><small>Votre coiffeur, votre créneau, en quelques gestes.</small></span></div><div class="rule"></div></div>
+    <div class="feat"><div class="mask"><span><p>Modifiez, annulez</p><small>Depuis votre espace, jusqu'à 48 h avant.</small></span></div><div class="rule"></div></div>
+    <div class="feat"><div class="mask"><span><p>Rappel 3 jours avant</p><small>Par email, avec l'ajout à votre agenda.</small></span></div><div class="rule"></div></div>
+  </div>
+  <!-- 6 -->
+  <svg id="endHex" viewBox="0 0 640 720"><path pathLength="1" d="M320 6 L634 186 V534 L320 714 L6 534 V186 Z"/></svg>
+  <div id="endLogo" class="logo" data-logo="#efe9dd"></div>
+  <div id="endTag" class="caps">Barbier · Schiltigheim</div>
+  <div id="endCta">
+    <h3><span class="mask"><span>Réservez</span></span><span class="mask"><span class="shine" id="shine3">en ligne.</span></span></h3>
+  </div>
+  <div id="endRule" class="led"></div>
+  <div id="endBio" class="caps">Lien en bio</div>
+  <div id="endAddr">162 route de Bischwiller, Schiltigheim<br>03 88 97 74 68</div>
+
+  <div class="layer" id="vignette"></div>
+  <canvas id="grain" width="540" height="960"></canvas>
+</div>
+
+<script>
+const DURATION = 19.0; // secondes
+const E = {
+  out: "cubic-bezier(0.2, 0.7, 0.2, 1)", draw: "cubic-bezier(0.6, 0, 0.2, 1)", in: "cubic-bezier(0.4, 0, 1, 1)",
+  trace: "cubic-bezier(0.55, 0, 0.25, 1)", shine: "cubic-bezier(0.5, 0, 0.3, 1)", expo: "cubic-bezier(0.16, 1, 0.3, 1)",
+  inout: "cubic-bezier(0.65, 0, 0.35, 1)", linear: "linear",
+};
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => [...document.querySelectorAll(s)];
+// Entrée : remplit avant et après (l'élément attend caché). Sortie : ne remplit qu'après, pour ne pas écraser l'entrée.
+const IN = (el, kf, at, dur, ease = E.out) => el.animate(kf, { delay: at * 1000, duration: dur * 1000, easing: ease, fill: "both" });
+const OUT = (el, kf, at, dur, ease = E.in) => el.animate(kf, { delay: at * 1000, duration: dur * 1000, easing: ease, fill: "forwards" });
+const fadeIn = (el, at, dur = .5, ease = E.out) => IN(el, [{ opacity: 0 }, { opacity: 1 }], at, dur, ease);
+const fadeOut = (el, at, dur = .4, ease = E.in) => OUT(el, [{ opacity: 1 }, { opacity: 0 }], at, dur, ease);
+const rise = (el, at, dur = .9) => IN(el, [{ transform: "translateY(108%)" }, { transform: "translateY(0)" }], at, dur, E.expo);
+const sink = (el, at, dur = .45) => OUT(el, [{ transform: "translateY(0)" }, { transform: "translateY(-108%)" }], at, dur, E.in);
+const draw = (el, at, dur, ease = E.trace) => IN(el, [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], at, dur, ease);
+const tap = (el, at) => IN(el, [
+  { opacity: 0, transform: "scale(.3)" }, { opacity: 1, transform: "scale(.75)", offset: .3 }, { opacity: 0, transform: "scale(1.5)" },
+], at, .6, E.out);
+const press = (el, at) => IN(el, [{ transform: "scale(1)" }, { transform: "scale(.95)", offset: .4 }, { transform: "scale(1)" }], at, .32, E.out);
+
+async function loadLogos() {
+  const svg = await (await fetch("assets/logo.svg")).text();
+  for (const slot of $$("[data-logo]")) {
+    slot.innerHTML = svg;
+    slot.querySelector("svg").setAttribute("fill", slot.dataset.logo);
+  }
+}
+
+function buildCeiling() {
+  // Hexagones à sommet plat, comme le plafond du salon. Chaque arête est un tracé qui se dessine,
+  // en vague depuis le centre du plafond.
+  const R = 150, H = Math.sqrt(3) * R, cx = 1500, cy = 900;
+  const edges = new Map();
+  const key = (x, y) => `${Math.round(x)}:${Math.round(y)}`;
+  for (let c = -12; c <= 12; c++) {
+    for (let r = -6; r <= 16; r++) {
+      const x = cx + c * 1.5 * R, y = cy + (r + (Math.abs(c) % 2) * .5) * H;
+      const pts = [...Array(6)].map((_, i) => [x + R * Math.cos(i * Math.PI / 3), y + R * Math.sin(i * Math.PI / 3)]);
+      pts.forEach((p, i) => {
+        const q = pts[(i + 1) % 6];
+        const k = [key(...p), key(...q)].sort().join("|");
+        if (!edges.has(k)) edges.set(k, [p, q]);
+      });
+    }
+  }
+  const svg = $("#ceiling");
+  let html = "";
+  for (const [p, q] of edges.values()) {
+    html += `<path pathLength="1" d="M${p[0].toFixed(1)} ${p[1].toFixed(1)} L${q[0].toFixed(1)} ${q[1].toFixed(1)}"/>`;
+  }
+  svg.innerHTML = html;
+  let n = 0;
+  for (const path of svg.querySelectorAll("path")) {
+    const [x1, y1, x2, y2] = path.getAttribute("d").match(/-?\d+(\.\d+)?/g).map(Number);
+    const d = Math.hypot((x1 + x2) / 2 - cx, (y1 + y2) / 2 - (cy + 300));
+    const jitter = ((n++ * 9301 + 49297) % 233280) / 233280 * .12;
+    draw(path, .55 + d / 2600 + jitter, .55, E.draw);
+  }
+}
+
+// Pose chaque toucher au centre du bouton visé (coordonnées de l'écran du téléphone, hors mise à l'échelle de l'aperçu).
+function placeTaps() {
+  const screen = $("#screen"), s = screen.getBoundingClientRect(), k = screen.offsetWidth / s.width;
+  [["#tap1", "#chipOrhan"], ["#tap2", "#daySat"], ["#tap3", "#slot1030"], ["#tap4", "#cta"]].forEach(([tapSel, target]) => {
+    const r = $(target).getBoundingClientRect();
+    $(tapSel).style.left = `${((r.left + r.width / 2) - s.left) * k}px`;
+    $(tapSel).style.top = `${((r.top + r.height / 2) - s.top) * k}px`;
+  });
+}
+
+function timeline() {
+  placeTaps();
+  // 1. Allumage (0 → 2,8 s)
+  IN($("#ledH"), [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], .15, 1.0, E.draw);
+  OUT($("#ledH"), [{ opacity: 1, transform: "translateY(0) scaleX(1)" }, { opacity: 0, transform: "translateY(-260px) scaleX(.4)" }], 1.15, .7, E.inout);
+  buildCeiling();
+  const glowOff = "brightness(.55) drop-shadow(0 0 0 rgba(255,255,255,0)) drop-shadow(0 0 0 rgba(255,255,255,0))";
+  const glowOn = "brightness(1) drop-shadow(0 0 6px rgba(255,255,255,.95)) drop-shadow(0 0 26px rgba(255,255,255,.5))";
+  const glowLow = "brightness(.7) drop-shadow(0 0 2px rgba(255,255,255,.4)) drop-shadow(0 0 8px rgba(255,255,255,.15))";
+  // Néon qui s'allume : deux battements, puis pleine lumière.
+  IN($("#ceiling"), [
+    { filter: glowOff }, { filter: glowOn, offset: .14 }, { filter: glowLow, offset: .24 }, { filter: glowOn, offset: .36 },
+    { filter: glowLow, offset: .42 }, { filter: glowOn },
+  ], 1.55, .9, E.linear);
+  IN($("#ceilingWrap"), [
+    { transform: "perspective(1100px) rotateX(-50deg) translateY(0)" },
+    { transform: "perspective(1100px) rotateX(-50deg) translateY(-520px)" },
+  ], 0, 3.6, E.linear);
+  fadeOut($("#s1"), 2.55, .9, E.inout);
+  rise($("#s1label .mask:nth-child(1) > span"), 1.25);
+  rise($("#s1label .mask:nth-child(2) > span"), 1.4);
+  fadeOut($("#s1label"), 2.35, .4);
+
+  // 2. Le salon (2,5 → 5,6 s) : le plafond dessiné se fond dans la vraie photo du plafond.
+  fadeIn($("#photo"), 2.45, 1.0, E.inout);
+  IN($("#photo"), [{ transform: "scale(1.22) translateY(-30px)" }, { transform: "scale(1.04) translateY(0)" }], 2.45, 3.4, E.out);
+  fadeIn($("#photoShade"), 2.6, 1.0);
+  rise($("#s2text .caps"), 2.95);
+  $$("#s2text h1 .mask > span").forEach((el, i) => rise(el, 3.1 + i * .12, 1.0));
+  $$("#s2text .mask > span").forEach((el, i) => sink(el, 5.05 + i * .06));
+  OUT($("#photo"), [{ filter: "brightness(1) blur(0px)", opacity: 1 }, { filter: "brightness(.32) blur(12px)", opacity: 1 }], 5.1, .8, E.inout);
+
+  // 3. La plaque (5,5 → 8,2 s)
+  draw($("#plaqueTrace path"), 5.45, 1.1);
+  IN($("#plaque"), [{ clipPath: "inset(50% 0 50% 0)" }, { clipPath: "inset(0% 0 0% 0)" }], 5.7, .7, E.expo);
+  IN($("#plaque .logo"), [{ clipPath: "inset(0 100% 0 0)" }, { clipPath: "inset(0 0% 0 0)" }], 6.0, .9, E.draw);
+  IN($("#plaqueLine"), [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], 6.45, .8, E.draw);
+  IN($("#plaqueTag"), [{ opacity: 0, transform: "translateY(14px)" }, { opacity: 1, transform: "translateY(0)" }], 6.75, .6);
+  fadeOut($("#plaqueTag"), 7.55, .25);
+  fadeOut($("#plaqueLine"), 7.55, .25);
+  fadeOut($("#plaqueTrace"), 7.45, .3);
+  OUT($("#plaqueWrap"), [{ transform: "translateY(0) scale(1)" }, { transform: "translateY(-775px) scale(.36)" }], 7.6, .85, E.inout);
+  fadeOut($("#photo"), 7.6, .7, E.inout);
+  fadeOut($("#photoShade"), 7.6, .7, E.inout);
+
+  // 4. La réservation (8 → 13,3 s)
+  $$("#s4head .mask > span").forEach((el, i) => rise(el, 8.05 + i * .12, 1.0));
+  fadeIn($("#glow"), 8.3, 1.2);
+  IN($("#phone"), [
+    { transform: "translateY(1250px) rotateX(24deg) rotateZ(-4deg)", opacity: 1 },
+    { transform: "translateY(0) rotateX(0deg) rotateZ(0deg)", opacity: 1 },
+  ], 8.2, 1.25, E.expo);
+  tap($("#tap1"), 9.6); fadeIn($("#chipOrhan .on"), 9.66, .2);
+  tap($("#tap2"), 10.05); fadeIn($("#daySat .on"), 10.11, .2);
+  tap($("#tap3"), 10.5); fadeIn($("#slot1030 .on"), 10.56, .2);
+  fadeIn($("#ctaOn"), 10.66, .3);
+  tap($("#tap4"), 11.0); press($("#cta"), 11.0);
+  fadeIn($("#confirm"), 11.18, .35, E.out);
+  draw($("#hexGold"), 11.28, 1.1);
+  draw($("#hexCheck"), 12.0, .4, "ease");
+  $$("#confirmTitle .mask > span").forEach((el, i) => rise(el, 11.5 + i * .1, .9));
+  ["#shine1", "#shine2"].forEach((s) => IN($(s), [{ backgroundPosition: "100% 0" }, { backgroundPosition: "0% 0" }], 12.1, 1.1, E.shine));
+  IN($("#confirmRule"), [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], 11.8, .7, E.draw);
+  IN($("#confirmInfo"), [{ opacity: 0, transform: "translateY(16px)" }, { opacity: 1, transform: "translateY(0)" }], 11.9, .6);
+  fadeIn($("#confirmMail"), 12.3, .5);
+  OUT($("#phone"), [{ transform: "translateY(0)" }, { transform: "translateY(1300px)" }], 13.3, .6, E.in);
+  fadeOut($("#glow"), 13.3, .6);
+  $$("#s4head .mask > span").forEach((el, i) => sink(el, 13.25 + i * .06));
+
+  // 5. Les avantages (13,6 → 15,8 s)
+  fadeIn($("#band"), 13.5, 1.0, E.inout);
+  IN($("#band"), [{ transform: "scale(1.12) translateX(30px)" }, { transform: "scale(1) translateX(0)" }], 13.5, 2.6, E.out);
+  fadeIn($("#bandShade"), 13.5, .1);
+  $$(".feat .mask > span").forEach((el, i) => rise(el, 13.65 + i * .16, 1.0));
+  $$(".feat .rule").forEach((el, i) => IN(el, [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], 13.85 + i * .16, .9, E.draw));
+  fadeOut($("#feats"), 15.75, .4);
+  fadeOut($("#band"), 15.7, .5);
+  fadeOut($("#bandShade"), 15.7, .5);
+  fadeOut($("#plaqueWrap"), 15.7, .4);
+
+  // 6. Fin (16 → 19 s)
+  draw($("#endHex path"), 16.0, 1.2);
+  IN($("#endLogo"), [{ clipPath: "inset(0 100% 0 0)" }, { clipPath: "inset(0 0% 0 0)" }], 16.45, .9, E.draw);
+  IN($("#endTag"), [{ opacity: 0, transform: "translateY(12px)" }, { opacity: 1, transform: "translateY(0)" }], 16.95, .6);
+  $$("#endCta .mask > span").forEach((el, i) => rise(el, 16.6 + i * .12, 1.0));
+  IN($("#shine3"), [{ backgroundPosition: "100% 0" }, { backgroundPosition: "0% 0" }], 17.55, 1.1, E.shine);
+  IN($("#endRule"), [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], 17.15, .9, E.draw);
+  fadeIn($("#endBio"), 17.45, .6);
+  fadeIn($("#endAddr"), 17.7, .6);
+}
+
+// Grain de pellicule, tiré d'une graine par image : identique à chaque rendu.
+const grain = $("#grain").getContext("2d");
+const img = grain.createImageData(540, 960);
+function drawGrain(seed) {
+  let s = (seed * 2654435761) >>> 0 || 1;
+  const d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    s ^= s << 13; s ^= s >>> 17; s ^= s << 5; s >>>= 0;
+    const v = s & 255;
+    d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255;
+  }
+  grain.putImageData(img, 0, 0);
+}
+
+window.__seek = (t) => {
+  for (const a of document.getAnimations()) { a.pause(); a.currentTime = t * 1000; }
+  drawGrain(Math.round(t * 60) + 1);
+};
+window.__duration = DURATION;
+
+(async () => {
+  const render = new URLSearchParams(location.search).has("render");
+  if (render) document.body.classList.add("render");
+  else {
+    const fit = () => document.body.style.setProperty("--fit", Math.min(innerWidth / 1080, innerHeight / 1920));
+    fit(); addEventListener("resize", fit);
+  }
+  await loadLogos();
+  await document.fonts.ready;
+  await Promise.all($$("img").map((i) => i.decode().catch(() => {})));
+  timeline();
+  if (render) { window.__seek(0); window.__ready = true; return; }
+  // Lecture en boucle pour l'aperçu.
+  const start = performance.now();
+  const loop = () => {
+    const t = ((performance.now() - start) / 1000) % (DURATION + 1);
+    window.__seek(Math.min(t, DURATION));
+    requestAnimationFrame(loop);
+  };
+  const at = new URLSearchParams(location.search).get("t");
+  if (at !== null) window.__seek(Number(at)); else loop();
+})();
+</script>
+</body>
+</html>

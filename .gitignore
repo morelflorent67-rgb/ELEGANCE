@@ -15,3 +15,7 @@ Thumbs.db
 supabase/.temp/
 supabase/.branches/
 .local-db/
+
+# Visuels de lancement : fichiers produits (sources dans communication/lancement)
+communication/lancement/export/
+communication/lancement/qr.svg

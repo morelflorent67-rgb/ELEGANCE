@@ -1,0 +1,15 @@
+{
+  "name": "elegance-lancement",
+  "private": true,
+  "description": "Visuels de lancement (vidéo et affiche). Outillage à part : rien ici n'entre dans l'application.",
+  "type": "module",
+  "scripts": {
+    "serve": "node render.mjs serve",
+    "video": "node render.mjs video",
+    "poster": "node render.mjs poster"
+  },
+  "dependencies": {
+    "ffmpeg-static": "5.2.0",
+    "qrcode": "1.5.4"
+  }
+}
