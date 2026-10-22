@@ -176,6 +176,8 @@ Questions posées à Florent et encore ouvertes : ce qui lui déplaît dans le v
 
 ## Réponses de Florent pour le lot 8 (22 octobre 2026)
 
+**Avancement du lot 8** : étape 1 faite côté documents : `docs/exploitation.md` (surveillance UptimeRobot à brancher par Florent, sauvegardes, pannes, variables, liste de contrôle avant ouverture). `/api/diagnostic` gardé jusqu'à la fin de la recette (voir `decisions.md`). Reste : fiche de recette, guide de bascule.
+
 Visuel de l'accueil : ok. Base de production : on **vide celle de test**. Domaine : pas encore choisi. Bascule : **Florent la fait lui-même à la main** (je rédige un guide pas à pas) ; pas de RDV Planity à reprendre par moi. Application installable : l'icône E suffit. Alertes de surveillance : morel.florent67@gmail.com. Recette : sur iPad et téléphone (je prépare la fiche à cocher). Plan validé : (1) surveillance externe gratuite + retrait de `/api/diagnostic` + guide d'exploitation et liste de contrôle ; (2) fiche de recette ; (3) guide de bascule (Vercel Pro et cron à la minute, Supabase Pro, domaine, Brevo sur le domaine, clés à changer, vidage de la base de test, import clients, saisie des RDV Planity). SumUp : Florent donnera la clé d'API et le code marchand dès que le salon les lui transmet (la clé se pose dans Vercel, pas dans le chat).
 
 ## Message à coller pour démarrer la prochaine conversation
