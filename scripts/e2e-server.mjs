@@ -53,6 +53,9 @@ const env = {
   APP_SECRET: "secret-des-tests-de-bout-en-bout",
   EMAIL_TRANSPORT: "log", // aucun email ne part
   E2E_ROUTES: "1", // /api/e2e/revalidate : vide le cache de la vitrine après une remise à zéro de la base
+  PAYMENT_DRIVER: "fake", // faux terminal d'encaissement, commandé par /api/e2e/payment
+  SUMUP_API_KEY: "",
+  SUMUP_WEBHOOK_SECRET: "secret-du-rappel-de-test",
   SITE_URL: `http://127.0.0.1:${SITE_PORT}`,
   // Aucune clé Supabase réelle ne doit servir ici, même si un fichier .env.local en contient.
   SUPABASE_URL: "http://127.0.0.1:1",

@@ -70,3 +70,7 @@
 - `src/modules/vitrine` : `load.ts`, `cache.ts` (`getVitrine()`, `use cache`, étiquette `vitrine`), `hours.ts`, `status.ts`, `catalog-view.ts`, `legal.ts`, `seo.ts`. **Tout texte qui cite la carte, l'équipe, les horaires ou une règle vient de la base.**
 - Les actions du gérant (`asManager`) vident le cache (`updateTag`). Un test qui change la base en SQL direct doit appeler `refreshVitrine()` (`tests/e2e/helpers.ts`) ; `resetData` le fait.
 - Tests Playwright : `serviceButton`, `chooseService`, `chooseStaff`, `barButton`, `pickFirstSlot` (`tests/e2e/helpers.ts`) ; `page.clock.setFixedTime` pour l'état « Ouvert maintenant ».
+
+## Encaissement SumUp Solo (lot 14)
+- `src/modules/payments` : `startPayment` (R-89, un seul encaissement en cours : index unique), `settlePayment` / `refreshPayment` (relisent le résultat chez SumUp, R-90/91, idempotent), `expireStalePayments` (R-92), `cancelPayment` (R-93), `pairTerminal` (gérant). Le terminal est une interface (`PaymentProvider`) : `sumup.ts` en vrai, `fake.ts` aux tests (`PAYMENT_DRIVER=fake`, commandé par `/api/e2e/payment`). Rappel : `/api/sumup/webhook/[secret]`. Le montant encaissé écrit `appointment.adjusted_amount_cents` (le Bilan le lit déjà).
+- Fiche RDV : `payment-block.tsx` (relit le résultat toutes les 2,5 s). Gérant : `/equipe/gerant/terminal`. Un test qui compte les erreurs de fournisseur passe par `isProviderError` (jamais `instanceof`, paquets du serveur séparés).

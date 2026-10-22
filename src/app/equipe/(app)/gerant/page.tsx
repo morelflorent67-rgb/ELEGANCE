@@ -32,6 +32,7 @@ const TOOLS: { label: string; href?: string }[] = [
   { label: "Équipe et habilitations", href: "/equipe/gerant/equipe" },
   { label: "Horaires et fermetures", href: "/equipe/gerant/horaires" },
   { label: "Bilan et chiffre d’affaires", href: "/equipe/gerant/bilan" },
+  { label: "Terminal d’encaissement", href: "/equipe/gerant/terminal" },
 ];
 
 async function Manager({

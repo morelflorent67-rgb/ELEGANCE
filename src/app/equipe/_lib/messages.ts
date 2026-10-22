@@ -37,6 +37,14 @@ const MESSAGES: Partial<Record<TeamError, string>> = {
   invalid_amount: "Le montant doit être un nombre d'euros entre 0 et 1 000, avec au plus deux décimales.",
   author_required: "Choisissez qui fait la modification.",
   unknown_author: "Ce prénom ne fait plus partie de l'équipe.",
+  terminal_not_configured:
+    "Le terminal d'encaissement n'est pas encore relié. Le gérant le relie dans l'espace gérant, « Terminal d'encaissement ».",
+  terminal_busy: "Un encaissement est déjà en cours sur le terminal. Terminez-le ou annulez-le d'abord.",
+  terminal_unavailable: "Le terminal ne répond pas. Vérifiez qu'il est allumé et connecté, puis réessayez.",
+  already_paid: "Ce rendez-vous est déjà encaissé.",
+  invalid_pairing:
+    "Le terminal a refusé ce code. Générez-en un nouveau sur le terminal (Connexions, API) et vérifiez le code marchand.",
+  payment_not_found: "Cet encaissement n'existe plus.",
   customer_not_blockable: "Le client n'a pas encore assez de lapins pour être bloqué.",
   invalid_service:
     "Vérifiez le nom, le prix et la durée : un multiple de 15 minutes, jusqu'à 8 heures.",

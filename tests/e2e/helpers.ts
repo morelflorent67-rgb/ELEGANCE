@@ -17,7 +17,7 @@ const seedSql = readFileSync("src/db/seed.sql", "utf8");
 export async function resetData() {
   // Carte, équipe, horaires et réglages aussi : le gérant les modifie (lot 5), chaque test repart des données de départ.
   await sql.unsafe(
-    `truncate waitlist_offer, waitlist_entry, appointment_item, appointment, appointment_series, absence, closure, email_outbox, audit_log, customer, rate_limit,
+    `truncate payment, waitlist_offer, waitlist_entry, appointment_item, appointment, appointment_series, absence, closure, email_outbox, audit_log, customer, rate_limit,
               service_staff, service, staff, opening_hours, salon_settings restart identity cascade`,
   );
   await sql.unsafe(seedSql);

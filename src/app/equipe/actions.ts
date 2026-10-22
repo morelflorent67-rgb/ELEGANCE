@@ -77,6 +77,15 @@ import {
   setOpeningHours,
   type WeekHours,
 } from "@/modules/schedule/manage";
+import {
+  cancelPayment,
+  pairTerminal,
+  refreshPayment,
+  startPayment,
+  unpairTerminal,
+  type PaymentView,
+} from "@/modules/payments";
+import { paymentProviderFromEnv, webhookUrl } from "@/modules/payments/from-env";
 import { sendEmailsForAppointment } from "@/modules/mail/send-now";
 import { wakeWaitlist } from "@/modules/waitlist/run";
 import { hitRateLimit } from "@/modules/security/rate-limit";
@@ -508,6 +517,69 @@ export async function adjustAmountAction(
       amountCents: parsed.data.amountCents,
     });
     return { ok: true, ...result };
+  });
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Encaissement au terminal SumUp Solo (D-105, R-89 à R-93) : toute l'équipe, signée d'un prénom (R-74)
+
+function terminalProvider() {
+  const provider = paymentProviderFromEnv();
+  if (!provider) throw new DomainError("terminal_not_configured");
+  return provider;
+}
+
+export async function startPaymentAction(input: unknown): Promise<TeamResult<{ payment: PaymentView }>> {
+  const parsed = z.object({ appointmentId: uuid, authorId: z.string() }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asStaff(async () => {
+    const payment = await startPayment(db(), terminalProvider(), {
+      appointmentId: parsed.data.appointmentId,
+      authorStaffId: parsed.data.authorId,
+      returnUrl: webhookUrl(),
+    });
+    return { ok: true, payment };
+  });
+}
+
+/** Relit le résultat pendant que le terminal attend le client ; clôt un encaissement oublié (R-92). */
+export async function refreshPaymentAction(input: unknown): Promise<TeamResult<{ payment: PaymentView }>> {
+  const parsed = z.object({ paymentId: uuid }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asStaff(async () => {
+    const payment = await refreshPayment(db(), terminalProvider(), parsed.data.paymentId);
+    return { ok: true, payment };
+  });
+}
+
+export async function cancelPaymentAction(input: unknown): Promise<TeamResult<{ payment: PaymentView }>> {
+  const parsed = z.object({ paymentId: uuid, authorId: z.string() }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asStaff(async () => {
+    const payment = await cancelPayment(db(), terminalProvider(), {
+      paymentId: parsed.data.paymentId,
+      authorStaffId: parsed.data.authorId,
+    });
+    return { ok: true, payment };
+  });
+}
+
+/** Espace gérant : relie le terminal avec le code affiché sur son écran. */
+export async function pairTerminalAction(input: unknown): Promise<TeamResult> {
+  const parsed = z
+    .object({ merchantCode: z.string().max(40), pairingCode: z.string().max(40) })
+    .safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asManager(async (user) => {
+    await pairTerminal(db(), terminalProvider(), { ...parsed.data, actorId: user.id });
+    return { ok: true };
+  });
+}
+
+export async function unpairTerminalAction(): Promise<TeamResult> {
+  return asManager(async (user) => {
+    await unpairTerminal(db(), { actorId: user.id });
+    return { ok: true };
   });
 }
 

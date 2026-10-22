@@ -22,6 +22,7 @@ import {
   type SeriesCardView,
 } from "../../actions";
 import { AuthorPicker, type TeamMemberView } from "./author-picker";
+import { PaymentBlock } from "./payment-block";
 import { SeriesForm } from "./series-form";
 import { SlotPicker, type PickedSalonSlot } from "./slot-picker";
 
@@ -521,6 +522,17 @@ export function AppointmentPanel({
               <button type="button" onClick={() => open("extend")} className={ghostButton}>
                 ↻ Prolonger la série
               </button>
+            ) : null}
+            {canAdjust ? (
+              <PaymentBlock
+                key={`${a.id}:${a.payment?.id ?? ""}:${a.payment?.status ?? ""}:${a.adjustedAmountCents ?? ""}`}
+                appointmentId={a.id}
+                customerFirstName={firstName(a.customerName)}
+                amountCents={a.adjustedAmountCents ?? a.totalPriceCents}
+                initial={a.payment}
+                team={team}
+                onToast={onToast}
+              />
             ) : null}
             {canAdjust ? (
               <button

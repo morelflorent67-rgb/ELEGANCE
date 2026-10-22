@@ -52,6 +52,13 @@ export type DomainErrorCode =
   | "offer_expired"
   // Correction du montant à la clôture (R-53, R-54)
   | "invalid_amount"
+  // Encaissement au terminal (D-105)
+  | "terminal_not_configured"
+  | "terminal_busy"
+  | "terminal_unavailable"
+  | "already_paid"
+  | "invalid_pairing"
+  | "payment_not_found"
   // Gestion de la carte et de l'équipe par le gérant (R-10 à R-13)
   | "invalid_service"
   | "unknown_staff"

@@ -65,6 +65,8 @@ export const seriesMonthlyMode = pgEnum("series_monthly_mode", [
   "weekday_rank",
   "last_weekday",
 ]);
+/** Encaissement au terminal (D-105) : en cours sur le terminal, réussi, refusé ou expiré, annulé par l'équipe. */
+export const paymentStatus = pgEnum("payment_status", ["pending", "successful", "failed", "cancelled"]);
 export const emailStatus = pgEnum("email_status", ["pending", "sent", "failed"]);
 
 /** Réglages du salon : une seule ligne (principe 8, R-01 à R-07). */
@@ -87,6 +89,9 @@ export const salonSettings = pgTable(
     waitlistHoldMinutes: integer("waitlist_hold_minutes").notNull().default(15),
     /** Délai après le dernier RDV honoré avant « Nous serions ravis de vous revoir » (D-74). */
     winbackAfterDays: integer("winback_after_days").notNull().default(15),
+    /** Terminal d'encaissement SumUp Solo (D-105) : code marchand et identifiant du terminal appairé. La clé d'API reste dans l'environnement. */
+    paymentMerchantCode: text("payment_merchant_code"),
+    paymentReaderId: text("payment_reader_id"),
     managerPinHash: text("manager_pin_hash"), // R-73
   },
   (t) => [
@@ -379,6 +384,36 @@ export const waitlistOffer = pgTable(
       .on(t.entryId)
       .where(sql`${t.status} = 'pending'`),
     index("waitlist_offer_entry_idx").on(t.entryId, t.status),
+  ],
+);
+
+/**
+ * Un encaissement lancé sur le terminal depuis la fiche RDV (R-89 à R-93). Une seule ligne « en cours » pour tout le
+ * salon : il n'y a qu'un terminal.
+ */
+export const payment = pgTable(
+  "payment",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    appointmentId: uuid("appointment_id")
+      .notNull()
+      .references(() => appointment.id),
+    amountCents: integer("amount_cents").notNull(),
+    status: paymentStatus("status").notNull().default("pending"),
+    /** Identifiant de la transaction côté SumUp (client_transaction_id), connu une fois le terminal joint. */
+    providerReference: text("provider_reference"),
+    failureReason: text("failure_reason"),
+    startedByStaffId: uuid("started_by_staff_id")
+      .notNull()
+      .references(() => staff.id),
+    createdAt: instant("created_at").notNull().defaultNow(),
+    completedAt: instant("completed_at"),
+  },
+  (t) => [
+    check("payment_amount", sql`${t.amountCents} > 0`),
+    uniqueIndex("payment_one_pending").on(t.status).where(sql`${t.status} = 'pending'`),
+    uniqueIndex("payment_provider_reference").on(t.providerReference),
+    index("payment_appointment_idx").on(t.appointmentId, t.status),
   ],
 );
 

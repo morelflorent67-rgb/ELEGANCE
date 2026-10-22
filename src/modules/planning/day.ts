@@ -7,6 +7,7 @@ import { capitalize, formatDay, parisDate } from "@/lib/format";
 import { formatPhone } from "@/lib/phone";
 import { planningStatus, type PlanningStatus } from "@/modules/appointments/status";
 import { loadSettings, loadSnapshot, openRangesOn } from "@/modules/availability";
+import { latestPaymentsFor, type PaymentView } from "@/modules/payments";
 import { listActiveStaff, type TeamMember } from "@/modules/staff/team";
 
 // Ce que la tablette affiche (R-72) : le planning d'un jour en une colonne par coiffeur, et la fiche d'un RDV.
@@ -49,6 +50,8 @@ export interface PlanningAppointment {
   blocked: boolean;
   /** Qui a réservé au salon (R-74), null pour une réservation en ligne. */
   bookedBy: string | null;
+  /** Dernier encaissement au terminal (D-105), ou null. */
+  payment: PaymentView | null;
   /** RDV répété : sa série (D-71), ou null. Le planning le marque d'un ↻ (D-92). */
   seriesId: string | null;
 }
@@ -147,6 +150,11 @@ async function hydrate(
     .groupBy(appointment.customerId);
   const noShowCount = new Map(noShows.map((n) => [n.customerId, n.n]));
 
+  const payments = await latestPaymentsFor(
+    db,
+    rows.map((r) => r.id),
+  );
+
   const minuteOf = (date: Date) => {
     const local = DateTime.fromJSDate(date, { zone });
     return local.hour * 60 + local.minute;
@@ -180,6 +188,7 @@ async function hydrate(
       blocked: row.blocked,
       bookedBy: row.bookedBy,
       seriesId: row.seriesId,
+      payment: payments.get(row.id) ?? null,
     };
   });
 }
