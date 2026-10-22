@@ -29,7 +29,7 @@ export interface LegalDocument {
 }
 
 /** Date de la dernière rédaction des textes (à changer quand un texte change). */
-export const LEGAL_UPDATED = "20 octobre 2026";
+export const LEGAL_UPDATED = "22 octobre 2026";
 
 const hoursToWords = (hours: number) =>
   hours % 24 === 0 ? `${hours / 24} ${hours / 24 > 1 ? "jours" : "jour"}` : `${hours} h`;
@@ -40,12 +40,12 @@ function mentions(): Raw[] {
   return [
     [
       "Éditeur du site",
-      `${SALON.name}\n[Forme juridique] au capital de [Montant du capital]\n${salonAddressLine}\nTéléphone : ${SALON.phoneDisplay}\nSIRET : [Numéro de SIRET]`,
+      `${SALON.name}\nSARL au capital de 50 €\nSiège social : ${salonAddressLine}\nTéléphone : ${SALON.phoneDisplay}\nSIRET : 852 415 736 00010 · RCS Strasbourg 852 415 736\nTVA intracommunautaire : FR39852415736`,
     ],
-    ["Directeur de la publication", "[Prénom Nom du directeur de la publication], [Fonction]."],
+    ["Directeur de la publication", "Orhan Sevig, gérant."],
     [
       "Hébergement",
-      "Le site est hébergé par Vercel Inc. [Adresse de l'hébergeur].\nLes comptes et les rendez-vous sont enregistrés par Supabase, dans l'Union européenne.\nLes emails sont envoyés par Brevo (France).",
+      "Le site est hébergé par Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723, États-Unis.\nLes comptes et les rendez-vous sont enregistrés par Supabase, dans l'Union européenne.\nLes emails sont envoyés par Brevo (France).",
     ],
     [
       "Propriété intellectuelle",
