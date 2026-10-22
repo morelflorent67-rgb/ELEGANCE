@@ -1,7 +1,8 @@
 import { SALON, salonAddressLine } from "@/lib/salon";
 
 // Gabarit commun des emails : tableaux HTML (les clients mail ignorent flex et grid), 600 px, thème sombre
-// du design, Arial en repli (Sora ne s'affiche pas partout). Chaque couleur est répétée en attribut
+// du design (D-93 : Manrope pour le texte, Cormorant Garamond pour les titres), Arial et Georgia en repli : la plupart
+// des messageries n'ont pas ces polices. Chaque couleur est répétée en attribut
 // bgcolor pour résister au mode sombre forcé d'Outlook.
 
 export const COLORS = {
@@ -14,7 +15,8 @@ export const COLORS = {
   line: "#2c2a26",
 } as const;
 
-export const FONT = "Sora, Arial, Helvetica, sans-serif";
+export const FONT = "Manrope, 'Helvetica Neue', Arial, Helvetica, sans-serif";
+export const DISPLAY_FONT = "'Cormorant Garamond', Georgia, 'Times New Roman', serif";
 
 export function escapeHtml(text: string): string {
   return text

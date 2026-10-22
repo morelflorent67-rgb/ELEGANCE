@@ -21,6 +21,7 @@ import {
   withoutAccount,
   type Recipient,
   type RenderedEmail,
+  DISPLAY_FONT,
 } from "../layout";
 
 export interface ModificationData extends Recipient {
@@ -87,7 +88,7 @@ export function renderModificationEmail(data: ModificationData): RenderedEmail {
 
   const bodyHtml = `
 <div style="font-size:11px;letter-spacing:0.32em;text-transform:uppercase;color:${COLORS.gold};">Rendez-vous modifié</div>
-<h1 style="margin:14px 0 0;font-size:30px;line-height:1.15;font-weight:300;letter-spacing:-0.01em;color:${COLORS.ivory};">${escapeHtml(greeting)}</h1>
+<h1 style="margin:14px 0 0;font-family:${DISPLAY_FONT};font-size:38px;line-height:1.1;font-weight:400;color:${COLORS.ivory};">${escapeHtml(greeting)}</h1>
 <p style="margin:14px 0 0;font-size:16px;line-height:1.6;font-weight:300;color:${COLORS.ivorySoft};">${escapeHtml(lead)}</p>
 
 <div style="margin-top:28px;padding:0 4px;">
@@ -98,7 +99,7 @@ export function renderModificationEmail(data: ModificationData): RenderedEmail {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${COLORS.graphite}" style="margin-top:24px;background:${COLORS.graphite};"><tr><td style="padding:28px;">
 <div style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:${COLORS.ivory};padding-bottom:18px;">Maintenant</div>
 <div style="font-size:12px;letter-spacing:0.26em;text-transform:uppercase;color:${COLORS.gold};">${escapeHtml(day)}</div>
-<div style="padding:4px 0 18px;font-size:40px;font-weight:300;line-height:1.2;color:${COLORS.ivory};">${escapeHtml(time)}</div>
+<div style="padding:4px 0 18px;font-family:${DISPLAY_FONT};font-size:46px;font-weight:400;line-height:1.1;color:${COLORS.ivory};">${escapeHtml(time)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid ${COLORS.line};"><tr><td height="18" style="height:18px;line-height:18px;font-size:1px;">&nbsp;</td></tr>${rows}${totalRow}</table>
 <div style="padding-top:14px;font-size:14px;line-height:1.6;color:${COLORS.stone};">${forNameHtml(data.forName)}avec ${escapeHtml(data.staffFirstName)}<br>Paiement sur place</div>
 </td></tr></table>

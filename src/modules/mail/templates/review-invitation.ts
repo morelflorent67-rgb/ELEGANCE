@@ -8,6 +8,7 @@ import {
   type RenderedEmail,
   noticeLines,
   type Recipient,
+  DISPLAY_FONT,
 } from "../layout";
 
 export interface ReviewInvitationData extends Recipient {
@@ -43,7 +44,7 @@ export function renderReviewInvitationEmail(data: ReviewInvitationData): Rendere
 
   const bodyHtml = `
 <div style="font-size:11px;letter-spacing:0.32em;text-transform:uppercase;color:${COLORS.gold};">Merci de votre visite</div>
-<h1 style="margin:14px 0 0;font-size:30px;line-height:1.15;font-weight:300;letter-spacing:-0.01em;color:${COLORS.ivory};">${escapeHtml(question)}</h1>
+<h1 style="margin:14px 0 0;font-family:${DISPLAY_FONT};font-size:38px;line-height:1.1;font-weight:400;color:${COLORS.ivory};">${escapeHtml(question)}</h1>
 <p style="margin:14px 0 0;font-size:16px;line-height:1.6;font-weight:300;color:${COLORS.ivorySoft};">${escapeHtml(lead)}</p>
 
 <div style="margin-top:28px;">${button("Laisser un avis", data.reviewUrl, "primary")}</div>

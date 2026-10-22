@@ -1,14 +1,23 @@
 import type { Metadata, Viewport } from "next";
-import { Sora } from "next/font/google";
+import { Cormorant_Garamond, Manrope } from "next/font/google";
 import { siteUrl } from "@/lib/env";
 import { photos } from "@/lib/photos";
 import { CLIENT_MANIFEST_PATH } from "@/lib/web-app";
 import "./globals.css";
 
-const sora = Sora({
+// D-93 : Manrope (texte) et Cormorant Garamond (titres, chiffres) pour le client ; la tablette charge Sora dans son
+// propre gabarit (src/app/equipe/layout.tsx).
+const manrope = Manrope({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+  variable: "--font-manrope",
+  display: "swap",
+});
+const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
   weight: ["300", "400", "500"],
-  variable: "--font-sora",
+  style: ["normal", "italic"],
+  variable: "--font-cormorant",
   display: "swap",
 });
 
@@ -47,7 +56,13 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="fr" className={sora.variable}>
+    // suppressHydrationWarning : le script de l'arrivée pose « opening-skip » sur <html> avant React (ouverture déjà
+    // jouée dans cette visite) ; ce n'est pas un écart de rendu.
+    <html
+      lang="fr"
+      className={`${manrope.variable} ${cormorant.variable}`}
+      suppressHydrationWarning
+    >
       <body className="min-h-dvh bg-ink text-ivory">{children}</body>
     </html>
   );

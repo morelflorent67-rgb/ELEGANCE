@@ -4,6 +4,7 @@ import {
   loginTablet,
   openDay,
   resetData,
+  serviceButton,
   setManagerCode,
   sql,
 } from "./helpers";
@@ -89,7 +90,7 @@ test.describe("R-11 : le gérant gère la carte", () => {
     await expect(row(page, "Soin de test").first()).toBeVisible();
 
     await page.goto("/reservation");
-    await expect(page.getByRole("button", { name: /Choisir Soin de test/ })).toBeVisible();
+    await expect(serviceButton(page, "Soin de test")).toBeVisible();
   });
 
   test("R-10 : un prix illisible est refusé avec un message, rien n'est enregistré", async ({

@@ -6,8 +6,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const base = siteUrl();
   const pages: [path: string, priority: number][] = [
     ["", 1],
-    ["/prestations", 0.9],
-    ["/salon", 0.8],
     ["/reservation", 0.8],
     ["/mentions-legales", 0.2],
     ["/confidentialite", 0.2],

@@ -58,8 +58,11 @@
 - `src/modules/dashboard` : `period.ts`, `compute.ts` (fonctions pures) et `load.ts`. Page `/equipe/gerant/bilan`, derrière le code gérant (D-60). `src/modules/booking/adjust-amount.ts` : correction du montant encaissé (R-53, R-54, D-62).
 - Les emails de RDV d'un même RDV sont plusieurs lignes de `email_outbox` (confirmation, rappel…) : un test qui compte les emails d'un RDV filtre sur `type`.
 
-## Vitrine (lot 6)
-- `src/app/(vitrine)` : accueil, `/prestations`, `/salon`, pages légales ; le gabarit pose le pied de page, la barre « Réserver + Appeler » et les révélations. Chaque page pose son `<SiteHeader />` (`overlay` sur l'accueil). Composants dans `src/components/vitrine`.
-- `src/modules/vitrine` : `load.ts` (lecture en base : carte, équipe active, horaires, fermetures, règles), `cache.ts` (`getVitrine()`, `use cache`, étiquette `vitrine`), puis fonctions pures testées : `hours.ts`, `catalog-view.ts`, `legal.ts`, `seo.ts`. **Tout texte de la vitrine qui cite la carte, l'équipe, les horaires ou une règle vient de la base**, jamais d'une valeur écrite en dur.
-- Les actions du gérant (`asManager`) vident le cache de la vitrine (`updateTag`). Un test qui change la base en SQL direct doit appeler `refreshVitrine()` (`tests/e2e/helpers.ts`) ; `resetData` le fait.
-- Ordinateur (D-37) dès 1024 px : la tablette en paysage (1194 px) a donc la mise en page ordinateur sur la vitrine.
+## Page client (lot 12, remplace la vitrine du lot 6)
+- `src/app/(client)` : toutes les pages client (accueil `/`, `/reservation`, `/compte/*`, connexion, inscription, pages légales, désinscription) ; son gabarit pose la colonne de 430 px (centrée dès 640 px, fond vivant autour) et la classe `.client`. Polices : Manrope (`font-sans`) et Cormorant Garamond (`font-display`) ; la tablette garde Sora (`.font-tablet`, gabarit `/equipe`) (D-93).
+- Animations : `src/app/(client)/client.css` (fiche « Lot12-Animations » du canevas), sans bibliothèque ; chaque classe a pour style de base son état final. Composants dans `src/components/client` (`ui.tsx`, `in-view.tsx`, `hours-live.tsx`, `access.tsx`, `panel.tsx`, `sheet.tsx`).
+- Accueil (D-94) : arrivée, horaires en direct (`src/modules/vitrine/status.ts`, calculé dans le navigateur), accès (plan dessiné, `SALON_ACCESS` dans `src/lib/salon.ts`). `/prestations` et `/salon` redirigent vers `/`.
+- Réservation : une étape par écran (`BookingFlow`), l'historique du navigateur suit les étapes (même adresse) ; bande de jours sur tout l'horizon (D-96). « Mes rendez-vous », « Mon compte », connexion : panneau (`PanelFrame`) ; sans session, il propose la connexion sur place.
+- `src/modules/vitrine` : `load.ts`, `cache.ts` (`getVitrine()`, `use cache`, étiquette `vitrine`), `hours.ts`, `status.ts`, `catalog-view.ts`, `legal.ts`, `seo.ts`. **Tout texte qui cite la carte, l'équipe, les horaires ou une règle vient de la base.**
+- Les actions du gérant (`asManager`) vident le cache (`updateTag`). Un test qui change la base en SQL direct doit appeler `refreshVitrine()` (`tests/e2e/helpers.ts`) ; `resetData` le fait.
+- Tests Playwright : `serviceButton`, `chooseService`, `chooseStaff`, `barButton`, `pickFirstSlot` (`tests/e2e/helpers.ts`) ; `page.clock.setFixedTime` pour l'état « Ouvert maintenant ».

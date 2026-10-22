@@ -2,6 +2,7 @@ import { DateTime } from "luxon";
 import { expect, test, type Page } from "@playwright/test";
 import {
   addAppointment,
+  barButton,
   newClient,
   openDay,
   parisIso,
@@ -19,18 +20,25 @@ test.beforeEach(async () => {
 const phoneLink = "tel:+33388977468";
 const soon = () => DateTime.now().plus({ minutes: 40 }).toUTC().toISO()!; // dans le délai d'une heure (D-63)
 
-/** Une carte de RDV de « Mes rendez-vous », retrouvée par son heure. */
+/** Une carte de RDV de « Mes rendez-vous », retrouvée par son texte. */
 const card = (page: Page, text: string | RegExp) =>
   page.locator("article").filter({ visible: true, hasText: text });
+
+/** La seconde feuille « Annuler ce rendez-vous ? ». */
+const cancelSheet = (page: Page) =>
+  page.getByRole("alertdialog", { name: /^Annuler ce rendez-vous/ });
 
 test.describe("Mes rendez-vous (R-76)", () => {
   test("sans rendez-vous : message vide et bouton pour réserver", async ({ page }) => {
     await signUpClient(page, newClient());
     await page.goto("/compte/rendez-vous");
-    await expect(page.getByRole("heading", { name: "Mes rendez-vous" })).toBeVisible();
-    await expect(page.getByRole("tab", { name: "À venir · 0" })).toBeVisible();
-    await expect(page.getByText("Aucun rendez-vous à venir")).toBeVisible();
-    await expect(page.getByRole("link", { name: "Prendre rendez-vous" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Bonjour Thomas." })).toBeVisible();
+    await expect(page.getByText("0 rendez-vous à venir sur 5")).toBeVisible();
+    await expect(page.getByText("Aucun rendez-vous à venir.")).toBeVisible();
+    await expect(page.getByRole("link", { name: /Nouveau rendez-vous/ })).toHaveAttribute(
+      "href",
+      "/reservation",
+    );
   });
 
   test("R-30, R-31 : un RDV lointain se modifie ou s'annule, un RDV proche renvoie au salon", async ({
@@ -42,29 +50,30 @@ test.describe("Mes rendez-vous (R-76)", () => {
     await addAppointment(client.email, { startsAt: soon(), staff: "Enes" });
 
     await page.goto("/compte/rendez-vous");
-    await expect(page.getByRole("tab", { name: "À venir · 2" })).toBeVisible();
+    // R-25 : deux RDV qui comptent dans la limite de 5.
+    await expect(page.getByText("2 rendez-vous à venir sur 5")).toBeVisible();
+    await expect(
+      page.getByText(/se modifie ou s.annule en ligne jusqu.à une heure avant son début/),
+    ).toBeVisible();
 
-    // Le RDV lointain : date limite affichée, Modifier et Annuler
+    // Le RDV lointain : Modifier et Annuler
     const far = card(page, "avec Orhan");
-    await expect(far.getByText(/Modifiable ou annulable jusqu.au /)).toBeVisible();
-    await expect(far.getByRole("link", { name: "Modifier" })).toBeVisible();
-    await expect(far.getByRole("button", { name: "Annuler", exact: true })).toBeVisible();
+    await expect(far.getByRole("link", { name: /^Modifier le rendez-vous du / })).toBeVisible();
+    await expect(far.getByRole("button", { name: /^Annuler le rendez-vous du / })).toBeVisible();
     await expect(far.getByRole("link", { name: "Ajouter à mon agenda" })).toHaveAttribute(
       "href",
       /^\/api\/agenda\/[0-9a-f-]{36}\?t=/,
     );
 
-    // Le RDV proche : « Contactez le salon » (R-31, R-32), ni Modifier ni Annuler
+    // Le RDV proche : il bat en doré, « Appeler » (R-31, R-32), ni Modifier ni Annuler
     const near = card(page, "avec Enes");
+    await expect(near.getByText(/^dans \d+ min$/)).toBeVisible();
     await expect(
-      near.getByText("Moins d'une heure avant : pour modifier ou annuler, appelez le salon."),
+      near.getByText("Moins d'une heure avant : modification ou annulation par téléphone."),
     ).toBeVisible();
-    await expect(near.getByRole("link", { name: "Appeler le salon" })).toHaveAttribute(
-      "href",
-      phoneLink,
-    );
-    await expect(near.getByRole("link", { name: "Modifier" })).toHaveCount(0);
-    await expect(near.getByRole("button", { name: "Annuler", exact: true })).toHaveCount(0);
+    await expect(near.getByRole("link", { name: "Appeler" })).toHaveAttribute("href", phoneLink);
+    await expect(near.getByRole("link", { name: /^Modifier/ })).toHaveCount(0);
+    await expect(near.getByRole("button", { name: /^Annuler/ })).toHaveCount(0);
   });
 
   test("R-30 : annuler un RDV, avec la feuille de confirmation, libère le créneau et envoie l'email", async ({
@@ -75,10 +84,10 @@ test.describe("Mes rendez-vous (R-76)", () => {
     const id = await addAppointment(client.email, { startsAt: parisIso(openDay(10), "10:00") });
 
     await page.goto("/compte/rendez-vous");
-    await page.getByRole("button", { name: "Annuler", exact: true }).click();
-    const sheet = page.getByRole("dialog", { name: "Annuler ce rendez-vous ?" });
+    await page.getByRole("button", { name: /^Annuler le rendez-vous du / }).click();
+    const sheet = cancelSheet(page);
     await expect(sheet).toBeVisible();
-    await expect(sheet.getByText(/Le créneau sera libéré pour un autre client/)).toBeVisible();
+    await expect(sheet.getByText(/Le créneau sera libéré tout de suite/)).toBeVisible();
 
     // « Garder mon rendez-vous » ferme la feuille sans rien changer
     await sheet.getByRole("button", { name: "Garder mon rendez-vous" }).click();
@@ -87,10 +96,15 @@ test.describe("Mes rendez-vous (R-76)", () => {
       "confirmed",
     );
 
-    await page.getByRole("button", { name: "Annuler", exact: true }).click();
+    await page.getByRole("button", { name: /^Annuler le rendez-vous du / }).click();
     await sheet.getByRole("button", { name: "Oui, annuler" }).click();
-    await expect(page.getByText("Votre rendez-vous est annulé")).toBeVisible();
-    await expect(page.getByRole("tab", { name: "À venir · 0" })).toBeVisible();
+    // Le message reste 5 s, le RDV quitte la liste.
+    await expect(
+      page
+        .getByRole("status")
+        .filter({ hasText: /annulé\. Un email de confirmation vous a été envoyé/ }),
+    ).toBeVisible();
+    await expect(page.getByText("0 rendez-vous à venir sur 5")).toBeVisible();
 
     expect((await sql`select status from appointment where id = ${id}`)[0].status).toBe(
       "cancelled_by_customer",
@@ -102,10 +116,9 @@ test.describe("Mes rendez-vous (R-76)", () => {
       .poll(async () => (await sql`select status from email_outbox where type = 'cancellation'`)[0])
       .toMatchObject({ status: "sent" });
 
-    // Il apparaît dans « Passés », marqué « Annulé », sans « Reprendre le même RDV »
-    await page.getByRole("tab", { name: "Passés" }).click();
-    await expect(page.getByText("Annulé", { exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Reprendre le même RDV" })).toHaveCount(0);
+    // Il apparaît dans « Déjà venus », marqué « Annulé », sans « Reprendre »
+    await expect(page.getByText(/ · Annulé$/)).toBeVisible();
+    await expect(page.getByRole("link", { name: /^Reprendre/ })).toHaveCount(0);
   });
 
   test("R-30 : le délai est revérifié côté serveur au moment de l'annulation", async ({ page }) => {
@@ -114,13 +127,10 @@ test.describe("Mes rendez-vous (R-76)", () => {
     const id = await addAppointment(client.email, { startsAt: parisIso(openDay(10), "10:00") });
 
     await page.goto("/compte/rendez-vous");
-    await page.getByRole("button", { name: "Annuler", exact: true }).click();
+    await page.getByRole("button", { name: /^Annuler le rendez-vous du / }).click();
     // Pendant que la feuille est ouverte, le RDV passe dans le délai (la page, elle, ne le sait pas).
     await sql`update appointment set starts_at = ${soon()}::timestamptz, ends_at = ${soon()}::timestamptz + interval '30 minutes' where id = ${id}`;
-    await page
-      .getByRole("dialog", { name: "Annuler ce rendez-vous ?" })
-      .getByRole("button", { name: "Oui, annuler" })
-      .click();
+    await cancelSheet(page).getByRole("button", { name: "Oui, annuler" }).click();
     await expect(
       page.getByText("Il est trop tard pour annuler en ligne. Appelez le salon."),
     ).toBeVisible();
@@ -139,9 +149,9 @@ test.describe("Mes rendez-vous (R-76)", () => {
       staff: "Enes",
     });
     await page.goto("/compte/rendez-vous");
-    await page.getByRole("tab", { name: "Passés" }).click();
-    await expect(page.getByText(/Coupe & taille de barbe · 28 € · avec Enes/)).toBeVisible();
-    await expect(page.getByRole("link", { name: "Reprendre le même RDV" })).toBeVisible();
+    const past = page.getByRole("region", { name: "Déjà venus" });
+    await expect(past.getByText(/Coupe & taille de barbe · 28 € · avec Enes/)).toBeVisible();
+    await expect(past.getByRole("link", { name: /^Reprendre le même RDV/ })).toBeVisible();
   });
 });
 
@@ -159,22 +169,21 @@ test.describe("Reprendre le même RDV", () => {
     });
 
     await page.goto("/compte/rendez-vous");
-    await page.getByRole("tab", { name: "Passés" }).click();
-    await page.getByRole("link", { name: "Reprendre le même RDV" }).click();
+    await page.getByRole("link", { name: /^Reprendre le même RDV/ }).click();
 
+    // Le parcours s'ouvre au créneau, avec la même prestation (30 min) et le même coiffeur.
     await expect(page).toHaveURL(/\/reservation\?reprendre=/);
-    await expect(page.getByRole("heading", { name: "Date et heure" })).toBeVisible();
-    await expect(
-      page.getByText("Coupe & taille de barbe · 28 €").filter({ visible: true }),
-    ).toBeVisible();
-    await expect(page.getByText("avec Enes").filter({ visible: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /^Quand/ })).toBeVisible();
+    await expect(page.getByText(/Départs à l.heure et à la demie · 30 min/)).toBeVisible();
 
     await expect(slotButtons(page).first()).toBeVisible();
     await slotButtons(page).first().click();
-    await expect(page.getByText("Connecté", { exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "Continuer", exact: true }).click();
-    await page.getByRole("button", { name: "Confirmer" }).click();
-    await expect(page.getByRole("heading", { name: "Rendez-vous confirmé" })).toBeVisible();
+    await expect(page.getByText("Enes", { exact: true }).filter({ visible: true })).toBeVisible();
+    await barButton(page, "Continuer").click();
+    // Déjà connecté : directement le récapitulatif.
+    await expect(page.getByText("Coupe & taille de barbe", { exact: true })).toBeVisible();
+    await barButton(page, /^Confirmer/).click();
+    await expect(page.getByRole("heading", { name: "C'est réservé." })).toBeVisible();
 
     const rows = await sql`
       select a.status, s.first_name, i.name_snapshot
@@ -203,10 +212,8 @@ test.describe("Reprendre le même RDV", () => {
     const stranger = await context.newPage();
     await signUpClient(stranger, newClient());
     await stranger.goto(`/reservation?reprendre=${id}`);
-    await expect(
-      stranger.getByRole("heading", { name: "Choisissez une prestation" }),
-    ).toBeVisible();
-    await expect(stranger.getByText("avec Orhan")).toHaveCount(0);
+    await expect(stranger.getByRole("heading", { name: /^Que souhaitez-vous/ })).toBeVisible();
+    await expect(stranger.locator('[aria-pressed="true"]')).toHaveCount(0);
     await context.close();
   });
 });
@@ -221,26 +228,26 @@ test.describe("Modifier un RDV", () => {
     const id = await addAppointment(client.email, { startsAt: original });
 
     await page.goto("/compte/rendez-vous");
-    await page.getByRole("link", { name: "Modifier" }).click();
+    await page.getByRole("link", { name: /^Modifier le rendez-vous du / }).click();
 
     await expect(page).toHaveURL(/\/reservation\?modifier=/);
-    await expect(page.getByRole("heading", { name: "Date et heure" })).toBeVisible();
-    // Les prestations ne se changent pas ici
-    await expect(page.getByText("Coupe homme · 18 €").filter({ visible: true })).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Ajouter une prestation à la suite" }),
-    ).toHaveCount(0);
-    await expect(page.getByRole("heading", { name: "Vos coordonnées" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: /^Quand/ })).toBeVisible();
+    await expect(page.getByText("Modifier le RDV")).toBeVisible();
+    await expect(page.getByText("Étape 2 sur 3")).toBeVisible();
+    // Le créneau actuel est rappelé, barré ; les prestations ne se changent pas ici (R-16).
+    await expect(page.getByText(/^Aujourd.hui :/)).toBeVisible();
 
     await expect(slotButtons(page).first()).toBeVisible();
     await slotButtons(page).first().click();
+    await barButton(page, "Continuer").click();
 
-    await expect(page.getByRole("heading", { name: "Récapitulatif" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /^Tout est prêt/ })).toBeVisible();
     await expect(page.getByText("Avant", { exact: true })).toBeVisible();
-    await expect(page.getByText("Paiement sur place.")).toBeVisible();
-    await page.getByRole("button", { name: "Confirmer la modification" }).click();
+    await expect(page.getByRole("button", { name: "Modifier les prestations" })).toHaveCount(0);
+    await expect(page.getByLabel(/Pour qui/)).toHaveCount(0);
+    await barButton(page, /^Confirmer la modification/).click();
 
-    await expect(page.getByRole("heading", { name: "Rendez-vous modifié" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "C'est modifié." })).toBeVisible();
     const rows = await sql`select id, starts_at, status from appointment`;
     expect(rows).toHaveLength(1);
     expect(rows[0].id).toBe(id);
@@ -259,12 +266,14 @@ test.describe("Modifier un RDV", () => {
     await signUpClient(page, client);
     const id = await addAppointment(client.email, { startsAt: soon() });
     await page.goto(`/reservation?modifier=${id}`);
-    await expect(page.getByText("Ce rendez-vous ne peut plus être modifié en ligne")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Ce rendez-vous ne peut plus être modifié en ligne." }),
+    ).toBeVisible();
     await expect(page.getByRole("link", { name: "Appeler le salon" })).toHaveAttribute(
       "href",
       phoneLink,
     );
-    await expect(page.getByRole("heading", { name: "Date et heure" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: /^Quand/ })).toHaveCount(0);
   });
 
   test("le RDV d'un autre client ne s'ouvre pas, et reste inchangé", async ({ page, browser }) => {
@@ -297,10 +306,16 @@ test.describe("Mes informations (R-70, R-76)", () => {
   test("modifie prénom, nom et téléphone", async ({ page }) => {
     await signUpClient(page, newClient());
     await page.goto("/compte/informations");
-    await expect(page.getByRole("heading", { name: "Mes informations" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Mon compte" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Enregistrer" })).toBeDisabled();
 
-    await page.getByLabel("Prénom").fill("Tom");
+    await expect(async () => {
+      await page.getByLabel("Prénom").fill("");
+      await page.getByLabel("Prénom").fill("Tom");
+      await expect(page.getByRole("button", { name: "Enregistrer" })).toBeEnabled({
+        timeout: 1_000,
+      });
+    }).toPass();
     await page.getByLabel("Téléphone").fill("07 11 22 33 44");
     await page.getByRole("button", { name: "Enregistrer" }).click();
     await expect(page.getByText("Vos informations sont à jour.")).toBeVisible();
@@ -313,7 +328,15 @@ test.describe("Mes informations (R-70, R-76)", () => {
   test("R-70 : un téléphone invalide est refusé avec un message", async ({ page }) => {
     await signUpClient(page, newClient());
     await page.goto("/compte/informations");
-    await page.getByLabel("Téléphone").fill("abc");
+    // Une saisie faite avant que le panneau soit actif est perdue : on recommence jusqu'à ce que le bouton suive.
+    await expect(async () => {
+      // Vider d'abord : retaper la même valeur ne déclencherait aucun changement.
+      await page.getByLabel("Téléphone").fill("");
+      await page.getByLabel("Téléphone").fill("abc");
+      await expect(page.getByRole("button", { name: "Enregistrer" })).toBeEnabled({
+        timeout: 1_000,
+      });
+    }).toPass();
     await page.getByRole("button", { name: "Enregistrer" }).click();
     await expect(page.getByText("Ce numéro de téléphone ne semble pas valide.")).toBeVisible();
   });
@@ -328,6 +351,7 @@ test.describe("Mes informations (R-70, R-76)", () => {
     const nextEmail = `nouveau.${Date.now()}@exemple.fr`;
     // Une saisie faite avant que la page soit active est perdue : on recommence jusqu'à ce que le champ suive.
     await expect(async () => {
+      await page.getByLabel("Email", { exact: true }).fill("");
       await page.getByLabel("Email", { exact: true }).fill(nextEmail);
       await expect(page.locator("#info-currentPassword")).toBeVisible({ timeout: 1_000 });
     }).toPass();
@@ -387,8 +411,10 @@ test.describe("Mes informations (R-70, R-76)", () => {
     await page.goto("/compte/informations");
     await page.getByRole("button", { name: "Se déconnecter" }).click();
     await expect(page).toHaveURL(/\/$/);
+    // Sans session, le panneau propose la connexion au lieu des rendez-vous.
     await page.goto("/compte/rendez-vous");
-    await expect(page).toHaveURL(/\/connexion/);
+    await expect(page.getByRole("heading", { name: "Bon retour." })).toBeVisible();
+    await expect(page.getByText(/rendez-vous à venir sur/)).toHaveCount(0);
   });
 });
 
@@ -407,7 +433,7 @@ test.describe("Supprimer mon compte (R-75, D-43)", () => {
 
     await page.goto("/compte/informations");
     await page.getByRole("button", { name: "Supprimer mon compte" }).click();
-    const sheet = page.getByRole("dialog", { name: "Supprimer votre compte ?" });
+    const sheet = page.getByRole("alertdialog", { name: /^Supprimer votre compte/ });
     await expect(sheet).toBeVisible();
 
     // Un mauvais mot de passe ne supprime rien
@@ -424,7 +450,7 @@ test.describe("Supprimer mon compte (R-75, D-43)", () => {
     await sheet.getByLabel("Confirmez avec votre mot de passe").fill(client.password);
     await sheet.getByRole("button", { name: "Supprimer définitivement" }).click();
     await expect(page).toHaveURL(/\/compte\/supprime$/);
-    await expect(page.getByRole("heading", { name: "Votre compte est supprimé" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Votre compte est supprimé." })).toBeVisible();
 
     const [row] =
       await sql`select first_name, last_name, phone, email, auth_user_id, anonymized_at from customer`;
@@ -453,7 +479,7 @@ test.describe("Supprimer mon compte (R-75, D-43)", () => {
     await expect(visitor.getByText("Email ou mot de passe incorrect.")).toBeVisible();
     await context.close();
     await page.goto("/compte/rendez-vous");
-    await expect(page).toHaveURL(/\/connexion/);
+    await expect(page.getByRole("heading", { name: "Bon retour." })).toBeVisible();
   });
 
   test("R-30 : avec un RDV dans l'heure, la suppression renvoie au salon et ne change rien", async ({
@@ -464,7 +490,7 @@ test.describe("Supprimer mon compte (R-75, D-43)", () => {
     await addAppointment(client.email, { startsAt: soon() });
     await page.goto("/compte/informations");
     await page.getByRole("button", { name: "Supprimer mon compte" }).click();
-    const sheet = page.getByRole("dialog", { name: "Supprimer votre compte ?" });
+    const sheet = page.getByRole("alertdialog", { name: /^Supprimer votre compte/ });
     await expect(sheet.getByText("Votre prochain rendez-vous est trop proche")).toBeVisible();
     await expect(sheet.getByRole("link", { name: "Appeler le salon" })).toHaveAttribute(
       "href",
@@ -501,9 +527,7 @@ test.describe("mobile et tablette", () => {
       expect(overflow, `${path} déborde`).toBe(0);
 
       const small: string[] = [];
-      for (const element of await page
-        .locator("main button, main a, header a, main input, [role=tab]")
-        .all()) {
+      for (const element of await page.locator("main button, main a, header a, main input").all()) {
         if (!(await element.isVisible())) continue;
         const box = await element.boundingBox();
         // Un lien au milieu d'une phrase est exempté de la taille minimale (WCAG 2.5.8).
@@ -515,13 +539,5 @@ test.describe("mobile et tablette", () => {
       }
       expect(small, `${path} : éléments trop petits`).toEqual([]);
     }
-
-    // Les onglets « À venir » et « Passés » ne cassent pas la mise en page
-    await page.goto("/compte/rendez-vous");
-    await page.getByRole("tab", { name: "Passés" }).click();
-    const overflow = await page.evaluate(
-      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-    );
-    expect(overflow).toBe(0);
   });
 });

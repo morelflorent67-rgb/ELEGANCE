@@ -1,35 +1,49 @@
 import type { ReactNode } from "react";
-import { Eyebrow, LedLine, PageHeader } from "./ui";
+import { PanelBody, PanelFrame, PanelHeader } from "./client/panel";
 
-/** Gabarit des pages de compte : en-tête, titre, filet de lumière, contenu. Une colonne, 480 px au plus. */
+/** Gabarit des pages de compte (connexion, inscription, mot de passe) : le panneau client, ouvert sur l'accueil. */
 export function AuthPage({
-  backHref = "/",
   title,
   lead,
   children,
   footer,
 }: {
-  backHref?: string;
   title: string;
   lead?: string;
   children: ReactNode;
   footer?: ReactNode;
 }) {
   return (
-    <div className="min-h-dvh">
-      <PageHeader backHref={backHref} />
-      <main className="mx-auto flex w-full max-w-[480px] flex-col gap-7 px-6 pb-12 pt-8">
-        <div className="flex flex-col gap-3">
-          <Eyebrow>Mon compte</Eyebrow>
-          <h1 className="text-title-1">{title}</h1>
-          {lead ? <p className="text-body text-ivory-soft">{lead}</p> : null}
+    <PanelFrame>
+      <PanelHeader label="Mon compte" />
+      <PanelBody>
+        <div className="flex flex-col gap-2.5">
+          <h1
+            className="s-up font-display text-[40px] leading-[1.05]"
+            style={{ animationDelay: "120ms" }}
+          >
+            {title}
+          </h1>
+          {lead ? (
+            <p
+              className="s-up text-[14px] leading-[1.55] text-stone"
+              style={{ animationDelay: "180ms" }}
+            >
+              {lead}
+            </p>
+          ) : null}
         </div>
-        <LedLine />
-        {children}
+        <div className="s-up" style={{ animationDelay: "230ms" }}>
+          {children}
+        </div>
         {footer ? (
-          <div className="flex flex-col gap-3.5 border-t border-line-subtle pt-6">{footer}</div>
+          <div className="s-up flex items-center gap-3.5" style={{ animationDelay: "420ms" }}>
+            <span className="h-px flex-1 bg-[rgb(239_233_221_/_0.12)]" />
+            {footer}
+            <span className="h-px flex-1 bg-[rgb(239_233_221_/_0.12)]" />
+          </div>
         ) : null}
-      </main>
-    </div>
+      </PanelBody>
+    </PanelFrame>
   );
 }

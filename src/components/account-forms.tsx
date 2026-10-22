@@ -9,9 +9,10 @@ import {
   signUpAction,
 } from "@/app/_actions/account";
 import { idleState, type FormState } from "@/app/_actions/form-state";
-import { Alert, Field, btnPrimary, inputClass } from "./ui";
+import { Field, Note, Problem, cta } from "./client/ui";
 
-// Formulaires de compte. Ils servent sur les pages /connexion et /inscription et dans l'étape 4 de la réservation.
+// Formulaires de compte (style des maquettes « Lot12- » : champs soulignés). Ils servent sur les pages /connexion et
+// /inscription, dans le panneau « Mes rendez-vous » et à l'étape 4 de la réservation.
 // `onSuccess` reçoit la fiche du client : la page décide où aller, l'étape 4 reste sur place.
 
 type Success = Required<Pick<FormState, "customer" | "booking">>;
@@ -33,7 +34,7 @@ function useAccountForm(
 
 function FormMessage({ state }: { state: FormState }) {
   if (state.status !== "error" || !state.message) return null;
-  return <Alert kind="error" title={state.message} />;
+  return <Problem title={state.message} />;
 }
 
 const errorProps = (state: FormState, name: string) => ({
@@ -52,7 +53,7 @@ export function LoginForm({
 }) {
   const { state, formAction, pending } = useAccountForm(loginAction, onSuccess);
   return (
-    <form action={formAction} className="flex flex-col gap-[18px]" noValidate>
+    <form action={formAction} className="flex flex-col gap-5" noValidate>
       <FormMessage state={state} />
       <Field id={`${idPrefix}-email`} label="Email" error={state.fieldErrors?.email}>
         <input
@@ -60,9 +61,8 @@ export function LoginForm({
           name="email"
           type="email"
           autoComplete="email"
-          placeholder="vous@exemple.fr"
+          placeholder="karim.benali@email.fr"
           defaultValue={state.values?.email}
-          className={inputClass}
           {...errorProps(state, "email")}
         />
       </Field>
@@ -72,17 +72,16 @@ export function LoginForm({
           name="password"
           type="password"
           autoComplete="current-password"
-          className={inputClass}
           {...errorProps(state, "password")}
         />
       </Field>
       <Link
         href={forgotHref}
-        className="inline-flex min-h-11 items-center self-start text-body-sm text-ivory-soft"
+        className="inline-flex min-h-11 items-center self-start text-[13px] text-ivory-soft underline-offset-[3px]"
       >
-        Mot de passe oublié ?
+        Mot de passe oublié ?
       </Link>
-      <button type="submit" disabled={pending} className={btnPrimary}>
+      <button type="submit" disabled={pending} className={cta}>
         {pending ? "Connexion…" : "Se connecter"}
       </button>
     </form>
@@ -99,9 +98,9 @@ export function SignUpForm({
   const { state, formAction, pending } = useAccountForm(signUpAction, onSuccess);
   const v = state.values ?? {};
   return (
-    <form action={formAction} className="flex flex-col gap-[18px]" noValidate>
+    <form action={formAction} className="flex flex-col gap-5" noValidate>
       <FormMessage state={state} />
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-2 gap-4">
         <Field id={`${idPrefix}-firstName`} label="Prénom" error={state.fieldErrors?.firstName}>
           <input
             id={`${idPrefix}-firstName`}
@@ -109,7 +108,6 @@ export function SignUpForm({
             type="text"
             autoComplete="given-name"
             defaultValue={v.firstName}
-            className={inputClass}
             {...errorProps(state, "firstName")}
           />
         </Field>
@@ -120,7 +118,6 @@ export function SignUpForm({
             type="text"
             autoComplete="family-name"
             defaultValue={v.lastName}
-            className={inputClass}
             {...errorProps(state, "lastName")}
           />
         </Field>
@@ -137,7 +134,6 @@ export function SignUpForm({
           type="tel"
           autoComplete="tel"
           defaultValue={v.phone}
-          className={inputClass}
           {...errorProps(state, "phone")}
         />
       </Field>
@@ -148,7 +144,6 @@ export function SignUpForm({
           type="email"
           autoComplete="email"
           defaultValue={v.email}
-          className={inputClass}
           {...errorProps(state, "email")}
         />
       </Field>
@@ -163,16 +158,16 @@ export function SignUpForm({
           name="password"
           type="password"
           autoComplete="new-password"
-          className={inputClass}
+          placeholder="8 caractères minimum"
           {...errorProps(state, "password")}
         />
       </Field>
       <div className="flex flex-col gap-1">
-        <label className="flex min-h-11 items-start gap-3.5 text-body-sm text-ivory-soft">
+        <label className="flex min-h-11 items-start gap-3.5 text-[13px] leading-[1.55] text-ivory-soft">
           <input
             type="checkbox"
             name="acceptTerms"
-            className="mt-0.5 h-[22px] w-[22px] shrink-0 accent-ivory"
+            className="mt-0.5 h-[22px] w-[22px] shrink-0 accent-[#efe9dd]"
             aria-invalid={state.fieldErrors?.acceptTerms ? true : undefined}
             aria-describedby={
               state.fieldErrors?.acceptTerms ? `${idPrefix}-terms-error` : undefined
@@ -180,23 +175,23 @@ export function SignUpForm({
           />
           <span>
             J&rsquo;accepte les{" "}
-            <Link href="/conditions" className="text-ivory underline underline-offset-4">
+            <Link href="/conditions" className="text-ivory underline underline-offset-[3px]">
               conditions d&rsquo;utilisation
             </Link>{" "}
             et la{" "}
-            <Link href="/confidentialite" className="text-ivory underline underline-offset-4">
+            <Link href="/confidentialite" className="text-ivory underline underline-offset-[3px]">
               politique de confidentialité
             </Link>
             .
           </span>
         </label>
         {state.fieldErrors?.acceptTerms ? (
-          <span id={`${idPrefix}-terms-error`} role="alert" className="text-body-sm text-brick">
+          <span id={`${idPrefix}-terms-error`} role="alert" className="text-[13px] text-brick">
             {state.fieldErrors.acceptTerms}
           </span>
         ) : null}
       </div>
-      <button type="submit" disabled={pending} className={btnPrimary}>
+      <button type="submit" disabled={pending} className={cta}>
         {pending ? "Création…" : "Créer mon compte"}
       </button>
     </form>
@@ -207,13 +202,13 @@ export function ForgotPasswordForm() {
   const { state, formAction, pending } = useAccountForm(forgotPasswordAction);
   if (state.status === "ok") {
     return (
-      <Alert kind="info" title="Demande envoyée">
-        {state.message}
-      </Alert>
+      <Note role="status">
+        <span className="text-ivory">Demande envoyée.</span> {state.message}
+      </Note>
     );
   }
   return (
-    <form action={formAction} className="flex flex-col gap-[18px]" noValidate>
+    <form action={formAction} className="flex flex-col gap-5" noValidate>
       <FormMessage state={state} />
       <Field id="forgot-email" label="Email" error={state.fieldErrors?.email}>
         <input
@@ -221,13 +216,12 @@ export function ForgotPasswordForm() {
           name="email"
           type="email"
           autoComplete="email"
-          placeholder="vous@exemple.fr"
+          placeholder="karim.benali@email.fr"
           defaultValue={state.values?.email}
-          className={inputClass}
           {...errorProps(state, "email")}
         />
       </Field>
-      <button type="submit" disabled={pending} className={btnPrimary}>
+      <button type="submit" disabled={pending} className={cta}>
         {pending ? "Envoi…" : "Recevoir le lien"}
       </button>
     </form>
@@ -239,15 +233,15 @@ export function ResetPasswordForm() {
   if (state.status === "ok") {
     return (
       <div className="flex flex-col gap-5">
-        <Alert kind="info" title={state.message ?? "Mot de passe modifié"} />
-        <Link href="/reservation" className={btnPrimary}>
+        <Note role="status">{state.message ?? "Mot de passe modifié"}</Note>
+        <Link href="/reservation" className={cta}>
           Réserver
         </Link>
       </div>
     );
   }
   return (
-    <form action={formAction} className="flex flex-col gap-[18px]" noValidate>
+    <form action={formAction} className="flex flex-col gap-5" noValidate>
       <FormMessage state={state} />
       <Field
         id="new-password"
@@ -260,11 +254,11 @@ export function ResetPasswordForm() {
           name="password"
           type="password"
           autoComplete="new-password"
-          className={inputClass}
+          placeholder="8 caractères minimum"
           {...errorProps(state, "password")}
         />
       </Field>
-      <button type="submit" disabled={pending} className={btnPrimary}>
+      <button type="submit" disabled={pending} className={cta}>
         {pending ? "Enregistrement…" : "Enregistrer"}
       </button>
     </form>

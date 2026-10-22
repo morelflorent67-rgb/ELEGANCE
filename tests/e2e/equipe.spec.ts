@@ -78,7 +78,8 @@ test.describe("R-72 : la tablette reste connectée en mode équipe", () => {
   test("le compte équipe n'ouvre pas l'espace client", async ({ page }) => {
     await loginTablet(page);
     await page.goto("/compte/rendez-vous");
-    await expect(page).toHaveURL(/\/connexion/);
+    // Aucun client derrière la session de la tablette : le panneau propose la connexion.
+    await expect(page.getByRole("heading", { name: "Bon retour." })).toBeVisible();
   });
 });
 
@@ -396,10 +397,14 @@ test.describe("R-26, R-27 : réserver pour un client par téléphone ou au compt
     await loginTablet(page);
     await page.goto("/equipe/reserver");
 
-    await page.getByLabel("Nom, prénom ou téléphone").fill("dur");
-    await expect(
-      page.getByRole("list", { name: "Clients trouvés" }).getByRole("button"),
-    ).toHaveCount(2);
+    // Une saisie faite avant que la page soit active est perdue : on vide et on retape jusqu'à ce que la liste suive.
+    await expect(async () => {
+      await page.getByLabel("Nom, prénom ou téléphone").fill("");
+      await page.getByLabel("Nom, prénom ou téléphone").fill("dur");
+      await expect(
+        page.getByRole("list", { name: "Clients trouvés" }).getByRole("button"),
+      ).toHaveCount(2, { timeout: 2_000 });
+    }).toPass();
     // Le téléphone est masqué tant que la fiche n'est pas ouverte.
     await expect(page.getByText("06 •• •• •• 78")).toBeVisible();
     await expect(page.getByText("06 12 34 56 78")).toHaveCount(0);

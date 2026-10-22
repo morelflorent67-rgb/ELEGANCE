@@ -30,15 +30,19 @@ export const stagger = {
   loader: 120,
 } as const;
 
-/** Ouverture de l'accueil : délais de chaque élément (ms). Jouée une fois par session. */
+/**
+ * Ouverture de l'accueil (lot 12, fiche « Lot12-Animations ») : 1,62 s, jouée une fois par visite, sautée au premier
+ * geste. Les délais et durées sont dans src/app/(client)/client.css (classes o-*).
+ */
 export const opening = {
-  photo: { delay: 0, duration: 1400, easing: easing.out },
-  frame: { delay: 100, duration: 1200, easing: easing.trace },
-  logo: { delay: 350, duration: 900, easing: easing.draw },
-  texts: { delay: 900, duration: 600, easing: easing.out },
-  bookingBar: { delay: 150, duration: 400, easing: easing.out },
+  totalMs: 1620,
   sessionKey: "elegance-opening-played",
 } as const;
+
+/** Script en ligne de l'arrivée, lu avant le premier affichage : l'ouverture déjà jouée dans cette visite est sautée. */
+export const skipOpeningIfPlayed = `try{if(sessionStorage.getItem(${JSON.stringify(
+  opening.sessionKey,
+)})!==null)document.documentElement.classList.add("opening-skip")}catch(e){}`;
 
 /** Confirmation du rendez-vous : le seul endroit où revient le reflet doré. */
 export const confirmation = {

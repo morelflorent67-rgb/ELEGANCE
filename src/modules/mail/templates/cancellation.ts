@@ -16,6 +16,7 @@ import {
   type RenderedEmail,
   noticeLines,
   type Recipient,
+  DISPLAY_FONT,
 } from "../layout";
 
 export interface CancellationData extends Recipient {
@@ -67,7 +68,7 @@ ${group.map((d) => `<div style="padding-top:10px;font-family:${FONT};font-size:1
 
   const bodyHtml = `
 <div style="font-size:11px;letter-spacing:0.32em;text-transform:uppercase;color:${COLORS.stone};">${group ? "Rendez-vous annulés" : "Rendez-vous annulé"}</div>
-<h1 style="margin:14px 0 0;font-size:30px;line-height:1.15;font-weight:300;letter-spacing:-0.01em;color:${COLORS.ivory};">${group ? "Vos rendez-vous sont annulés." : "Votre rendez-vous est annulé."}</h1>
+<h1 style="margin:14px 0 0;font-family:${DISPLAY_FONT};font-size:38px;line-height:1.1;font-weight:400;color:${COLORS.ivory};">${group ? "Vos rendez-vous sont annulés." : "Votre rendez-vous est annulé."}</h1>
 <p style="margin:14px 0 0;font-size:16px;line-height:1.6;font-weight:300;color:${COLORS.ivorySoft};">${escapeHtml(intro)}</p>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:28px;border:1px solid ${COLORS.line};"><tr><td style="padding:24px 28px;">

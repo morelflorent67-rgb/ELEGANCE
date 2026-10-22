@@ -14,6 +14,7 @@ import {
   withoutAccount,
   type Recipient,
   type RenderedEmail,
+  DISPLAY_FONT,
 } from "../layout";
 
 export interface SeriesConfirmationData extends Recipient {
@@ -71,7 +72,7 @@ export function renderSeriesConfirmationEmail(data: SeriesConfirmationData): Ren
 
   const bodyHtml = `
 <div style="font-size:11px;letter-spacing:0.32em;text-transform:uppercase;color:${COLORS.gold};">${data.extended ? "Série prolongée" : "Rendez-vous confirmés"}</div>
-<h1 style="margin:14px 0 0;font-size:30px;line-height:1.15;font-weight:300;letter-spacing:-0.01em;color:${COLORS.ivory};">${escapeHtml(greeting)}</h1>
+<h1 style="margin:14px 0 0;font-family:${DISPLAY_FONT};font-size:38px;line-height:1.1;font-weight:400;color:${COLORS.ivory};">${escapeHtml(greeting)}</h1>
 <p style="margin:14px 0 0;font-size:16px;line-height:1.6;font-weight:300;color:${COLORS.ivorySoft};">${escapeHtml(intro)}</p>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${COLORS.graphite}" style="margin-top:28px;background:${COLORS.graphite};"><tr><td style="padding:28px;">

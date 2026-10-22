@@ -1,11 +1,8 @@
 /*
  * Elegance Strasbourg — thème Tailwind CSS v4 (Next.js)
  * À importer dans app/globals.css à la place de @import "tailwindcss".
- * Police : charger Sora (300, 400, 500) avec next/font/google, variable CSS --font-sora.
- *
- *   import { Sora } from "next/font/google";
- *   const sora = Sora({ subsets: ["latin"], weight: ["300", "400", "500"], variable: "--font-sora" });
- *   <html lang="fr" className={sora.variable}>
+ * Polices (D-93) : Manrope (texte) et Cormorant Garamond (titres) pour le client, chargées dans app/layout.tsx ;
+ * Sora pour la tablette, chargée dans app/equipe/layout.tsx, qui pose la classe .font-tablet.
  *
  * Échelle d'espacement : celle de Tailwind par défaut (4 px) correspond déjà au système
  * (p-6 = 24 px, gap-14 = 56 px…). Points de rupture par défaut conservés (640/768/1024/1280).
@@ -40,7 +37,8 @@
   --color-current: currentColor;
 
   /* ---------- Typographie ---------- */
-  --font-sans: var(--font-sora), "Century Gothic", Arial, sans-serif;
+  --font-sans: var(--font-manrope), "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-cormorant), Georgia, "Times New Roman", serif;
 
   --text-display: 2.5rem;
   --text-display--line-height: 1.1;
@@ -212,6 +210,11 @@
     font-family: var(--font-sans);
     font-weight: 300;
     -webkit-font-smoothing: antialiased;
+  }
+  /* La tablette garde Sora (D-93). */
+  .font-tablet {
+    --font-sans: var(--font-sora), "Century Gothic", Arial, sans-serif;
+    font-family: var(--font-sans);
   }
   ::selection {
     background: var(--color-ivory);

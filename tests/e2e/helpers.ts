@@ -44,8 +44,29 @@ export type Client = ReturnType<typeof newClient>;
 /** Bouton d'un créneau : « Mardi 3 novembre, 10:00 ». */
 export const slotButtons = (page: Page) => page.getByRole("button", { name: /, \d{2}:\d{2}$/ });
 
+const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** Une prestation de l'étape 1 : « Coupe homme, 18 € » (bouton à bascule, lot 12). */
+export const serviceButton = (page: Page, name: string) =>
+  page.getByRole("button", { name: new RegExp(`^${escapeRegExp(name)}, \\d`) });
+
 export async function chooseService(page: Page, name: string) {
-  await page.getByRole("button", { name: `Choisir ${name}`, exact: true }).click();
+  const button = serviceButton(page, name);
+  // Un clic avant que la page soit active (hydratée) est perdu : on réessaie jusqu'à ce qu'il compte.
+  await expect(async () => {
+    if ((await button.getAttribute("aria-pressed")) !== "true") await button.click();
+    await expect(button).toHaveAttribute("aria-pressed", "true", { timeout: 1000 });
+  }).toPass({ timeout: 10_000 });
+}
+
+/** Le bouton de la barre du bas (« Continuer », « Confirmer »…). */
+export const barButton = (page: Page, name: string | RegExp) =>
+  page.getByRole("button", { name, exact: typeof name === "string" });
+
+/** Étape 2 : toucher un coiffeur (ou « Sans préférence ») passe au créneau. */
+export async function chooseStaff(page: Page, name: string | RegExp = /^Sans préférence/) {
+  await page.getByRole("radio", { name }).click();
+  await expect(page.getByRole("heading", { name: /^Quand/ })).toBeVisible();
 }
 
 export async function fillSignUp(page: Page, client: Client, prefix: string) {
@@ -57,26 +78,29 @@ export async function fillSignUp(page: Page, client: Client, prefix: string) {
   await page.getByRole("checkbox").check();
 }
 
-/** Parcours jusqu'à l'étape 4 : une coupe, sans préférence, premier créneau libre. */
-export async function reachIdentityStep(page: Page) {
+/** Parcours jusqu'au créneau choisi : une coupe, sans préférence, premier créneau libre (pas encore « Continuer »). */
+export async function pickFirstSlot(page: Page, service = "Coupe homme") {
   await page.goto("/reservation");
-  await chooseService(page, "Coupe homme");
-  await page.getByRole("button", { name: /^Continuer/ }).click();
-  await page.getByRole("button", { name: "Continuer", exact: true }).click(); // étape 2, « Sans préférence »
+  await chooseService(page, service);
+  await barButton(page, "Continuer").click();
+  await chooseStaff(page);
   await expect(slotButtons(page).first()).toBeVisible();
   await slotButtons(page).first().click();
-  await expect(page.getByRole("heading", { name: "Vos coordonnées" })).toBeVisible();
+}
+
+/** Parcours jusqu'à l'étape 4 (« Votre compte ») : une coupe, sans préférence, premier créneau libre. */
+export async function reachIdentityStep(page: Page) {
+  await pickFirstSlot(page);
+  await barButton(page, "Continuer").click();
+  await expect(page.getByRole("heading", { name: "Votre compte" })).toBeVisible();
 }
 
 /** Étape 4 par la création d'un compte, jusqu'au récapitulatif. */
 export async function signUpAndReachRecap(page: Page, client: Client) {
   await reachIdentityStep(page);
-  await page.getByRole("tab", { name: "Créer un compte" }).click();
   await fillSignUp(page, client, "step-signup");
   await page.getByRole("button", { name: "Créer mon compte" }).click();
-  await expect(page.getByText("Connecté", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Continuer", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Récapitulatif" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^Tout est prêt/ })).toBeVisible();
 }
 
 /** Heure de Paris → instant ISO (UTC), pour poser des RDV directement en base. */

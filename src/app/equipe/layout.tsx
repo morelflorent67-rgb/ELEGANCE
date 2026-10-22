@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Sora } from "next/font/google";
 import type { ReactNode } from "react";
 import { TABLET_MANIFEST_PATH } from "@/lib/web-app";
 
@@ -11,6 +12,14 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: "Elegance", statusBarStyle: "black" },
 };
 
+// D-93 : la tablette garde Sora ; le client a Manrope et Cormorant Garamond (gabarit racine).
+const sora = Sora({
+  subsets: ["latin"],
+  weight: ["300", "400", "500"],
+  variable: "--font-sora",
+  display: "swap",
+});
+
 export default function TeamRootLayout({ children }: { children: ReactNode }) {
-  return children;
+  return <div className={`${sora.variable} font-tablet min-h-dvh`}>{children}</div>;
 }
