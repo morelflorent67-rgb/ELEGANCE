@@ -1,7 +1,7 @@
 # Reprise du projet : où on en est
 
 Ce document permet de reprendre le travail dans une **nouvelle conversation**, sans rien perdre. Il se met à jour à la fin de chaque lot.
-À jour au **22 octobre 2026** (nuit). Les lots 0 à 7 sont validés. Le lot 8 (recette et bascule) est **en pause** : le salon a demandé des changements (lots 9 à 14, section « Demandes du salon »), et Florent ne retourne le voir, et ne met en ligne, qu'une fois tout terminé. **Lots 9 et 10 validés par Florent** (22 octobre). **Lot 11 fait**, à valider par Florent ; **migration 0010 pas encore appliquée sur Supabase** (son accord d'abord), donc code du lot 11 pas encore poussé.
+À jour au **22 octobre 2026** (nuit). Les lots 0 à 7 sont validés. Le lot 8 (recette et bascule) est **en pause** : le salon a demandé des changements (lots 9 à 14, section « Demandes du salon »), et Florent ne retourne le voir, et ne met en ligne, qu'une fois tout terminé. **Lots 9 et 10 validés par Florent** (22 octobre). **Lot 11 fait et poussé**, à valider par Florent ; migration 0010 appliquée sur Supabase le 22 octobre 2026 avec son accord.
 
 ## Avancement
 
@@ -18,7 +18,7 @@ Ce document permet de reprendre le travail dans une **nouvelle conversation**, s
 | 8 | Recette et bascule | En pause jusqu'à la fin du lot 14. Fait : lenteur de la tablette corrigée (pooler en mode session), clignotement de la vitrine corrigé, surveillance des emails dans `/api/health`, visuels de lancement faits ; le reste du plan attend les réponses de Florent (voir « Lot 8 ») |
 | 9 | Réglages et petites demandes du salon : délai 1 h, rappel 24 h, créneaux à l'heure et à la demie partout, 5 RDV à venir, lien d'avis Google, couleurs en ligne/salon, résumé du planning repliable, icône E et application installable | Fait ; retours de Florent (case pleine couleur, languette) faits au lot 10 |
 | 10 | Clients sans compte : fiches créées à la tablette, « Pour qui ? », rattachement par l'email, fusion par le gérant, emails des fiches sans compte, import du fichier clients (Treatwell) | Validé par Florent (22 octobre 2026 : planning, fiches sans compte, « Pour qui ? », fusion) ; migration 0009 appliquée sur Supabase et code poussé |
-| 11 | RDV répétés depuis la fiche du planning : répéter, prolonger, annuler la suite, un email qui liste les dates | Fait le 22 octobre 2026, à valider par Florent. Migration 0010 **à appliquer sur Supabase** (avec son accord) avant de pousser |
+| 11 | RDV répétés depuis la fiche du planning : répéter, prolonger, annuler la suite, un email qui liste les dates | Fait le 22 octobre 2026, à valider par Florent ; migration 0010 appliquée sur Supabase et code poussé |
 | 12 | Nouvelle interface client : une seule page de réservation, motion design poussé | À faire : Florent fait les maquettes dans Claude Design (prompt complet et méthode dans `docs/design/brief-lot12-claude-design.md`) |
 | 13 | Liste d'attente, email « Nous serions ravis de vous revoir » | À faire |
 | 14 | Encaissement SumUp Solo depuis la fiche RDV | À faire |
@@ -69,7 +69,7 @@ Pour mémoire, à la fin du lot 7 : **699 Vitest** (197 unitaires et 502 d'inté
 12. **Après Brevo** : essayer un vrai rappel et une vraie invitation à soi-même (aucun email réel n'a été envoyé pendant le lot : les tests utilisent un faux transport et les modèles ont été vérifiés par captures). Vérifier l'affichage dans Gmail, Apple Mail et Outlook, mode sombre compris.
 13. ~~Migration 0008 sur Supabase~~ : **appliquée le 21 octobre 2026** avec l'accord de Florent ; réglages vérifiés en ligne (grille 30 min partout, délai 1 h, 5 RDV, rappel 24 h, lien d'avis Google direct).
 14. ~~Migration 0009 sur Supabase~~ : **appliquée le 22 octobre 2026** avec l'accord de Florent (colonnes `customer.origin`, `legacy_visits`, `legacy_last_visit_on`, `origin_notice_sent_at`, `appointment.for_name`, contraintes et index vérifiés en ligne ; `pnpm smoke:db` vert), puis code du lot 10 poussé.
-14 bis. **Migration 0010 sur Supabase (lot 11)** : à appliquer avec l'accord de Florent (`pnpm db:migrate:remote` : table `appointment_series`, colonne `appointment.series_id`, type d'email `series_confirmation`), vérifier en ligne, lancer `pnpm smoke:db`, **puis** pousser le code du lot 11.
+14 bis. ~~Migration 0010 sur Supabase (lot 11)~~ : **appliquée le 22 octobre 2026** avec l'accord de Florent (table `appointment_series` avec sécurité par ligne, colonne `appointment.series_id`, type d'email `series_confirmation`, contraintes et index vérifiés en ligne ; `pnpm smoke:db` vert), puis code du lot 11 poussé.
 15. **Import réel du fichier clients** : à la bascule, Florent exporte un fichier **tout neuf** (Treatwell, et Planity si le salon y a des clients récents : la commande ne lit aujourd'hui que le format Treatwell) et lance lui-même `pnpm customers:import:remote "<chemin>"` (bilan, puis « oui »). Le fichier reste hors du dossier du projet. Essai à blanc fait le 21 octobre 2026 sur l'export du 25 août 2026 : 1 968 fiches sur 3 313. Le salon prévient ses clients par ses réseaux (D-78).
 16. **Textes légaux** : la confidentialité cite maintenant les fiches sans compte et le fichier repris ; deux champs à compléter s'ajoutent (durée de conservation d'une fiche sans compte).
 
@@ -231,7 +231,6 @@ Questions posées à Florent et encore ouvertes : ce qui lui déplaît dans le v
 ```text
 Tu es le développeur principal du site et de l'application de réservation d'Elegance Strasbourg.
 Lis CLAUDE.md, puis docs/reprise.md : les lots 0 à 7 et 9 à 10 sont validés, le lot 8 (recette et bascule) est en pause, le lot 11 est fait.
-Migration 0010 (lot 11) sur Supabase : [d'accord, applique-la puis pousse le code / pas encore].
 Mon retour sur le lot 11 :
 - Répéter un RDV depuis la fiche (fréquence, coiffeur, fin, aperçu, dates sautées) : [ok / à revoir : ...]
 - Fiche d'un RDV de série, prolonger, annuler « celui-ci et les suivants » : [ok / à revoir : ...]
