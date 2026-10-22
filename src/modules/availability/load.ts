@@ -1,7 +1,14 @@
-import { and, gt, gte, inArray, lt, lte, ne } from "drizzle-orm";
+import { and, eq, gt, gte, inArray, lt, lte, ne } from "drizzle-orm";
 import { DateTime } from "luxon";
 import type { Database } from "@/db/types";
-import { absence, appointment, closure, openingHours, salonSettings } from "@/db/schema";
+import {
+  absence,
+  appointment,
+  closure,
+  openingHours,
+  salonSettings,
+  waitlistOffer,
+} from "@/db/schema";
 import type { Snapshot } from "./types";
 
 /** Statuts qui occupent encore un coiffeur (R-23) : une annulation libère le créneau. */
@@ -19,18 +26,28 @@ export async function loadSettings(db: Database): Promise<SalonSettingsRow> {
  * Charge ce qu'il faut pour calculer les créneaux sur la fenêtre [from, to] (instants) :
  * réglages, horaires, fermetures, RDV occupants et absences des coiffeurs demandés.
  * `excludeAppointmentId` : un RDV qu'on déplace ne doit pas bloquer son propre nouveau créneau.
+ * Les places gardées pour la liste d'attente (D-100) sont chargées aussi ; `ignoreOfferId` : celle qu'on est en train
+ * de prendre ne se bloque pas elle-même.
  */
 export async function loadSnapshot(
   db: Database,
-  input: { from: Date; to: Date; staffIds: string[]; excludeAppointmentId?: string },
+  input: {
+    from: Date;
+    to: Date;
+    staffIds: string[];
+    excludeAppointmentId?: string;
+    now?: Date;
+    ignoreOfferId?: string;
+  },
 ): Promise<{ snapshot: Snapshot; settings: SalonSettingsRow }> {
-  const { from, to, staffIds, excludeAppointmentId } = input;
+  const { from, to, staffIds, excludeAppointmentId, ignoreOfferId } = input;
+  const now = input.now ?? new Date();
   const settings = await loadSettings(db);
   const zone = settings.timezone;
   const firstDay = DateTime.fromJSDate(from, { zone }).toISODate()!;
   const lastDay = DateTime.fromJSDate(to, { zone }).toISODate()!;
 
-  const [hours, closures, appointments, absences] = await Promise.all([
+  const [hours, closures, appointments, absences, holds] = await Promise.all([
     db.select().from(openingHours),
     db
       .select()
@@ -66,6 +83,25 @@ export async function loadSnapshot(
               gt(absence.endsAt, from),
             ),
           ),
+    staffIds.length === 0
+      ? []
+      : db
+          .select({
+            staffId: waitlistOffer.staffId,
+            startsAt: waitlistOffer.startsAt,
+            endsAt: waitlistOffer.endsAt,
+          })
+          .from(waitlistOffer)
+          .where(
+            and(
+              inArray(waitlistOffer.staffId, staffIds),
+              eq(waitlistOffer.status, "pending"),
+              gt(waitlistOffer.expiresAt, now),
+              lt(waitlistOffer.startsAt, to),
+              gt(waitlistOffer.endsAt, from),
+              ...(ignoreOfferId ? [ne(waitlistOffer.id, ignoreOfferId)] : []),
+            ),
+          ),
   ]);
 
   return {
@@ -86,6 +122,7 @@ export async function loadSnapshot(
       closures: closures.map((c) => ({ startsOn: c.startsOn, endsOn: c.endsOn })),
       appointments,
       absences,
+      holds,
     },
   };
 }

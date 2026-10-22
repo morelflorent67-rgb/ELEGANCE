@@ -24,6 +24,8 @@ const data: VitrineData = {
     noShowBlockThreshold: 2,
     reminderHours: 72,
     reviewInvitations: false,
+    waitlistHoldMinutes: 15,
+    winbackAfterDays: 15,
   },
   services: [
     service("Coupe homme", 1800),

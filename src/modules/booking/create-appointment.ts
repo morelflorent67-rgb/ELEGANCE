@@ -30,6 +30,8 @@ export interface CreateAppointmentInput {
   forName?: string;
   /** Membre de l'équipe qui réserve, pour une réservation au salon (R-74). */
   createdByStaffId?: string;
+  /** D-100 : la place gardée (offre de la liste d'attente) que ce RDV prend ; elle ne se bloque pas elle-même. */
+  holdOfferId?: string;
 }
 
 export interface CreatedAppointment {
@@ -106,6 +108,8 @@ export async function createAppointment(
         from: new Date(input.startsAt.getTime() - margin),
         to: new Date(input.startsAt.getTime() + margin),
         staffIds: candidateIds,
+        now,
+        ...(input.holdOfferId ? { ignoreOfferId: input.holdOfferId } : {}),
       });
 
       // R-25 : au plus N RDV à venir, salon compris ; les RDV répétés n'y comptent pas (D-87).
@@ -137,7 +141,7 @@ export async function createAppointment(
         // Les refus d'horaire valent pour tous les coiffeurs ; seul « occupé » dépend du coiffeur.
         const reason = checks
           .map((c) => (c.result.ok ? null : c.result.reason))
-          .find((r) => r !== "busy");
+          .find((r) => r !== "busy" && r !== "held");
         throw new DomainError(reason ?? "slot_unavailable");
       }
 

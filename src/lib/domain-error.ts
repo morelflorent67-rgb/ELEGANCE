@@ -43,6 +43,13 @@ export type DomainErrorCode =
   | "already_in_series"
   | "not_in_series"
   | "series_empty"
+  // Liste d'attente (D-73, D-99, D-100)
+  | "invalid_waitlist"
+  | "slots_available"
+  | "waitlist_full"
+  | "offer_not_found"
+  | "offer_closed"
+  | "offer_expired"
   // Correction du montant à la clôture (R-53, R-54)
   | "invalid_amount"
   // Gestion de la carte et de l'équipe par le gérant (R-10 à R-13)

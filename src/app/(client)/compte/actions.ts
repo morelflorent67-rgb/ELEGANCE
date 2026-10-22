@@ -16,6 +16,7 @@ import {
   type ProfileResult,
 } from "@/modules/customers/profile";
 import { sendEmailsForAppointment } from "@/modules/mail/send-now";
+import { wakeWaitlist } from "@/modules/waitlist/run";
 import { hitRateLimit } from "@/modules/security/rate-limit";
 
 // Actions de l'espace client. Toute la logique et tous les contrôles sont dans les modules `booking` et `customers` :
@@ -48,7 +49,11 @@ export async function cancelAppointmentAction(appointmentId: string): Promise<Ca
       appointmentId: id.data,
     });
     // L'email part après la réponse ; en cas d'échec il reste dans la file et le cron le reprend.
-    if (!result.alreadyCancelled) after(() => sendEmailsForAppointment(db(), id.data));
+    if (!result.alreadyCancelled) {
+      after(() => sendEmailsForAppointment(db(), id.data));
+      // D-100 : la place libérée est proposée à la liste d'attente.
+      after(() => wakeWaitlist(db()));
+    }
     return { ok: true };
   } catch (error) {
     if (error instanceof DomainError) return { ok: false, error: error.code };

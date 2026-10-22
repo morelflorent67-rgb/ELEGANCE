@@ -58,6 +58,10 @@
 - `src/modules/dashboard` : `period.ts`, `compute.ts` (fonctions pures) et `load.ts`. Page `/equipe/gerant/bilan`, derrière le code gérant (D-60). `src/modules/booking/adjust-amount.ts` : correction du montant encaissé (R-53, R-54, D-62).
 - Les emails de RDV d'un même RDV sont plusieurs lignes de `email_outbox` (confirmation, rappel…) : un test qui compte les emails d'un RDV filtre sur `type`.
 
+## Liste d'attente et relance (lot 13)
+- `src/modules/waitlist` : `joinWaitlist`, `processWaitlist` (idempotent : offre une place à une seule personne à la fois, la garde `waitlist_hold_minutes`), `acceptOffer` (passe par `createAppointment`, `holdOfferId`), `declineOffer`, `leaveWaitlist`, `wakeWaitlist` (`run.ts`, à lancer dans `after` après tout ce qui libère une place). La place gardée est lue par le moteur de créneaux (`Snapshot.holds`, refus `held` pour le public « online » seulement).
+- `src/modules/mail/winback.ts` : relance « Nous serions ravis de vous revoir » (R-87), programmée par le cron. Pages : `/attente/[offerId]`, `/relance/desinscription`. Un test qui pose une inscription en SQL écrit `"window"` entre guillemets (mot réservé).
+
 ## Page client (lot 12, remplace la vitrine du lot 6)
 - `src/app/(client)` : toutes les pages client (accueil `/`, `/reservation`, `/compte/*`, connexion, inscription, pages légales, désinscription) ; son gabarit pose la colonne de 430 px (centrée dès 640 px, fond vivant autour) et la classe `.client`. Polices : Manrope (`font-sans`) et Cormorant Garamond (`font-display`) ; la tablette garde Sora (`.font-tablet`, gabarit `/equipe`) (D-93).
 - Animations : `src/app/(client)/client.css` (fiche « Lot12-Animations » du canevas), sans bibliothèque ; chaque classe a pour style de base son état final. Composants dans `src/components/client` (`ui.tsx`, `in-view.tsx`, `hours-live.tsx`, `access.tsx`, `panel.tsx`, `sheet.tsx`).

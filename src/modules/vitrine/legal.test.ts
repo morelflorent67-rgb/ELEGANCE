@@ -7,6 +7,8 @@ const rules = {
   noShowBlockThreshold: 2,
   reminderHours: 72,
   reviewInvitations: false,
+  waitlistHoldMinutes: 15,
+  winbackAfterDays: 15,
 };
 
 const text = (slug: (typeof LEGAL_SLUGS)[number], r = rules) =>
@@ -91,6 +93,16 @@ describe("la politique de confidentialité décrit ce que le site fait vraiment"
     const launched = text("confidentialite", { ...rules, reviewInvitations: true });
     expect(launched).toContain("le lendemain d'un rendez-vous, une invitation à donner votre avis");
     expect(launched).toContain("permet de ne plus en recevoir");
+  });
+
+  it("R-80, R-87 : la liste d'attente et la relance sont citées, avec leurs délais lus dans les réglages", () => {
+    expect(privacy).toContain("liste d'attente");
+    expect(privacy).toContain("gardée pour vous 15 minutes");
+    expect(privacy).toContain("15 jours après votre dernier rendez-vous");
+    expect(privacy).toContain("permet de ne plus en recevoir");
+    const other = text("confidentialite", { ...rules, waitlistHoldMinutes: 10, winbackAfterDays: 30 });
+    expect(other).toContain("gardée pour vous 10 minutes");
+    expect(other).toContain("30 jours après votre dernier rendez-vous");
   });
 
   it("cookies : seulement les cookies nécessaires, ni publicité ni mesure d'audience", () => {

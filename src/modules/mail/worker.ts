@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNull, lte } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, isNull, lte } from "drizzle-orm";
 import { DateTime } from "luxon";
 import type { Database } from "@/db/types";
 import {
@@ -9,6 +9,7 @@ import {
   emailOutbox,
   salonSettings,
   staff,
+  waitlistOffer,
 } from "@/db/schema";
 import { listAppointmentsToHandle } from "@/modules/absences/to-handle";
 import { isHonored } from "@/modules/appointments/status";
@@ -18,7 +19,9 @@ import {
   reviewOptOutSubject,
   seriesCalendarSubject,
   signToken,
+  winbackOptOutSubject,
 } from "@/modules/security/token";
+import { loadOffer } from "@/modules/waitlist/offer";
 import { z } from "zod";
 import { renderCancellationEmail } from "./templates/cancellation";
 import { renderConfirmationEmail } from "./templates/confirmation";
@@ -26,6 +29,8 @@ import { renderModificationEmail } from "./templates/modification";
 import { renderReminderEmail } from "./templates/reminder";
 import { renderReviewInvitationEmail } from "./templates/review-invitation";
 import { renderSeriesConfirmationEmail } from "./templates/series-confirmation";
+import { renderWaitlistOfferEmail } from "./templates/waitlist-offer";
+import { renderWinbackEmail } from "./templates/winback";
 import type { RenderedEmail } from "./layout";
 import { EmailSendError, type EmailMessage, type EmailTransport } from "./transport";
 
@@ -460,6 +465,94 @@ async function renderReviewInvitation(
   );
 }
 
+const waitlistOfferPayload = z.object({ offerId: z.uuid() });
+
+/** Email « Une place s'est libérée » (D-99, D-100) : seulement tant que l'offre est en cours. */
+async function renderWaitlistOffer(
+  db: Database,
+  row: Row,
+  options: ProcessOptions,
+  now: Date,
+): Promise<EmailMessage> {
+  const payload = waitlistOfferPayload.safeParse(row.payload);
+  if (!payload.success) throw new Skip("offre absente de l'email");
+  const [offerRow] = await db
+    .select({
+      customerId: waitlistOffer.customerId,
+      firstName: customer.firstName,
+    })
+    .from(waitlistOffer)
+    .innerJoin(customer, eq(customer.id, waitlistOffer.customerId))
+    .where(eq(waitlistOffer.id, payload.data.offerId));
+  if (!offerRow) throw new Skip("offre introuvable");
+  const offer = await loadOffer(db, offerRow.customerId, payload.data.offerId, now);
+  if (!offer || offer.state !== "pending") throw new Skip("offre plus en cours");
+  const [settings] = await db.select().from(salonSettings).limit(1);
+  return {
+    to: { email: row.toEmail, ...(offerRow.firstName ? { name: offerRow.firstName } : {}) },
+    ...renderWaitlistOfferEmail({
+      firstName: offerRow.firstName,
+      startsAt: offer.startsAt,
+      endsAt: offer.endsAt,
+      expiresAt: offer.expiresAt,
+      holdMinutes: settings?.waitlistHoldMinutes ?? 15,
+      items: offer.items,
+      totalPriceCents: offer.totalPriceCents,
+      staffFirstName: offer.staffFirstName,
+      offerUrl: `${options.baseUrl}/attente/${offer.id}`,
+      cutoffHours: settings?.changeCutoffHours ?? 1,
+      maxUpcoming: settings?.maxUpcomingPerCustomer ?? 5,
+      logoUrl: `${options.baseUrl}/email/logo.png`,
+    }),
+  };
+}
+
+/** Email « Nous serions ravis de vous revoir » (D-74) : revérifié à l'envoi (désinscription, nouveau RDV, lapin). */
+async function renderWinback(
+  db: Database,
+  row: Row,
+  options: ProcessOptions,
+  now: Date,
+): Promise<EmailMessage> {
+  const appt = await loadEmailAppointment(db, row);
+  if (!isHonored(appt, now)) throw new Skip("rendez-vous non honoré");
+  if (!appt.hasAccount) throw new Skip("fiche sans compte");
+  const [client] = await db
+    .select({ optOut: customer.winbackOptOut })
+    .from(customer)
+    .where(eq(customer.id, appt.customerId));
+  if (client?.optOut) throw new Skip("le client ne veut plus de ces messages");
+  const upcoming = await db
+    .select({ id: appointment.id })
+    .from(appointment)
+    .where(
+      and(
+        eq(appointment.customerId, appt.customerId),
+        eq(appointment.status, "confirmed"),
+        gt(appointment.startsAt, now),
+      ),
+    )
+    .limit(1);
+  if (upcoming.length > 0) throw new Skip("un rendez-vous est déjà prévu");
+
+  const token = signToken(options.secret, winbackOptOutSubject(appt.customerId));
+  return message(
+    row,
+    appt,
+    renderWinbackEmail({
+      firstName: appt.customerFirstName,
+      lastVisit: appt.startsAt,
+      items: appt.items,
+      totalPriceCents: appt.totalPriceCents,
+      staffFirstName: appt.staffFirstName,
+      bookUrl: `${options.baseUrl}/reservation`,
+      rebookUrl: `${options.baseUrl}/reservation?reprendre=${appt.id}`,
+      unsubscribeUrl: `${options.baseUrl}/relance/desinscription?c=${appt.customerId}&t=${token}`,
+      logoUrl: `${options.baseUrl}/email/logo.png`,
+    }),
+  );
+}
+
 async function render(
   db: Database,
   row: Row,
@@ -480,6 +573,10 @@ async function render(
       return renderReviewInvitation(db, row, options, now);
     case "series_confirmation":
       return renderSeriesConfirmation(db, row, options, now);
+    case "waitlist_offer":
+      return renderWaitlistOffer(db, row, options, now);
+    case "winback":
+      return renderWinback(db, row, options, now);
     default:
       throw new EmailSendError(`Type d'email non géré : ${row.type}`, true);
   }

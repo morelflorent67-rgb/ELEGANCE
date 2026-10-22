@@ -6,6 +6,7 @@ import { formatDuration } from "@/lib/format";
 import { SALON } from "@/lib/salon";
 import { nearestSlots, periodsOf } from "@/lib/slot-view";
 import { fetchDays, fetchToday, type DayView, type SlotView } from "../actions";
+import { WaitlistSheet } from "./waitlist-sheet";
 
 export interface PickedSlot extends SlotView {
   /** « AAAA-MM-JJ » */
@@ -33,6 +34,7 @@ export function DateStep({
   durationMin,
   selectedIso,
   lost,
+  signedIn,
   onPick,
   onTrySansPreference,
 }: {
@@ -47,6 +49,8 @@ export function DateStep({
   selectedIso: string | null;
   /** Le créneau choisi vient d'être pris (ou n'est plus réservable) : on le montre barré, avec des voisins. */
   lost: { time: string; date: string; reason: "taken" | "gone" } | null;
+  /** Le client est connecté : la liste d'attente (D-73) est liée à son compte. */
+  signedIn: boolean;
   onPick: (slot: PickedSlot) => void;
   onTrySansPreference: () => void;
 }) {
@@ -54,6 +58,7 @@ export function DateStep({
   const [failed, setFailed] = useState(false);
   const [chosen, setChosen] = useState<string | null>(null);
   const [cascade, setCascade] = useState(0);
+  const [waitlistOpen, setWaitlistOpen] = useState(false);
   const strip = useRef<HTMLDivElement>(null);
 
   // Tout l'horizon d'un coup (une seule lecture de la base côté serveur) ; on recharge si le coiffeur change.
@@ -253,6 +258,15 @@ export function DateStep({
                       ? "Le salon est fermé ce jour-là. Choisissez un autre jour dans la liste."
                       : `Tout est réservé ce jour-là${staffId === "any" ? "" : ` avec ${staffLabel}`}. Essayez un autre jour.`}
                   </p>
+                  {day.state === "full" && !appointmentId ? (
+                    <button
+                      type="button"
+                      onClick={() => setWaitlistOpen(true)}
+                      className={ghost}
+                    >
+                      Me prévenir si une place se libère
+                    </button>
+                  ) : null}
                   {noneAtAll ? (
                     <>
                       <p className="text-[14px] leading-[1.55] text-ivory-soft">
@@ -319,6 +333,19 @@ export function DateStep({
           ) : null}
         </>
       )}
+      {days && day && !appointmentId ? (
+        <WaitlistSheet
+          key={day.date}
+          open={waitlistOpen}
+          onClose={() => setWaitlistOpen(false)}
+          days={days}
+          initialDate={day.date}
+          serviceIds={serviceIds}
+          staffId={staffId}
+          staffLabel={staffLabel}
+          signedIn={signedIn}
+        />
+      ) : null}
     </div>
   );
 }

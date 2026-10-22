@@ -27,6 +27,8 @@ describe("principe 5 : aucun accès direct depuis le navigateur", () => {
       "service",
       "service_staff",
       "staff",
+      "waitlist_entry",
+      "waitlist_offer",
     ]);
     expect(tables.filter((r) => !r.rls).map((r) => r.name)).toEqual([]);
   });

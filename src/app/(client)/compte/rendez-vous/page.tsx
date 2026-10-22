@@ -13,6 +13,8 @@ import { getAuthDriver } from "@/modules/auth";
 import { loadSettings } from "@/modules/availability";
 import { currentCustomer, customerBookingState } from "@/modules/customers/accounts";
 import { calendarSubject, signToken } from "@/modules/security/token";
+import { listCustomerWaitlist, WINDOW_LABELS } from "@/modules/waitlist";
+import { formatTime } from "@/lib/format";
 import { AppointmentsView } from "./appointments-view";
 
 export const metadata: Metadata = { title: "Mes rendez-vous" };
@@ -45,10 +47,11 @@ async function Appointments() {
   if (!customer) return <PanelAuth />;
 
   const now = new Date();
-  const [list, settings, booking] = await Promise.all([
+  const [list, settings, booking, waitlist] = await Promise.all([
     listCustomerAppointments(database, customer.id),
     loadSettings(database),
     customerBookingState(database, customer.id, now),
+    listCustomerWaitlist(database, customer.id, now),
   ]);
   const { upcoming, past } = splitAppointments(list, now);
 
@@ -87,6 +90,20 @@ async function Appointments() {
       cutoffHours={settings.changeCutoffHours}
       maxUpcoming={settings.maxUpcomingPerCustomer}
       blocked={booking.blocked}
+      waitlist={waitlist.map((w) => ({
+        id: w.id,
+        daysLabel: w.days.map((d) => dayNames(d).short).join(", "),
+        windowLabel: WINDOW_LABELS[w.window],
+        staffLabel: w.staffFirstName ? `avec ${w.staffFirstName}` : "sans préférence de coiffeur",
+        what: w.serviceNames.join(" + "),
+        offer: w.offer
+          ? {
+              id: w.offer.id,
+              label: `${dayNames(parisDate(w.offer.startsAt)).short} à ${formatTime(w.offer.startsAt)}`,
+              until: formatTime(w.offer.expiresAt),
+            }
+          : null,
+      }))}
     />
   );
 }

@@ -40,6 +40,8 @@ const TYPE_LABEL: Record<HeldEmail["type"], string> = {
   reminder: "Rappel",
   review_invitation: "Avis",
   series_confirmation: "RDV répétés",
+  waitlist_offer: "Liste d'attente",
+  winback: "Relance",
 };
 
 const ghost =

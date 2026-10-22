@@ -425,6 +425,7 @@ export function BookingFlow({
               durationMin={durationMin}
               selectedIso={slot?.iso ?? null}
               lost={lost}
+              signedIn={!!customer}
               onPick={(next) => {
                 setSlot(next);
                 setPickedAt(Date.now());

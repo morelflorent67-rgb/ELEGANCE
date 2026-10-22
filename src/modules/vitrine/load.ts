@@ -27,6 +27,10 @@ export interface SalonRules {
   reminderHours: number;
   /** R-64 : le salon a renseigné sa page d'avis, donc une invitation part le lendemain d'un rendez-vous honoré. */
   reviewInvitations: boolean;
+  /** D-100 : une place libérée est gardée ce nombre de minutes pour la personne à qui elle est proposée. */
+  waitlistHoldMinutes: number;
+  /** D-74 : « Nous serions ravis de vous revoir » part ce nombre de jours après le dernier rendez-vous honoré. */
+  winbackAfterDays: number;
 }
 
 export interface VitrineData {
@@ -56,6 +60,8 @@ export async function readVitrine(db: Database, now: Date = new Date()): Promise
       noShowBlockThreshold: settings.noShowBlockThreshold,
       reminderHours: settings.reminderHours,
       reviewInvitations: !!settings.reviewUrl,
+      waitlistHoldMinutes: settings.waitlistHoldMinutes,
+      winbackAfterDays: settings.winbackAfterDays,
     },
     services,
     team,

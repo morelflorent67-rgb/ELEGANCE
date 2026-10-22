@@ -34,6 +34,7 @@ export async function getDaySlots(
     from: day.startOf("day").toJSDate(),
     to: day.endOf("day").toJSDate(),
     staffIds: candidates.map((c) => c.id),
+    now,
   });
 
   return slotsForDay(snapshot, {

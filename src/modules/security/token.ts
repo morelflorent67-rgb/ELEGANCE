@@ -20,3 +20,6 @@ export const seriesCalendarSubject = (seriesId: string) => `agenda-serie:${serie
 
 /** Lien « Ne plus recevoir ces invitations » de l'email d'avis (R-64). */
 export const reviewOptOutSubject = (customerId: string) => `avis-desinscription:${customerId}`;
+
+/** Lien « Ne plus recevoir ces messages » de l'email « Nous serions ravis de vous revoir » (D-74). */
+export const winbackOptOutSubject = (customerId: string) => `relance-desinscription:${customerId}`;

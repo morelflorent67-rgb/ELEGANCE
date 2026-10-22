@@ -20,6 +20,7 @@ import { splitAppointments } from "@/modules/appointments/account-view";
 import { listCustomerAppointments } from "@/modules/appointments/queries";
 import { currentCustomer } from "@/modules/customers/accounts";
 import { sendEmailsForAppointment } from "@/modules/mail/send-now";
+import { wakeWaitlist } from "@/modules/waitlist/run";
 import { hitRateLimit } from "@/modules/security/rate-limit";
 
 // Actions de la page de réservation. Rien n'est calculé dans le navigateur : créneaux, règles et refus viennent du serveur.
@@ -231,7 +232,10 @@ export async function rescheduleBooking(
       startsAt: new Date(parsed.data.startsAt),
     });
     // L'email part après la réponse ; en cas d'échec il reste dans la file et le cron le reprend.
-    if (moved.changed) after(() => sendEmailsForAppointment(db(), parsed.data.appointmentId));
+    if (moved.changed) {
+      after(() => sendEmailsForAppointment(db(), parsed.data.appointmentId));
+      after(() => wakeWaitlist(db())); // D-100 : l'ancien créneau est libre
+    }
     return { ok: true, appointmentId: parsed.data.appointmentId, changed: moved.changed };
   } catch (error) {
     return toFailure(error);

@@ -9,6 +9,7 @@ import { capitalize, hoursPhrase, lessThanHours } from "@/lib/format";
 import { SALON } from "@/lib/salon";
 import type { PastAccountAppointment } from "@/modules/appointments/account-view";
 import { cancelAppointmentAction } from "../actions";
+import { leaveWaitlistAction } from "../../attente/actions";
 
 export interface UpcomingCard {
   id: string;
@@ -30,6 +31,20 @@ export interface UpcomingCard {
   changeable: boolean;
   deadlineLabel: string | null;
   calendarUrl: string;
+}
+
+/** Une inscription à la liste d'attente (R-80), avec son offre en cours s'il y en a une. */
+export interface WaitlistCard {
+  id: string;
+  /** « sam. 24 oct., mar. 27 oct. » */
+  daysLabel: string;
+  /** « le matin », « l'après-midi », « toute la journée » */
+  windowLabel: string;
+  /** « avec Orhan » ou « sans préférence de coiffeur » */
+  staffLabel: string;
+  what: string;
+  /** Une place gardée pour ce client : « jusqu'à 15:07 ». */
+  offer: { id: string; label: string; until: string } | null;
 }
 
 const divider = "border-[rgb(239_233_221_/_0.1)]";
@@ -62,6 +77,7 @@ export function AppointmentsView({
   cutoffHours,
   maxUpcoming,
   blocked,
+  waitlist,
 }: {
   firstName: string;
   upcoming: UpcomingCard[];
@@ -71,6 +87,7 @@ export function AppointmentsView({
   cutoffHours: number;
   maxUpcoming: number;
   blocked: boolean;
+  waitlist: WaitlistCard[];
 }) {
   const router = useRouter();
   const [toCancel, setToCancel] = useState<UpcomingCard | null>(null);
@@ -104,6 +121,15 @@ export function AppointmentsView({
     }
     setProblem(cancelMessage(result.error));
     if (result.error === "change_too_late" || result.error === "not_modifiable") router.refresh();
+  };
+
+  const [leaving2, setLeaving2] = useState<string | null>(null);
+  const removeFromWaitlist = async (id: string) => {
+    setLeaving2(id);
+    const result = await leaveWaitlistAction(id);
+    setLeaving2(null);
+    if (result.ok) router.refresh();
+    else setProblem("Impossible de vous retirer de la liste. Réessayez.");
   };
 
   const shownCount = leaving ? Math.max(0, counted - 1) : counted;
@@ -249,6 +275,57 @@ export function AppointmentsView({
           </p>
         ) : null}
       </div>
+
+      {waitlist.length > 0 ? (
+        <section
+          aria-labelledby="liste-attente"
+          className="s-up flex flex-col"
+          style={{ animationDelay: "380ms" }}
+        >
+          <h2
+            id="liste-attente"
+            className="pb-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-gold"
+          >
+            Liste d&rsquo;attente
+          </h2>
+          {waitlist.map((w) => (
+            <div key={w.id} className={`flex flex-col gap-2 border-t ${divider} py-3`}>
+              <span className="flex flex-col gap-[3px]">
+                <span className="text-[14px]">
+                  {w.daysLabel} · {w.windowLabel}
+                </span>
+                <span className="text-[12px] text-stone-dark">
+                  {w.what} · {w.staffLabel}
+                </span>
+              </span>
+              {w.offer ? (
+                <Link
+                  href={`/attente/${w.offer.id}`}
+                  className="flex min-h-11 items-center justify-between gap-3 border border-[rgb(184_147_90_/_0.5)] bg-[rgb(184_147_90_/_0.08)] px-3.5 text-[13px]"
+                >
+                  <span>
+                    Une place vous est gardée : {w.offer.label}, jusqu&rsquo;à {w.offer.until}
+                  </span>
+                  <ArrowRight size={16} color="#b8935a" />
+                </Link>
+              ) : (
+                <span className="text-[12px] text-stone">
+                  Nous vous écrivons dès qu&rsquo;une place se libère.
+                </span>
+              )}
+              <button
+                type="button"
+                disabled={leaving2 === w.id}
+                onClick={() => removeFromWaitlist(w.id)}
+                aria-label={`Me retirer de la liste d'attente : ${w.daysLabel}`}
+                className="flex min-h-11 items-center self-start text-[12px] text-ivory-soft underline underline-offset-[3px]"
+              >
+                {leaving2 === w.id ? "Un instant…" : "Me retirer"}
+              </button>
+            </div>
+          ))}
+        </section>
+      ) : null}
 
       {blocked ? (
         <a href={SALON.phoneHref} className={`s-up ${ghost}`} style={{ animationDelay: "420ms" }}>

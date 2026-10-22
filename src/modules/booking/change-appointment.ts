@@ -236,6 +236,7 @@ export async function applyReschedule(
     to: new Date(input.startsAt.getTime() + margin),
     staffIds: candidateIds,
     excludeAppointmentId: row.id,
+    now,
   });
 
   const checks = candidateIds.map((staffId) => ({
@@ -252,7 +253,7 @@ export async function applyReschedule(
   if (free.length === 0) {
     const reason = checks
       .map((c) => (c.result.ok ? null : c.result.reason))
-      .find((r) => r !== "busy");
+      .find((r) => r !== "busy" && r !== "held");
     throw new DomainError(reason ?? "slot_unavailable");
   }
 

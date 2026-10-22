@@ -36,10 +36,15 @@ export interface Snapshot {
   /** RDV qui occupent un coiffeur (confirmé, honoré, non venu) : voir R-23. */
   appointments: BusyInterval[];
   absences: BusyInterval[];
+  /**
+   * Places gardées pour une personne de la liste d'attente (D-100) : elles bloquent la réservation en ligne des autres,
+   * pas celle du salon.
+   */
+  holds?: BusyInterval[];
 }
 
 export type RejectionReason =
-  "in_past" | "too_soon" | "too_far" | "closed" | "outside_hours" | "off_grid" | "busy";
+  "in_past" | "too_soon" | "too_far" | "closed" | "outside_hours" | "off_grid" | "busy" | "held";
 
 export type SlotCheck = { ok: true } | { ok: false; reason: RejectionReason };
 

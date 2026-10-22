@@ -44,6 +44,18 @@ export const emailType = pgEnum("email_type", [
   "cancellation",
   "review_invitation",
   "series_confirmation",
+  "waitlist_offer",
+  "winback",
+]);
+/** Liste d'attente (D-73, D-100) : plage de la journée voulue, avant midi, après midi, ou toute la journée. */
+export const waitlistWindow = pgEnum("waitlist_window", ["morning", "afternoon", "day"]);
+export const waitlistEntryStatus = pgEnum("waitlist_entry_status", ["active", "fulfilled", "removed"]);
+export const waitlistOfferStatus = pgEnum("waitlist_offer_status", [
+  "pending",
+  "accepted",
+  "declined",
+  "expired",
+  "lost",
 ]);
 /** RDV répétés (D-71) : toutes les 1 à 4 semaines, ou chaque mois. */
 export const seriesFrequency = pgEnum("series_frequency", ["weekly", "monthly"]);
@@ -71,11 +83,16 @@ export const salonSettings = pgTable(
     reminderHours: integer("reminder_hours").notNull().default(24), // R-61, D-64
     /** Page d'avis externe vers laquelle mène l'invitation (R-64). Vide : aucune invitation n'est envoyée. */
     reviewUrl: text("review_url"),
+    /** Durée pendant laquelle une place libérée est gardée pour une seule personne de la liste d'attente (D-100). */
+    waitlistHoldMinutes: integer("waitlist_hold_minutes").notNull().default(15),
+    /** Délai après le dernier RDV honoré avant « Nous serions ravis de vous revoir » (D-74). */
+    winbackAfterDays: integer("winback_after_days").notNull().default(15),
     managerPinHash: text("manager_pin_hash"), // R-73
   },
   (t) => [
     check("salon_settings_single_row", sql`${t.id} = true`),
     check("salon_settings_review_url", sql`${t.reviewUrl} is null or ${t.reviewUrl} ~ '^https?://[^ ]+$'`),
+    check("salon_settings_waitlist", sql`${t.waitlistHoldMinutes} > 0 and ${t.winbackAfterDays} > 0`),
     check("salon_settings_positive", sql`${t.minNoticeMinutes} >= 0 and ${t.maxHorizonDays} > 0`),
     check(
       "salon_settings_steps",
@@ -164,6 +181,7 @@ export const customer = pgTable(
     email: text("email"),
     onlineBookingBlocked: boolean("online_booking_blocked").notNull().default(false), // R-52
     reviewOptOut: boolean("review_opt_out").notNull().default(false), // R-64 : ne veut plus des invitations à un avis
+    winbackOptOut: boolean("winback_opt_out").notNull().default(false), // R-84 : ne veut plus des relances (D-74)
     /** Sans compte de connexion tant que `authUserId` est vide ; l'origine reste après le rattachement (D-70). */
     origin: customerOrigin("origin").notNull().default("account"),
     /** Historique repris du fichier du salon, affiché à titre indicatif sur la fiche (D-77). */
@@ -301,6 +319,68 @@ export const auditLog = pgTable("audit_log", {
   after: jsonb("after"),
   createdAt: instant("created_at").notNull().defaultNow(),
 });
+
+/**
+ * Liste d'attente (D-73, D-100) : un client qui n'a trouvé aucun créneau demande à être prévenu. Les prestations
+ * décident de la durée de la place cherchée ; sans coiffeur, « Sans préférence ».
+ */
+export const waitlistEntry = pgTable(
+  "waitlist_entry",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    customerId: uuid("customer_id")
+      .notNull()
+      .references(() => customer.id),
+    serviceIds: uuid("service_ids").array().notNull(),
+    staffId: uuid("staff_id").references(() => staff.id),
+    /** Jours voulus, « AAAA-MM-JJ » (heure de Paris). */
+    days: date("days", { mode: "string" }).array().notNull(),
+    window: waitlistWindow("window").notNull(),
+    status: waitlistEntryStatus("status").notNull().default("active"),
+    createdAt: instant("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    check("waitlist_entry_days", sql`cardinality(${t.days}) between 1 and 14`),
+    check("waitlist_entry_services", sql`cardinality(${t.serviceIds}) between 1 and 8`),
+    index("waitlist_entry_active_idx").on(t.status, t.createdAt),
+    index("waitlist_entry_customer_idx").on(t.customerId),
+  ],
+);
+
+/**
+ * Une place proposée à une inscrite, gardée jusqu'à `expiresAt` (D-100). Une place n'est proposée qu'à une personne
+ * à la fois, et une inscrite n'a qu'une offre en cours.
+ */
+export const waitlistOffer = pgTable(
+  "waitlist_offer",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    entryId: uuid("entry_id")
+      .notNull()
+      .references(() => waitlistEntry.id, { onDelete: "cascade" }),
+    customerId: uuid("customer_id")
+      .notNull()
+      .references(() => customer.id),
+    staffId: uuid("staff_id")
+      .notNull()
+      .references(() => staff.id),
+    startsAt: instant("starts_at").notNull(),
+    endsAt: instant("ends_at").notNull(),
+    status: waitlistOfferStatus("status").notNull().default("pending"),
+    expiresAt: instant("expires_at").notNull(),
+    createdAt: instant("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    check("waitlist_offer_order", sql`${t.endsAt} > ${t.startsAt}`),
+    uniqueIndex("waitlist_offer_one_per_slot")
+      .on(t.staffId, t.startsAt)
+      .where(sql`${t.status} = 'pending'`),
+    uniqueIndex("waitlist_offer_one_per_entry")
+      .on(t.entryId)
+      .where(sql`${t.status} = 'pending'`),
+    index("waitlist_offer_entry_idx").on(t.entryId, t.status),
+  ],
+);
 
 /** File d'envoi des emails, avec reprise (R-60 à R-64, principe 7) : utilisée au lot 7. */
 export const emailOutbox = pgTable(

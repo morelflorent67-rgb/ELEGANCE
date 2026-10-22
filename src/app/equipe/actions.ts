@@ -78,6 +78,7 @@ import {
   type WeekHours,
 } from "@/modules/schedule/manage";
 import { sendEmailsForAppointment } from "@/modules/mail/send-now";
+import { wakeWaitlist } from "@/modules/waitlist/run";
 import { hitRateLimit } from "@/modules/security/rate-limit";
 import { VITRINE_TAG } from "@/modules/vitrine/tag";
 import { loginStaff, currentStaffUser, listActiveStaff } from "@/modules/staff";
@@ -446,6 +447,7 @@ export async function rescheduleAppointmentAsSalon(
     if (result.changed && !hold) {
       after(() => sendEmailsForAppointment(db(), parsed.data.appointmentId));
     }
+    if (result.changed) after(() => wakeWaitlist(db())); // D-100 : l'ancien créneau est libre
     return { ok: true, changed: result.changed, held: hold && result.changed };
   });
 }
@@ -465,6 +467,7 @@ export async function cancelAppointmentAsSalon(
     if (!result.alreadyCancelled && !hold) {
       after(() => sendEmailsForAppointment(db(), parsed.data.appointmentId));
     }
+    if (!result.alreadyCancelled) after(() => wakeWaitlist(db())); // D-100
     return { ok: true, held: hold && !result.alreadyCancelled };
   });
 }
@@ -567,6 +570,7 @@ const SKIP_LABEL: Record<SkipReason, string> = {
   in_past: "Déjà passé",
   too_soon: "Trop tôt",
   too_far: "Trop loin",
+  held: "Place gardée",
 };
 
 async function planView(plan: SeriesPlan, staffChoice: string | "any"): Promise<SeriesPlanView> {
@@ -791,6 +795,7 @@ export async function cancelSeriesAction(
     if (cancelled.length > 0 && !hold) {
       after(() => sendEmailsForAppointment(db(), cancelled[0]));
     }
+    if (cancelled.length > 0) after(() => wakeWaitlist(db())); // D-100
     return { ok: true, cancelled: cancelled.length, held: hold && cancelled.length > 0 };
   });
 }
@@ -990,6 +995,7 @@ export async function removeClosureAction(input: unknown): Promise<TeamResult> {
   if (!parsed.success) return { ok: false, error: "invalid" };
   return asManager(async (user) => {
     await removeClosure(db(), parsed.data.closureId, user.id);
+    after(() => wakeWaitlist(db())); // D-100
     return { ok: true };
   });
 }
@@ -1024,6 +1030,7 @@ export async function deleteAbsenceAction(input: unknown): Promise<TeamResult> {
   if (!parsed.success) return { ok: false, error: "invalid" };
   return asStaff(async () => {
     await deleteAbsence(db(), parsed.data.absenceId, parsed.data.authorId);
+    after(() => wakeWaitlist(db())); // D-100
     return { ok: true };
   });
 }

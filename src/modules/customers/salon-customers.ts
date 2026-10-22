@@ -265,6 +265,7 @@ export async function mergeCustomers(
         email: keep.email || gone.email,
         onlineBookingBlocked: keep.onlineBookingBlocked || gone.onlineBookingBlocked,
         reviewOptOut: keep.reviewOptOut || gone.reviewOptOut,
+        winbackOptOut: keep.winbackOptOut || gone.winbackOptOut,
         legacyVisits: visits,
         legacyLastVisitOn: latest ?? null,
         originNoticeSentAt: keep.originNoticeSentAt ?? gone.originNoticeSentAt,

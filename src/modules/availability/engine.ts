@@ -84,6 +84,14 @@ export function checkSlot(
     snapshot.absences.some((a) => a.staffId === staffId && overlaps(a, startsAt, endsAt));
   if (taken) return { ok: false, reason: "busy" };
 
+  // D-100 : une place gardée pour la liste d'attente n'est pas réservable en ligne par quelqu'un d'autre.
+  if (
+    audience === "online" &&
+    snapshot.holds?.some((h) => h.staffId === staffId && overlaps(h, startsAt, endsAt))
+  ) {
+    return { ok: false, reason: "held" };
+  }
+
   return { ok: true };
 }
 

@@ -51,6 +51,7 @@ export async function getSlotsForRange(db: Database, input: RangeInput): Promise
       .endOf("day")
       .toJSDate(),
     staffIds,
+    now,
     ...(moving ? { excludeAppointmentId: moving.appointmentId } : {}),
   });
 
