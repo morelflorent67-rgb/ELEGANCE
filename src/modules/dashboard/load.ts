@@ -1,12 +1,13 @@
 import { and, asc, desc, eq, gte, inArray, lt, lte, sql } from "drizzle-orm";
 import type { Database } from "@/db/types";
-import { appointment, appointmentItem, customer, staff } from "@/db/schema";
+import { appointment, appointmentItem, customer, payment, staff } from "@/db/schema";
 import { loadSettings } from "@/modules/availability";
 import {
   computeDashboard,
   type DashboardAppointment,
   type DashboardStaff,
   type DashboardTotals,
+  type DashboardWalkIn,
 } from "./compute";
 import { resolvePeriod, type Period, type PeriodKind } from "./period";
 
@@ -87,12 +88,28 @@ export async function loadDashboard(
     priceCents: priceOf.get(r.id) ?? 0,
   }));
 
+  // R-94 : les encaissements hors rendez-vous réussis de la période, comptés à l'heure du paiement.
+  const walkInRows = await db
+    .select({ staffId: payment.staffId, amountCents: payment.amountCents })
+    .from(payment)
+    .where(
+      and(
+        eq(payment.status, "successful"),
+        sql`${payment.appointmentId} is null`,
+        gte(payment.completedAt, period.start),
+        lt(payment.completedAt, period.end),
+      ),
+    );
+  const walkIns: DashboardWalkIn[] = walkInRows.flatMap((w) =>
+    w.staffId ? [{ staffId: w.staffId, amountCents: w.amountCents }] : [],
+  );
+
   // L'équipe active dans son ordre, puis les membres retirés qui ont encore des RDV sur la période.
   const team = await db
     .select({ id: staff.id, firstName: staff.firstName, role: staff.role, active: staff.active })
     .from(staff)
     .orderBy(asc(staff.sortOrder), asc(staff.firstName));
-  const withAppointments = new Set(rows.map((r) => r.staffId));
+  const withAppointments = new Set([...rows.map((r) => r.staffId), ...walkIns.map((w) => w.staffId)]);
   const shown: DashboardStaff[] = [
     ...team.filter((m) => m.active),
     ...team.filter((m) => !m.active && withAppointments.has(m.id)),
@@ -140,7 +157,7 @@ export async function loadDashboard(
 
   return {
     period,
-    totals: computeDashboard(appointments, shown, now),
+    totals: computeDashboard(appointments, shown, now, walkIns),
     recentNoShows,
     noShowBlockThreshold: settings.noShowBlockThreshold,
   };

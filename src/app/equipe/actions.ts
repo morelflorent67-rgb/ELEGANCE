@@ -82,6 +82,7 @@ import {
   pairTerminal,
   refreshPayment,
   startPayment,
+  startWalkInPayment,
   unpairTerminal,
   type PaymentView,
 } from "@/modules/payments";
@@ -548,6 +549,31 @@ export async function refreshPaymentAction(input: unknown): Promise<TeamResult<{
   if (!parsed.success) return { ok: false, error: "invalid" };
   return asStaff(async () => {
     const payment = await refreshPayment(db(), terminalProvider(), parsed.data.paymentId);
+    return { ok: true, payment };
+  });
+}
+
+/** Encaissement hors rendez-vous (D-109, R-94) : montant libre, coiffeur concerné, libellé facultatif. */
+export async function startWalkInPaymentAction(
+  input: unknown,
+): Promise<TeamResult<{ payment: PaymentView }>> {
+  const parsed = z
+    .object({
+      staffId: uuid,
+      authorId: z.string(),
+      amountCents: z.number().int(),
+      label: z.string().max(200).optional(),
+    })
+    .safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asStaff(async () => {
+    const payment = await startWalkInPayment(db(), terminalProvider(), {
+      staffId: parsed.data.staffId,
+      authorStaffId: parsed.data.authorId,
+      amountCents: parsed.data.amountCents,
+      label: parsed.data.label,
+      returnUrl: webhookUrl(),
+    });
     return { ok: true, payment };
   });
 }

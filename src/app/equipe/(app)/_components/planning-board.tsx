@@ -264,6 +264,12 @@ export function PlanningBoard({
             {countLabel(day.count)}
           </span>
           <Link
+            href="/equipe/encaisser"
+            className="flex h-12 items-center gap-2.5 border border-line-strong px-5 text-[12px] uppercase tracking-[0.22em] text-ivory hover:bg-graphite-light"
+          >
+            Encaisser
+          </Link>
+          <Link
             href="/equipe/reserver"
             className="flex h-12 items-center gap-2.5 bg-ivory px-5 text-[12px] font-medium uppercase tracking-[0.22em] text-ink"
           >

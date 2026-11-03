@@ -22,6 +22,12 @@ export interface DashboardStaff {
   role: "barber" | "apprentice";
 }
 
+/** Un encaissement hors rendez-vous réussi (D-109) : passage sans RDV, produit, supplément. */
+export interface DashboardWalkIn {
+  staffId: string;
+  amountCents: number;
+}
+
 export interface StaffTotals extends DashboardStaff {
   appointments: number;
   revenueCents: number;
@@ -29,8 +35,11 @@ export interface StaffTotals extends DashboardStaff {
 }
 
 export interface DashboardTotals {
-  /** R-53 : les RDV honorés (R-51), au prix figé ou au montant ajusté. */
+  /** R-53 : les RDV honorés (R-51), au prix figé ou au montant ajusté, plus les encaissements hors rendez-vous (R-94). */
   revenueCents: number;
+  /** R-94 : la part des encaissements hors rendez-vous dans le chiffre d'affaires, et leur nombre. */
+  walkInCents: number;
+  walkInCount: number;
   /** Rendez-vous de la période, annulés exclus : honorés, en cours, à venir et lapins. */
   appointmentCount: number;
   onlineCount: number;
@@ -50,12 +59,15 @@ export function computeDashboard(
   appointments: DashboardAppointment[],
   staff: DashboardStaff[],
   now: Date,
+  walkIns: DashboardWalkIn[] = [],
 ): DashboardTotals {
   const perStaff = new Map<string, StaffTotals>(
     staff.map((s) => [s.id, { ...s, appointments: 0, revenueCents: 0, noShows: 0 }]),
   );
   const totals: DashboardTotals = {
     revenueCents: 0,
+    walkInCents: 0,
+    walkInCount: 0,
     appointmentCount: 0,
     onlineCount: 0,
     salonCount: 0,
@@ -82,6 +94,14 @@ export function computeDashboard(
       if (a.adjustedAmountCents !== null) totals.adjustedCount++;
       if (row) row.revenueCents += amount;
     }
+  }
+
+  for (const w of walkIns) {
+    totals.revenueCents += w.amountCents;
+    totals.walkInCents += w.amountCents;
+    totals.walkInCount++;
+    const row = perStaff.get(w.staffId);
+    if (row) row.revenueCents += w.amountCents;
   }
 
   totals.perStaff = [...perStaff.values()];

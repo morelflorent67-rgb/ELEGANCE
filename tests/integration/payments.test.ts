@@ -18,6 +18,7 @@ import {
   refreshPayment,
   settleByReference,
   startPayment,
+  startWalkInPayment,
   unpairTerminal,
 } from "../../src/modules/payments";
 import { createFakeTerminal } from "../../src/modules/payments/fake";
@@ -384,5 +385,108 @@ describe("D-105 : relier le terminal (espace gérant)", () => {
     );
     await unpairTerminal(t.db, { actorId: ENES });
     expect((await getTerminalStatus(t.db)).configured).toBe(false);
+  });
+});
+
+describe("R-94 : encaissement hors rendez-vous", () => {
+  const walkIn = (
+    over: Partial<Parameters<typeof startWalkInPayment>[2]> = {},
+    now: Date = EVENING,
+  ) =>
+    startWalkInPayment(
+      t.db,
+      terminal,
+      { staffId: ORHAN, authorStaffId: ENES, amountCents: 1800, returnUrl: RETURN_URL, ...over },
+      now,
+    );
+  const day = (date = "2026-11-07", now: Date = EVENING) =>
+    loadDashboard(t.db, { kind: "day", date }, now);
+
+  it("envoie le montant libre au terminal, avec le coiffeur et le libellé", async () => {
+    const started = await walkIn({ label: "  Coupe homme + Gel  " });
+    expect(started).toMatchObject({ status: "pending", amountCents: 1800, appointmentId: null });
+    expect(terminal.sent[0]).toMatchObject({ amountCents: 1800, returnUrl: RETURN_URL });
+    const [row] = await t.sql`select staff_id, label, started_by_staff_id, appointment_id from payment`;
+    expect(row).toMatchObject({ staff_id: ORHAN, label: "Coupe homme + Gel", started_by_staff_id: ENES });
+    expect(row.appointment_id).toBeNull();
+  });
+
+  it("au succès : compté au Bilan du jour et du coiffeur, rien n'est écrit sur un RDV, au journal", async () => {
+    const rdv = await book("10:00"); // 18 € honoré
+    const started = await walkIn({ staffId: ENES, amountCents: 750 });
+    terminal.complete(terminal.sent[0].reference, { status: "successful" });
+    const settled = await refreshPayment(t.db, terminal, started.id, EVENING);
+    expect(settled).toMatchObject({ status: "successful", amountCents: 750 });
+
+    const view = await day();
+    expect(view.totals.revenueCents).toBe(1800 + 750);
+    expect(view.totals).toMatchObject({ walkInCents: 750, walkInCount: 1, appointmentCount: 1 });
+    const perStaff = (id: string) => view.totals.perStaff.find((m) => m.id === id)!;
+    expect(perStaff(ENES).revenueCents).toBe(750);
+    expect(perStaff(ORHAN).revenueCents).toBe(1800);
+    expect(perStaff(ENES).appointments).toBe(0);
+    expect((await appointmentRow(rdv.id)).adjusted_amount_cents).toBeNull();
+    const [entry] = await t.sql`select actor_id, after from audit_log where action = 'payment.walk_in'`;
+    expect(entry.actor_id).toBe(ENES);
+    expect(entry.after).toMatchObject({ staffId: ENES, amountCents: 750 });
+  });
+
+  it("un refus, une annulation ou un abandon ne comptent pas au Bilan", async () => {
+    const first = await walkIn();
+    terminal.complete(terminal.sent[0].reference, { status: "failed" });
+    await refreshPayment(t.db, terminal, first.id, EVENING);
+    const second = await walkIn();
+    await cancelPayment(t.db, terminal, { paymentId: second.id, authorStaffId: ENES }, EVENING);
+    expect((await day()).totals).toMatchObject({ revenueCents: 0, walkInCount: 0 });
+  });
+
+  it("compte le jour du paiement, pas un autre jour", async () => {
+    const started = await walkIn();
+    terminal.complete(terminal.sent[0].reference, { status: "successful" });
+    await refreshPayment(t.db, terminal, started.id, EVENING);
+    expect((await day("2026-11-06")).totals.walkInCents).toBe(0);
+    expect((await day("2026-11-07")).totals.walkInCents).toBe(1800);
+  });
+
+  it("refuse un montant nul, négatif, fractionnaire ou au-delà de 1 000 €", async () => {
+    for (const amountCents of [0, -100, 12.5, 100_001]) {
+      await expectRefused(walkIn({ amountCents }), "invalid_amount");
+    }
+    expect(terminal.sent).toHaveLength(0);
+    expect(await t.sql`select 1 from payment`).toHaveLength(0);
+  });
+
+  it("refuse un coiffeur inconnu ou retiré, et un encaisseur inconnu (R-74)", async () => {
+    await expectRefused(walkIn({ staffId: "00000000-0000-4000-8000-00000000ffff" }), "unknown_staff");
+    await t.sql`update staff set active = false where id = ${ENES}`;
+    await expectRefused(walkIn({ staffId: ENES, authorStaffId: ORHAN }), "unknown_staff");
+    await expectRefused(walkIn({ authorStaffId: "" }), "author_required");
+    expect(terminal.sent).toHaveLength(0);
+  });
+
+  it("partage le terminal unique avec l'encaissement d'un RDV, et tient 60 caractères de libellé", async () => {
+    const a = await book("10:00");
+    await pay(a.id);
+    await expectRefused(walkIn(), "terminal_busy");
+    await cancelPayment(
+      t.db,
+      terminal,
+      { paymentId: (await t.sql`select id from payment`)[0].id as string, authorStaffId: ENES },
+      EVENING,
+    );
+    await walkIn({ label: "x".repeat(200) });
+    const [row] = await t.sql`select label from payment where staff_id is not null`;
+    expect((row.label as string).length).toBe(60);
+  });
+
+  it("refuse tant que le terminal n'est pas relié", async () => {
+    await t.sql`update salon_settings set payment_merchant_code = null, payment_reader_id = null`;
+    await expectRefused(walkIn(), "terminal_not_configured");
+  });
+
+  it("la base refuse un encaissement sans RDV ni coiffeur", async () => {
+    await expect(
+      t.sql`insert into payment (amount_cents, started_by_staff_id) values (500, ${ENES})`,
+    ).rejects.toThrow();
   });
 });

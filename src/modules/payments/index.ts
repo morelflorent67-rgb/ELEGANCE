@@ -9,9 +9,12 @@ export {
   settleByReference,
   settlePayment,
   startPayment,
+  startWalkInPayment,
+  WALK_IN_LABEL_MAX,
   unpairTerminal,
   type PaymentState,
   type PaymentView,
   type StartPaymentInput,
+  type StartWalkInInput,
 } from "./pay";
 export { ProviderError, type CheckoutState, type PaymentProvider } from "./provider";

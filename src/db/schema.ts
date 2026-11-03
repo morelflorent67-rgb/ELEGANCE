@@ -395,9 +395,11 @@ export const payment = pgTable(
   "payment",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    appointmentId: uuid("appointment_id")
-      .notNull()
-      .references(() => appointment.id),
+    /** Null : encaissement hors rendez-vous (D-109) ; il porte alors le coiffeur concerné et un libellé. */
+    appointmentId: uuid("appointment_id").references(() => appointment.id),
+    /** Coiffeur d'un encaissement hors rendez-vous : le Bilan par membre le lit. */
+    staffId: uuid("staff_id").references(() => staff.id),
+    label: text("label"),
     amountCents: integer("amount_cents").notNull(),
     status: paymentStatus("status").notNull().default("pending"),
     /** Identifiant de la transaction côté SumUp (client_transaction_id), connu une fois le terminal joint. */
@@ -411,6 +413,8 @@ export const payment = pgTable(
   },
   (t) => [
     check("payment_amount", sql`${t.amountCents} > 0`),
+    check("payment_target", sql`${t.appointmentId} is not null or ${t.staffId} is not null`),
+    check("payment_label_length", sql`char_length(${t.label}) <= 60`),
     uniqueIndex("payment_one_pending").on(t.status).where(sql`${t.status} = 'pending'`),
     uniqueIndex("payment_provider_reference").on(t.providerReference),
     index("payment_appointment_idx").on(t.appointmentId, t.status),

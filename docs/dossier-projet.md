@@ -261,6 +261,7 @@ Ces 52 règles fixent le comportement du moteur de réservation : toutes sont d�
 | R-91 | Le rappel de SumUp (webhook) est idempotent et ne se croit pas sur parole : l'adresse porte un secret, et le résultat est relu chez SumUp avant d'être enregistré. Un rappel en double, inconnu ou trop tôt est sans effet | Décidé (D-106) |
 | R-92 | Un encaissement resté sans réponse plus de 5 minutes est clos « échoué » (terminal éteint, client parti) et le terminal est interrompu ; un paiement arrivé entre-temps l'emporte | Décidé (D-107) |
 | R-93 | « Annuler sur le terminal » interrompt le terminal et clôt l'encaissement « annulé » ; si le client a déjà payé, le paiement est gardé et l'annulation est sans effet | Décidé (D-105) |
+| R-94 | « Encaisser » dans la barre du planning (page `/equipe/encaisser`) : encaissement **hors rendez-vous** (passage sans RDV, produit, supplément) au terminal : montant libre au pavé numérique (de 0,01 € à 1 000 €), raccourcis de la carte qui s'additionnent, **coiffeur concerné obligatoire**, libellé facultatif (60 caractères), signé d'un prénom (R-74). Au succès, le montant entre dans le chiffre d'affaires du jour (heure du paiement) et dans celui du coiffeur, avec une mention « hors rendez-vous » ; il ne compte ni comme rendez-vous ni sur une fiche client. Mêmes garde-fous que R-89 à R-93 (terminal unique, abandon à 5 min, annulation) | Décidé (D-109) |
 
 ## Journal des décisions
 
@@ -376,6 +377,7 @@ Le 20 octobre 2026, 57 décisions ont fixé le cadre du projet ; le 21 octobre 2
 | D-106 | SumUp ne signe pas ses rappels : l'adresse du rappel contient un secret (`SUMUP_WEBHOOK_SECRET`, sinon dérivé de `APP_SECRET`) et le contenu de l'appel ne sert qu'à retrouver l'encaissement ; l'état et le montant sont relus chez SumUp. La tablette relit aussi le résultat toutes les 2,5 s pendant l'attente : le paiement est enregistré même si le rappel n'arrive pas | Lot 14 |
 | D-107 | Délai d'abandon d'un encaissement : 5 minutes (limite technique, pas un réglage) | Lot 14 |
 | D-108 | Le terminal se relie dans l'espace gérant (« Terminal d'encaissement ») : code marchand du compte SumUp et code d'appairage affiché sur le terminal (Connexions, API, valable 5 minutes). Le client SumUp est écrit d'après la documentation et **pas encore essayé sur un vrai compte** (clé d'API en attente) | Lot 14 |
+| D-109 | Encaissement hors rendez-vous : table `payment` sans RDV (`appointment_id` nul, `staff_id` et `label`), compté au Bilan par le coiffeur choisi. Pas de faux client ni de faux RDV « de passage » (R-07, chiffres de RDV faussés). Réponses de Florent, 3 novembre 2026 : il compte dans le chiffre d'affaires ; le coiffeur se choisit à chaque fois ; des raccourcis de la carte s'ajoutent au pavé numérique libre | Lot 15 |
 
 ## Documents liés
 

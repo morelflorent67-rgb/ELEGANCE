@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray, lt } from "drizzle-orm";
 import type { Database } from "@/db/types";
-import { appointment, appointmentItem, payment, salonSettings } from "@/db/schema";
+import { appointment, appointmentItem, payment, salonSettings, staff } from "@/db/schema";
 import { DomainError } from "@/lib/domain-error";
 import { recordAudit } from "@/modules/audit/record";
 import { MAX_ADJUSTED_AMOUNT_CENTS } from "@/modules/booking/adjust-amount";
@@ -18,7 +18,8 @@ export type PaymentState = "pending" | "successful" | "failed" | "cancelled";
 
 export interface PaymentView {
   id: string;
-  appointmentId: string;
+  /** Null : encaissement hors rendez-vous (D-109). */
+  appointmentId: string | null;
   status: PaymentState;
   amountCents: number;
   failureReason: string | null;
@@ -132,11 +133,23 @@ export async function startPayment(
     throw error;
   }
 
+  return sendToTerminal(db, provider, created, terminal, input.returnUrl, now);
+}
+
+/** Envoie l'encaissement déjà écrit au terminal ; s'il refuse ou ne répond pas, la ligne est close « échouée ». */
+async function sendToTerminal(
+  db: Database,
+  provider: PaymentProvider,
+  created: typeof payment.$inferSelect,
+  terminal: { merchantCode: string; readerId: string },
+  returnUrl: string,
+  now: Date,
+): Promise<PaymentView> {
   try {
     const { reference } = await provider.startCheckout({
       ...terminal,
       amountCents: created.amountCents,
-      returnUrl: input.returnUrl,
+      returnUrl,
       paymentId: created.id,
     });
     const [updated] = await db
@@ -153,6 +166,73 @@ export async function startPayment(
       .where(and(eq(payment.id, created.id), eq(payment.status, "pending")));
     throw new DomainError("terminal_unavailable");
   }
+}
+
+export const WALK_IN_LABEL_MAX = 60;
+
+export interface StartWalkInInput {
+  /** Coiffeur concerné : le Bilan par membre le compte. */
+  staffId: string;
+  /** Membre de l'équipe qui encaisse (R-74). */
+  authorStaffId: string;
+  amountCents: number;
+  /** « Coupe homme + Gel » : facultatif, 60 caractères au plus. */
+  label?: string;
+  returnUrl: string;
+}
+
+/**
+ * R-94 : encaissement hors rendez-vous (passage sans RDV, produit, supplément) : un montant libre, le coiffeur concerné,
+ * un libellé facultatif, signé d'un prénom (R-74). Même terminal, même file unique, mêmes abandons que R-89 à R-93.
+ * Refus : `invalid_amount` (de 1 centime à 1 000 €), `unknown_staff`, `author_required` / `unknown_author`,
+ * `terminal_not_configured`, `terminal_busy`, `terminal_unavailable`.
+ */
+export async function startWalkInPayment(
+  db: Database,
+  provider: PaymentProvider,
+  input: StartWalkInInput,
+  now: Date = new Date(),
+): Promise<PaymentView> {
+  const { amountCents } = input;
+  if (!Number.isInteger(amountCents) || amountCents <= 0 || amountCents > MAX_ADJUSTED_AMOUNT_CENTS) {
+    throw new DomainError("invalid_amount");
+  }
+  const label = input.label?.trim().slice(0, WALK_IN_LABEL_MAX) || null;
+  await expireStalePayments(db, provider, now);
+  const terminal = await loadTerminal(db);
+
+  let created: typeof payment.$inferSelect;
+  try {
+    created = await db.transaction(async (tx) => {
+      const authorId = await assertActiveAuthor(tx, input.authorStaffId);
+      const [member] = await tx
+        .select({ id: staff.id })
+        .from(staff)
+        .where(and(eq(staff.id, input.staffId), eq(staff.active, true)));
+      if (!member) throw new DomainError("unknown_staff");
+      const [inserted] = await tx
+        .insert(payment)
+        .values({ staffId: member.id, label, amountCents, startedByStaffId: authorId, createdAt: now })
+        .returning();
+      await recordAudit(
+        tx,
+        {
+          actorType: "staff",
+          actorId: authorId,
+          action: "payment.started",
+          entity: "payment",
+          entityId: inserted.id,
+          after: { staffId: member.id, amountCents, walkIn: true },
+        },
+        now,
+      );
+      return inserted;
+    });
+  } catch (error) {
+    if (isUniqueViolation(error)) throw new DomainError("terminal_busy");
+    throw error;
+  }
+  return sendToTerminal(db, provider, created, terminal, input.returnUrl, now);
 }
 
 /**
@@ -217,6 +297,22 @@ export async function settlePayment(
       .where(eq(payment.id, paymentId))
       .returning();
 
+    if (!locked.appointmentId) {
+      // Hors rendez-vous : rien à écrire sur un RDV, le Bilan lit les encaissements réussis (D-109).
+      await recordAudit(
+        tx,
+        {
+          actorType: "staff",
+          actorId: locked.startedByStaffId,
+          action: "payment.walk_in",
+          entity: "payment",
+          entityId: paymentId,
+          after: { staffId: locked.staffId, amountCents: charged, label: locked.label },
+        },
+        now,
+      );
+      return view(done);
+    }
     const [row] = await tx
       .select()
       .from(appointment)
@@ -361,6 +457,7 @@ export async function latestPaymentsFor(
     .where(inArray(payment.appointmentId, appointmentIds))
     .orderBy(desc(payment.createdAt));
   for (const row of rows) {
+    if (!row.appointmentId) continue;
     const known = result.get(row.appointmentId);
     if (!known || (row.status === "successful" && known.status !== "successful")) {
       result.set(row.appointmentId, view(row));

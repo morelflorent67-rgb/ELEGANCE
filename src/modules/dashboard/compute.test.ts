@@ -156,3 +156,22 @@ describe("tableau de bord : rendez-vous et lapins", () => {
     expect(totals.perStaff).toHaveLength(3);
   });
 });
+
+describe("R-94 : encaissements hors rendez-vous", () => {
+  it("s'ajoutent au chiffre d'affaires et au coiffeur concerné, sans compter comme rendez-vous", () => {
+    const totals = computeDashboard([appt()], team, NOW, [
+      { staffId: "orhan", amountCents: 500 },
+      { staffId: "enes", amountCents: 1250 },
+    ]);
+    expect(totals.walkInCents).toBe(1750);
+    expect(totals.walkInCount).toBe(2);
+    expect(totals.revenueCents).toBe(2800 + 1750);
+    expect(totals.appointmentCount).toBe(1);
+    expect(totals.perStaff.find((m) => m.id === "enes")).toMatchObject({ revenueCents: 1250, appointments: 0 });
+    expect(totals.perStaff.find((m) => m.id === "orhan")?.revenueCents).toBe(2800 + 500);
+  });
+
+  it("sans encaissement hors rendez-vous, rien ne change", () => {
+    expect(computeDashboard([appt()], team, NOW)).toMatchObject({ walkInCents: 0, walkInCount: 0, revenueCents: 2800 });
+  });
+});

@@ -144,6 +144,9 @@ function Cards({ view }: { view: DashboardView }) {
           {totals.adjustedCount > 0
             ? ` · ${totals.adjustedCount} montant${totals.adjustedCount > 1 ? "s" : ""} corrigé${totals.adjustedCount > 1 ? "s" : ""}`
             : ""}
+          {totals.walkInCount > 0
+            ? ` · dont ${formatPrice(totals.walkInCents)} hors rendez-vous (${totals.walkInCount} encaissement${totals.walkInCount > 1 ? "s" : ""})`
+            : ""}
           . Un repère : la caisse fait foi.
         </span>
       </section>

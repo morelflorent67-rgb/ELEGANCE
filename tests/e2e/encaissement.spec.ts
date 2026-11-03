@@ -175,6 +175,100 @@ test.describe("R-91 : le rappel de SumUp", () => {
   });
 });
 
+test.describe("R-94 : encaisser hors rendez-vous", () => {
+  const amount = (page: Page) => page.getByLabel("Montant saisi");
+
+  test("pavé et raccourcis s'additionnent, le paiement revient et compte au Bilan du coiffeur", async ({
+    page,
+    request,
+  }) => {
+    await loginTablet(page);
+    await page.goto("/equipe");
+    await page.getByRole("link", { name: "Encaisser", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Encaisser", exact: true })).toBeVisible();
+
+    const pad = page.getByRole("group", { name: "Pavé numérique" });
+    await pad.getByRole("button", { name: "5", exact: true }).click();
+    await expect(amount(page)).toContainText("5 €");
+    await page.getByRole("button", { name: /^Coupe homme/ }).click(); // + 18 €
+    await expect(amount(page)).toContainText("23 €");
+    await pad.getByRole("button", { name: "Virgule" }).click();
+    await pad.getByRole("button", { name: "5", exact: true }).click();
+    await expect(amount(page)).toContainText("23,5 €");
+
+    const send = page.getByRole("button", { name: /^Envoyer au terminal/ });
+    await expect(send).toBeDisabled(); // ni coiffeur ni prénom (R-74)
+    await chooseAuthor(page, "Enes", "Pour quel coiffeur ?");
+    await expect(send).toBeDisabled();
+    await chooseAuthor(page, "Kaan", "Qui encaisse ?");
+    await expect(send).toBeEnabled();
+    await send.click();
+    await expect(page.getByText("En attente du client sur le terminal · 23,50 €")).toBeVisible();
+
+    await request.post("/api/e2e/payment", { data: { action: "complete", status: "successful" } });
+    await expect(page.getByText("Encaissé · 23,50 €")).toBeVisible(TIMEOUT);
+
+    const [row] = await sql`select status, amount_cents, label, appointment_id from payment`;
+    expect(row).toMatchObject({ status: "successful", amount_cents: 2350, label: "Coupe homme" });
+    expect(row.appointment_id).toBeNull();
+
+    // Le Bilan du jour compte ces 23,50 €, rattachés à Enes.
+    await setManagerCode(CODE);
+    await page.goto("/equipe/gerant/bilan?periode=jour");
+    await page.getByLabel("Code à 6 chiffres").fill(CODE);
+    await page.getByRole("button", { name: "Déverrouiller" }).click();
+    const card = page.getByRole("region", { name: "Chiffre d’affaires indicatif" }).filter({ visible: true });
+    await expect(card).toContainText("23,50 €");
+    await expect(card).toContainText("hors rendez-vous (1 encaissement)");
+    const members = page.getByRole("region", { name: "Par membre" }).filter({ visible: true });
+    await expect(members.getByRole("row", { name: /Enes/ })).toContainText("23,50 €");
+  });
+
+  test("un refus ne coûte rien et permet de recommencer sans ressaisir le montant", async ({ page, request }) => {
+    await loginTablet(page);
+    await page.goto("/equipe/encaisser");
+    await page.getByRole("button", { name: /^Coupe homme/ }).click();
+    await chooseAuthor(page, "Orhan", "Pour quel coiffeur ?");
+    await chooseAuthor(page, "Kaan", "Qui encaisse ?");
+    await page.getByRole("button", { name: /^Envoyer au terminal/ }).click();
+    await expect(page.getByText("En attente du client sur le terminal")).toBeVisible();
+    await request.post("/api/e2e/payment", { data: { action: "complete", status: "failed" } });
+    await expect(page.getByText("Le paiement n’a pas abouti")).toBeVisible(TIMEOUT);
+    await expect(amount(page)).toContainText("18 €");
+    expect(await sql`select 1 from payment where status = 'successful'`).toHaveLength(0);
+  });
+
+  test("annuler sur le terminal, et « Tout effacer » remet à zéro", async ({ page }) => {
+    await loginTablet(page);
+    await page.goto("/equipe/encaisser");
+    await page.getByRole("button", { name: /^Coupe homme/ }).click();
+    await page.getByRole("button", { name: "Tout effacer" }).click();
+    await expect(amount(page)).toContainText("0 €");
+    await page.getByRole("button", { name: /^Coupe homme/ }).click();
+    await chooseAuthor(page, "Taha", "Pour quel coiffeur ?");
+    await chooseAuthor(page, "Kaan", "Qui encaisse ?");
+    await page.getByRole("button", { name: /^Envoyer au terminal/ }).click();
+    await expect(page.getByText("En attente du client sur le terminal")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Annuler sur le terminal" })).toBeDisabled();
+    await chooseAuthor(page, "Kaan", "Qui annule ?");
+    await page.getByRole("button", { name: "Annuler sur le terminal" }).click();
+    await expect(page.getByText("Encaissement annulé")).toBeVisible();
+    const [row] = await sql`select status from payment`;
+    expect(row.status).toBe("cancelled");
+  });
+
+  test("terminal pas relié : le message renvoie au gérant", async ({ page }) => {
+    await sql`update salon_settings set payment_merchant_code = null, payment_reader_id = null`;
+    await loginTablet(page);
+    await page.goto("/equipe/encaisser");
+    await page.getByRole("button", { name: /^Coupe homme/ }).click();
+    await chooseAuthor(page, "Orhan", "Pour quel coiffeur ?");
+    await chooseAuthor(page, "Kaan", "Qui encaisse ?");
+    await page.getByRole("button", { name: /^Envoyer au terminal/ }).click();
+    await expect(page.locator("p[role=alert]")).toContainText("pas encore relié");
+  });
+});
+
 test.describe("D-105 : relier le terminal dans l'espace gérant", () => {
   test("le gérant relie puis délie le terminal", async ({ page }) => {
     test.skip((page.viewportSize()?.width ?? 0) < 768, "parcours de la tablette");
