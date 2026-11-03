@@ -202,6 +202,7 @@ export async function createAppointment(
           toEmail: client.email,
           appointmentId: created.id,
           dedupeKey: `confirmation:${created.id}`,
+          now,
         });
         // R-61 : le rappel de J-72 h, pour un RDV pris plus tôt.
         await scheduleReminder(tx, {

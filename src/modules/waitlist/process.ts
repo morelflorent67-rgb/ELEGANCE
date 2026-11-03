@@ -168,6 +168,7 @@ export async function processWaitlist(db: Database, now: Date = new Date()): Pro
         toEmail: client.email,
         appointmentId: null,
         dedupeKey: `waitlist-offer:${offer.id}`,
+        now,
         payload: { offerId: offer.id },
       });
       result.offers.push({ offerId: offer.id, entryId: entry.id });

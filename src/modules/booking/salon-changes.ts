@@ -108,6 +108,7 @@ export async function salonCancelAppointment(
         toEmail: owner.email,
         appointmentId: row.id,
         dedupeKey: `cancellation:${row.id}`,
+        now,
         payload: { by: "salon" },
         ...(input.holdEmails ? { held: true } : {}),
       });

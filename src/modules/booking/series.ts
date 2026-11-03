@@ -373,6 +373,7 @@ async function write(
           toEmail: client.email,
           appointmentId: created[0].id,
           dedupeKey: `series:${seriesId}:${created[0].id}`,
+          now,
           payload: { seriesId, appointmentIds: listed, extended: mode === "extend" },
         });
         for (const c of created) {
@@ -501,6 +502,7 @@ export async function salonCancelSeries(
         toEmail: owner.email,
         appointmentId: ids[0],
         dedupeKey: `cancellation:${ids[0]}`,
+        now,
         payload: { by: "salon", appointmentIds: ids },
         ...(input.holdEmails ? { held: true } : {}),
       });

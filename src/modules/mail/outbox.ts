@@ -17,6 +17,8 @@ export async function enqueueEmail(
     appointmentId: string | null;
     dedupeKey: string;
     runAt?: Date;
+    /** L'heure de l'action qui motive l'email : l'email est dû à cet instant (sans `runAt`). Par défaut, l'heure de la base. */
+    now?: Date;
     /** Données propres au message (ex. l'ancien créneau d'un déplacement). Rien de plus que ce que l'email affiche. */
     payload?: Record<string, unknown>;
     /** Retenu jusqu'à la confirmation du gérant (R-43, D-56) : ni l'envoi immédiat ni le cron ne le prennent. */
@@ -32,7 +34,7 @@ export async function enqueueEmail(
       dedupeKey: input.dedupeKey,
       ...(input.payload ? { payload: input.payload } : {}),
       ...(input.held ? { heldForManager: true } : {}),
-      ...(input.runAt ? { nextAttemptAt: input.runAt } : {}),
+      ...(input.runAt ?? input.now ? { nextAttemptAt: input.runAt ?? input.now } : {}),
     })
     .onConflictDoNothing({ target: emailOutbox.dedupeKey })
     .returning({ id: emailOutbox.id });

@@ -165,6 +165,7 @@ export async function cancelAppointment(
         toEmail: owner.email,
         appointmentId: row.id,
         dedupeKey: `cancellation:${row.id}`,
+        now,
       });
     }
     return { alreadyCancelled: false };
@@ -307,6 +308,7 @@ export async function applyReschedule(
       toEmail: owner.email,
       appointmentId: row.id,
       dedupeKey: `modification:${row.id}:${randomUUID()}`,
+      now,
       ...(input.holdEmails ? { held: true } : {}),
       payload: {
         previousStartsAt: row.startsAt.toISOString(),
