@@ -9,6 +9,7 @@ import { db } from "@/db/client";
 import type { FormState } from "@/app/_actions/form-state";
 import { DomainError } from "@/lib/domain-error";
 import { capitalize, formatDay, formatDayShort, formatTime, parisDate } from "@/lib/format";
+import { parisInstant } from "@/lib/paris-instant";
 import { callerIp } from "@/lib/request-ip";
 import { getAuthDriver } from "@/modules/auth";
 import type { AuthUser } from "@/modules/auth/types";
@@ -459,6 +460,33 @@ export async function rescheduleAppointmentAsSalon(
     }
     if (result.changed) after(() => wakeWaitlist(db())); // D-100 : l'ancien créneau est libre
     return { ok: true, changed: result.changed, held: hold && result.changed };
+  });
+}
+
+/**
+ * Glisser-déposer d'un RDV dans le planning (D-110, R-95) : la tablette envoie le jour affiché et la minute de la
+ * journée ; l'heure de Paris est calculée ici. Même chemin et mêmes refus que « Modifier » (rescheduleAppointmentAsSalon).
+ */
+export async function moveAppointmentByDragAction(
+  input: unknown,
+): Promise<TeamResult<{ changed: boolean; held: boolean }>> {
+  const parsed = z
+    .object({
+      appointmentId: uuid,
+      staffId: uuid,
+      date: isoDate,
+      minute: z.number().int().min(0).max(24 * 60 - 1),
+      authorId: z.string(),
+    })
+    .safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  const startsAt = parisInstant(parsed.data.date, parsed.data.minute);
+  if (!startsAt) return { ok: false, error: "invalid" };
+  return rescheduleAppointmentAsSalon({
+    appointmentId: parsed.data.appointmentId,
+    staffId: parsed.data.staffId,
+    startsAt,
+    authorId: parsed.data.authorId,
   });
 }
 

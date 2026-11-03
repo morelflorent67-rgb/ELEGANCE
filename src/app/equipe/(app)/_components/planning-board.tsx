@@ -7,6 +7,9 @@ import type { DayPlanning, PlanningAppointment } from "@/modules/planning";
 import { formatTime } from "@/lib/format";
 import { AppointmentPanel } from "./appointment-panel";
 import type { TeamMemberView } from "./author-picker";
+import { MoveConfirm, type PendingMove } from "./move-confirm";
+import { useAppointmentDrag } from "./use-appointment-drag";
+import { DROP_PROBLEM_LABEL } from "@/lib/drag-move";
 
 // Le planning du jour (R-72) : une colonne par coiffeur, 96 px par heure. Tout est calculé côté serveur ; ici on
 // place les blocs et on ouvre la fiche. L'écran se met à jour seul toutes les 30 secondes (D-54).
@@ -119,6 +122,9 @@ export function PlanningBoard({
   const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId);
   const [toast, setToast] = useState<string | null>(null);
   const busy = useRef(false);
+  const dragBusy = useRef(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [move, setMove] = useState<PendingMove | null>(null);
   const summaryCollapsed = useSyncExternalStore(
     subscribeSummary,
     () => readSummaryCollapsed() || fallbackCollapsed,
@@ -128,7 +134,7 @@ export function PlanningBoard({
   // Rafraîchissement automatique : jamais pendant une action en cours, jamais écran caché.
   useEffect(() => {
     const timer = setInterval(() => {
-      if (!document.hidden && !busy.current) router.refresh();
+      if (!document.hidden && !busy.current && !dragBusy.current) router.refresh();
     }, REFRESH_MS);
     return () => clearInterval(timer);
   }, [router]);
@@ -170,6 +176,47 @@ export function PlanningBoard({
       gridEnd: Math.ceil((ends.length ? Math.max(...ends) : 19 * 60) / 60) * 60,
     };
   }, [day, all]);
+
+  // Glisser-déposer (D-110, R-95) : les colonnes telles que le planning les montre, pour annoncer où le RDV tomberait.
+  const { drag, columnRef, blockProps, consumeClick } = useAppointmentDrag({
+    columns: day.columns.map((c) => ({
+      staffId: c.staff.id,
+      appointments: c.appointments.map((a) => ({
+        id: a.id,
+        startMinute: a.startMinute,
+        endMinute: a.endMinute,
+      })),
+      absences: c.absences,
+    })),
+    ranges: day.ranges,
+    gridStart,
+    gridEnd,
+    step: day.slotStepMinutes,
+    nowMinute: isToday ? nowMinute : null,
+    pxPerMinute: PX_PER_MINUTE,
+    topOffset: 8,
+    scrollRef,
+    onDrop: ({ id, staffId, startMinute }) => {
+      const appt = all.find((a) => a.id === id);
+      const target = day.columns.find((c) => c.staff.id === staffId);
+      if (!appt || !target) return;
+      setMove({
+        appointmentId: appt.id,
+        customerFirstName: (appt.forName ?? appt.customerName).split(" ")[0],
+        hasEmail: appt.hasEmail,
+        fromStaffName: appt.staffFirstName,
+        fromTime: formatTime(appt.startsAt),
+        toStaffId: staffId,
+        toStaffName: target.staff.firstName,
+        toTime: hhmm(startMinute),
+        date: day.date,
+        startMinute,
+      });
+    },
+  });
+  useEffect(() => {
+    dragBusy.current = drag !== null || move !== null;
+  }, [drag, move]);
 
   const top = (minute: number) => (minute - gridStart) * PX_PER_MINUTE;
   const hours: number[] = [];
@@ -297,7 +344,7 @@ export function PlanningBoard({
           </p>
         ) : null}
 
-        <div className="min-h-0 flex-1 overflow-auto">
+        <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto">
           <div className="min-w-[640px]">
             <div
               className="sticky top-0 z-10 grid border-b border-line bg-ink"
@@ -337,6 +384,7 @@ export function PlanningBoard({
               {day.columns.map((col) => (
                 <div
                   key={col.staff.id}
+                  ref={columnRef(col.staff.id)}
                   role="group"
                   aria-label={`Rendez-vous de ${col.staff.firstName}`}
                   className="relative border-l border-line-subtle"
@@ -372,17 +420,31 @@ export function PlanningBoard({
                     const tall = height >= 70;
                     const on = appt.id === selectedId;
                     const tone = blockTone(appt);
+                    // R-95 : seuls les RDV que le salon peut encore déplacer se glissent.
+                    const movable = appt.status === "upcoming" || appt.status === "in_progress";
+                    const dragging = drag?.id === appt.id;
                     return (
                       <button
                         key={appt.id}
                         type="button"
-                        onClick={() => setSelectedId(on ? null : appt.id)}
+                        onClick={() => {
+                          if (consumeClick()) return;
+                          setSelectedId(on ? null : appt.id);
+                        }}
+                        {...(movable
+                          ? blockProps({
+                              id: appt.id,
+                              staffId: col.staff.id,
+                              startMinute: appt.startMinute,
+                              endMinute: appt.endMinute,
+                            })
+                          : {})}
                         aria-pressed={on}
                         aria-label={`${formatTime(appt.startsAt)}, ${appt.forName ? `${appt.forName}, au nom de ` : ""}${appt.customerName}, ${appt.summary}, avec ${col.staff.firstName}, ${SOURCE_WORD[appt.source].toLowerCase()}${appt.seriesId ? ", RDV répété" : ""}${tag ? `, ${tag.word}` : ""}`}
                         data-source={appt.source}
-                        className={`absolute inset-x-1 flex flex-col justify-center gap-0.5 overflow-hidden border px-2.5 text-left ${tone.block} ${
+                        className={`absolute inset-x-1 flex flex-col justify-center gap-0.5 overflow-hidden border px-2.5 text-left [-webkit-touch-callout:none] ${tone.block} ${
                           on ? "outline outline-2 outline-offset-2 outline-ivory" : ""
-                        }`}
+                        } ${movable ? "cursor-grab select-none" : ""} ${dragging ? "opacity-40" : ""}`}
                         style={{ top: top(appt.startMinute) + 8, height }}
                       >
                         <span className="flex items-center gap-2 whitespace-nowrap text-[13px]">
@@ -429,6 +491,27 @@ export function PlanningBoard({
                       </button>
                     );
                   })}
+                  {drag?.target?.staffId === col.staff.id ? (
+                    <div
+                      data-drop-ghost
+                      data-problem={drag.problem ?? undefined}
+                      aria-hidden="true"
+                      className={`pointer-events-none absolute inset-x-1 z-20 flex items-start justify-between gap-2 border-2 border-dashed px-2.5 py-1 text-[12px] ${
+                        drag.problem
+                          ? "border-brick bg-brick/20 text-brick"
+                          : "border-gold bg-gold/20 text-ivory"
+                      }`}
+                      style={{
+                        top: top(drag.target.startMinute) + 8,
+                        height: Math.max(24, drag.duration * PX_PER_MINUTE - 2),
+                      }}
+                    >
+                      <span className="tabular-nums">
+                        {hhmm(drag.target.startMinute)} – {hhmm(drag.target.startMinute + drag.duration)}
+                      </span>
+                      {drag.problem ? <span>{DROP_PROBLEM_LABEL[drag.problem]}</span> : null}
+                    </div>
+                  ) : null}
                 </div>
               ))}
 
@@ -475,6 +558,20 @@ export function PlanningBoard({
           </div>
         </div>
       </section>
+
+      {move ? (
+        <MoveConfirm
+          key={`${move.appointmentId}:${move.toStaffId}:${move.startMinute}`}
+          move={move}
+          team={team}
+          onClose={() => setMove(null)}
+          onDone={(message) => {
+            setMove(null);
+            setToast(message);
+            router.refresh();
+          }}
+        />
+      ) : null}
 
       <AppointmentPanel
         key={selected?.id ?? "none"}

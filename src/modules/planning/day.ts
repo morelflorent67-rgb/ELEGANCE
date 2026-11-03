@@ -74,6 +74,8 @@ export interface DayPlanning {
   open: boolean;
   /** Plages d'ouverture en minutes depuis minuit ; la pause est le trou entre deux plages. */
   ranges: { from: number; to: number }[];
+  /** Pas de la grille des créneaux du salon (réglage), pour aligner un RDV glissé (R-95). */
+  slotStepMinutes: number;
   columns: DayColumn[];
   /** RDV du jour, annulés exclus. */
   count: number;
@@ -267,6 +269,7 @@ export async function loadDayPlanning(
     label: capitalize(formatDay(start.set({ hour: 12 }).toJSDate())),
     open: ranges.length > 0,
     ranges,
+    slotStepMinutes: snapshot.settings.salonSlotStepMinutes,
     columns: cols,
     count: list.length,
     next,
