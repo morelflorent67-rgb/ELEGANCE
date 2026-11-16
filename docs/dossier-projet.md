@@ -393,6 +393,7 @@ Le 20 octobre 2026, 57 décisions ont fixé le cadre du projet ; le 21 octobre 2
 | D-116 | Comptes gérés par l'app : mots de passe hachés par scrypt (`node:crypto`, aucune dépendance), sessions en base (jeton aléatoire dans un cookie httpOnly, seule son empreinte SHA-256 est stockée), 90 jours glissants, lien de réinitialisation valable 1 h, à usage unique | Lot 21 |
 | D-117 | Emails de réinitialisation du mot de passe envoyés par l'app via Brevo, **hors de la file** `email_outbox` (le lien est un secret : il ne doit pas dormir dans la base) ; en cas d'échec, le client redemande un lien | Lot 21 |
 | D-118 | Sauvegarde chaque nuit (3 h, heure de Paris) : `pg_dump` chiffré par restic vers Backblaze B2 (EU Central, Amsterdam) ; on garde 7 nuits et 4 semaines. Restauration essayée avant l'ouverture. Alertes à morel.florent67@gmail.com. Vercel et Supabase coupés après une semaine sans incident sur le VPS | Lot 23 |
+| D-119 | Le site tourne **dans Docker, comme lafineequipe** (écart à « pas de Docker » : le serveur a déjà Docker et un Caddy en conteneur) : conteneurs `elegance` (Next.js) et `elegance-db` (PostgreSQL 17, réseau privé, aucun port ouvert, volume à lui) ; la base de n8n n'est pas touchée. Le Caddy de n8n reçoit un bloc pour `elegance-strasbourg.fr`. Centre de données Contabo : Lauterbourg | Lot 22 |
 
 ## Documents liés
 

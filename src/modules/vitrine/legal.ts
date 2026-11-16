@@ -45,7 +45,7 @@ function mentions(): Raw[] {
     ["Directeur de la publication", "Orhan Sevig, gérant."],
     [
       "Hébergement",
-      "Le site, sa base de données (comptes et rendez-vous) et les connexions sont hébergés par Contabo GmbH, Welfenstraße 22, 81541 Munich, Allemagne (Union européenne). [Ville du centre de données]\nLes copies de sauvegarde sont chiffrées avant leur envoi chez Backblaze, à Amsterdam (Pays-Bas).\nLes emails sont envoyés par Brevo (France).",
+      "Le site, sa base de données (comptes et rendez-vous) et les connexions sont hébergés par Contabo GmbH, Welfenstraße 22, 81541 Munich, Allemagne (Union européenne). Les serveurs sont situés dans le centre de données de Lauterbourg (France).\nLes copies de sauvegarde sont chiffrées avant leur envoi chez Backblaze, à Amsterdam (Pays-Bas).\nLes emails sont envoyés par Brevo (France).",
     ],
     [
       "Propriété intellectuelle",

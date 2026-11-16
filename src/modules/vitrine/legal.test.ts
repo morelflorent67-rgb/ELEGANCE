@@ -132,6 +132,7 @@ describe("la politique de confidentialité décrit ce que le site fait vraiment"
   it("les prestataires sont nommés : hébergement, base de données, emails", () => {
     for (const name of ["Contabo", "Backblaze", "Brevo"]) expect(privacy).toContain(name);
     for (const gone of ["Vercel", "Supabase"]) expect(privacy).not.toContain(gone);
+    expect(text("mentions-legales")).toContain("Lauterbourg");
   });
 });
 
@@ -139,7 +140,8 @@ describe("placeholdersOf : ce que le salon doit encore fournir", () => {
   it("liste les champs entre crochets, sans doublon, pour tous les documents", () => {
     const missing = placeholdersOf(rules);
     expect(missing).toContain("[Adresse email de contact]");
-    expect(missing).toContain("[Ville du centre de données]");
+    // Centre de données de Contabo : Lauterbourg (réponse de Florent, 16 novembre 2026).
+    expect(missing).not.toContain("[Ville du centre de données]");
     // Identité du salon (societe.com, 22 octobre 2026) : ces champs sont remplis.
     for (const filled of ["[Forme juridique]", "[Numéro de SIRET]", "[Montant du capital]", "[Fonction]"]) {
       expect(missing).not.toContain(filled);
