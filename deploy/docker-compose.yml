@@ -1,0 +1,75 @@
+# Elegance Strasbourg sur le VPS, à côté de n8n et de lafineequipe (D-119).
+# - elegance-db : PostgreSQL 17 à lui, sur un réseau privé, aucun port ouvert, données dans un volume.
+# - elegance    : le site ; il rejoint aussi le réseau de n8n pour que son Caddy l'atteigne (elegance:3000).
+# - tools / publish : lancés à la demande (profil « tools ») par update.sh et run.sh.
+# Les valeurs viennent de deploy/.env (jamais commité, droits 600) : voir .env.example.
+name: elegance
+
+services:
+  elegance-db:
+    image: postgres:17-alpine
+    container_name: elegance-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: elegance
+      POSTGRES_DB: elegance
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD manquant dans deploy/.env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U elegance -d elegance"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    mem_limit: 1g
+    networks: [private]
+
+  elegance:
+    image: elegance-app:latest
+    container_name: elegance
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      elegance-db:
+        condition: service_healthy
+    volumes:
+      - next_live:/app/.next
+    mem_limit: 1536m
+    networks: [private, n8n_default]
+
+  # Migrations, compilation et commandes d'exploitation (db:seed, staff:account, manager:set-code…).
+  tools:
+    profiles: [tools]
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: elegance-app:latest
+    env_file: .env
+    depends_on:
+      elegance-db:
+        condition: service_healthy
+    volumes:
+      - next_staging:/app/.next
+    mem_limit: 2g
+    networks: [private]
+
+  # Recopie la compilation réussie (next_staging) vers celle qui sert le site (next_live).
+  publish:
+    profiles: [tools]
+    image: elegance-app:latest
+    user: root
+    entrypoint: ["sh", "-c", "find /to -mindepth 1 -delete && cp -a /from/. /to/"]
+    volumes:
+      - next_staging:/from:ro
+      - next_live:/to
+    networks: [private]
+
+volumes:
+  pgdata:
+  next_live:
+  next_staging:
+
+networks:
+  private:
+  n8n_default:
+    external: true

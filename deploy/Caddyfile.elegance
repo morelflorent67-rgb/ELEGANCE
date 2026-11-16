@@ -1,0 +1,9 @@
+# Bloc à AJOUTER à la fin de ~/n8n/Caddyfile (le Caddy de n8n, dans Docker, sert déjà n8n et fineequipe.com).
+www.elegance-strasbourg.fr {
+    redir https://elegance-strasbourg.fr{uri} permanent
+}
+
+elegance-strasbourg.fr {
+    encode zstd gzip
+    reverse_proxy elegance:3000
+}

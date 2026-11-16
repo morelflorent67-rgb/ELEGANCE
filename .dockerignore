@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.env
+.env.*
+.local-db
+test-results
+playwright-report
+coverage
+*.tsbuildinfo
+assets
+communication
+*.csv
+*.xlsx

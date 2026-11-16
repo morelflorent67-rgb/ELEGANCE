@@ -14,6 +14,17 @@ describe("connectionOptions", () => {
     );
   });
 
+  it("accepte « sslmode=disable » écrit dans l'adresse (base d'un conteneur sur le réseau privé du serveur)", () => {
+    const { url, ssl } = connectionOptions("postgresql://elegance:p@elegance-db:5432/elegance?sslmode=disable");
+    expect(ssl).toBe(false);
+    expect(url).toBe("postgresql://elegance:p@elegance-db:5432/elegance");
+  });
+
+  it("garde le SSL pour toute autre valeur de sslmode sur une base distante", () => {
+    expect(connectionOptions("postgresql://u:p@db.example.com/x?sslmode=prefer").ssl).toBe("require");
+    expect(connectionOptions("postgresql://u:p@db.example.com/x").ssl).toBe("require");
+  });
+
   it("n'impose pas le SSL à la base locale (le serveur du site la contacte en local)", () => {
     expect(connectionOptions("postgresql://postgres@127.0.0.1:54322/postgres").ssl).toBe(false);
     expect(connectionOptions("postgresql://elegance@localhost:5432/elegance").ssl).toBe(false);

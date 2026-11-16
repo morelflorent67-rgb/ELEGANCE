@@ -16,6 +16,8 @@ export const CLIENT_OPTIONS = {
 
 export function connectionOptions(rawUrl: string): { url: string; ssl: "require" | false } {
   const parsed = new URL(rawUrl);
+  // « sslmode=disable » écrit explicitement : base d'un conteneur sur le réseau privé du serveur (D-119), pas de SSL.
+  const sslDisabled = parsed.searchParams.get("sslmode") === "disable";
   parsed.search = "";
-  return { url: parsed.toString(), ssl: LOCAL_HOSTS.has(parsed.hostname) ? false : "require" };
+  return { url: parsed.toString(), ssl: sslDisabled || LOCAL_HOSTS.has(parsed.hostname) ? false : "require" };
 }
