@@ -3,6 +3,8 @@
 Ce document permet de reprendre le travail dans une **nouvelle conversation**, sans rien perdre. Il se met à jour à la fin de chaque lot.
 À jour au **22 octobre 2026** (soir). Les lots 0 à 7 sont validés. Le lot 8 (recette et bascule) est **en pause** : le salon a demandé des changements (lots 9 à 14, section « Demandes du salon »), et Florent ne retourne le voir, et ne met en ligne, qu'une fois tout terminé. **Lots 9 à 13 validés par Florent** (22 octobre). **Lot 14 fait et validé par Florent** (encaissement SumUp Solo), commité et poussé ; **migration 0012 appliquée à Supabase** (vérifiée en ligne, `pnpm smoke:db` vert). Le terminal est relié (3 novembre 2026). **Lot 15 fait le 3 novembre 2026** (encaissement hors rendez-vous), à valider par Florent ; **migration 0013 écrite et testée en local, pas encore appliquée à Supabase, rien n'est poussé** (voir action 21). **Lot 15 validé par Florent (3 novembre 2026)** ; migration 0013 appliquée à Supabase et lot 15 poussé. **Lot 16 fait le 3 novembre 2026** (glisser-déposer d'un RDV dans le planning), à valider par Florent sur l'iPad ; aucune migration, rien n'est poussé. Le client SumUp est écrit d'après la documentation et **pas encore essayé sur un vrai compte** : la clé d'API et le code d'appairage de Florent sont attendus.
 
+**16 novembre 2026 : migration vers le VPS de Florent décidée** (tout : site, base, comptes, cron, sauvegardes ; plus de Vercel ni de Supabase ; l'app n'a jamais servi, aucune donnée à reprendre). Plan complet et message de démarrage : `docs/plan-migration-vps.md` (lots 21 à 23). Elle passe **avant** la reprise du lot 8, qui se fera sur le VPS.
+
 ## Avancement
 
 | Lot | Contenu | État |
