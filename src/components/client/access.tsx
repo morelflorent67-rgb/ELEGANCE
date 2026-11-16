@@ -2,6 +2,7 @@ import {
   SALON,
   SALON_ACCESS,
   salonAddressLine,
+  salonApplePlansUrl,
   salonDirectionsUrl,
   salonWazeUrl,
 } from "@/lib/salon";
@@ -130,7 +131,7 @@ export function Access() {
           <span className="text-[14px] text-ivory-soft">{salonAddressLine}</span>
         </div>
         <div className="s-up grid grid-cols-2 gap-2.5" style={{ animationDelay: "380ms" }}>
-          <a href={salonDirectionsUrl} className={tile}>
+          <a href={salonDirectionsUrl} className={`${tile} col-span-2`}>
             <svg
               width="18"
               height="18"
@@ -163,6 +164,21 @@ export function Access() {
               <path d="M3 11l18-8-8 18-2-8z" />
             </svg>
             Waze
+          </a>
+          <a href={salonApplePlansUrl} className={`${tile} justify-center`}>
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#efe9dd"
+              strokeWidth="1.4"
+              aria-hidden="true"
+            >
+              <path d="M9 4L3 6.5v13L9 17l6 3 6-2.5v-13L15 7z" />
+              <path d="M9 4v13M15 7v13" />
+            </svg>
+            Plans
           </a>
         </div>
         <span

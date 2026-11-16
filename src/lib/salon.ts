@@ -22,6 +22,10 @@ export const salonMapsUrl = `https://www.google.com/maps/search/?api=1&query=${e
 export const salonDirectionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
   salonAddressLine,
 )}`;
+/** Plans (Apple) : s'ouvre dans l'app sur iPhone, iPad et Mac, sur le site d'Apple ailleurs. */
+export const salonApplePlansUrl = `https://maps.apple.com/?daddr=${encodeURIComponent(
+  salonAddressLine,
+)}&dirflg=d`;
 export const salonWazeUrl = `https://waze.com/ul?q=${encodeURIComponent(
   `${SALON.street} ${SALON.city}`,
 )}&navigate=yes`;

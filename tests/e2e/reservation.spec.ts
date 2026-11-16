@@ -259,9 +259,7 @@ test.describe("la carte (R-10 à R-18)", () => {
     await expect(serviceButton(page, "Taillage barbe")).toContainText(
       "Pas avec un tarif formation",
     );
-    await expect(
-      page.getByRole("note").filter({ hasText: "Les apprentis travaillent seuls" }),
-    ).toBeVisible();
+    await expect(page.getByRole("note")).toHaveCount(0);
   });
 
   test("R-14 : des prestations à la suite additionnent durées et prix, jusqu'au récapitulatif", async ({

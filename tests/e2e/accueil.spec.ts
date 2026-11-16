@@ -126,6 +126,10 @@ test("D-98 : l'accès donne l'adresse, l'itinéraire, Waze et les transports, sa
     /google\.com\/maps\/dir/,
   );
   await expect(access.getByRole("link", { name: "Waze" })).toHaveAttribute("href", /waze\.com/);
+  await expect(access.getByRole("link", { name: "Plans" })).toHaveAttribute(
+    "href",
+    /maps\.apple\.com\/\?daddr=.*Schiltigheim/,
+  );
   for (const text of ["Hôtel de ville", "Bus 60 · C3", "Arrêt Mairie", "Piste cyclable"]) {
     await expect(access.getByText(text)).toBeVisible();
   }

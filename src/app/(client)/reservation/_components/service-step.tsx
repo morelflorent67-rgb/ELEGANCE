@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckBox, Mark, Note, PhoneIcon, chip } from "@/components/client/ui";
+import { CheckBox, Mark, PhoneIcon, chip } from "@/components/client/ui";
 import { formatDuration, formatPrice } from "@/lib/format";
 import { SALON } from "@/lib/salon";
 import type { CatalogService } from "@/modules/catalog";
@@ -43,18 +43,6 @@ export function ServiceStep({
   const toggle = (id: string) =>
     onChange(selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id]);
 
-  const barbers = team.barber.join(" ou ");
-  // « d'Orhan ou Enes », « de Karim ou Enes » : élision devant une voyelle.
-  const ofBarbers = barbers
-    ? `${/^[aeiouyhéèêàâîôû]/i.test(barbers) ? "d'" : "de "}${barbers}`
-    : "d'un coiffeur";
-  // Après une prestation coiffeur, aucun message en tête de liste : les tarifs formation grisés disent déjà
-  // « Dans un rendez-vous séparé » (demande de Florent, 16 nov.). Après un tarif formation, on garde l'explication.
-  const mixNote =
-    category === "apprentice"
-      ? `Les apprentis travaillent seuls : pour une prestation ${ofBarbers}, prenez un second rendez-vous.`
-      : null;
-
   let row = 0;
   return (
     <div className="flex flex-col gap-[26px] px-6 pb-9 pt-[26px]">
@@ -66,11 +54,6 @@ export function ServiceStep({
           Plusieurs choix possibles.
         </p>
       </div>
-      {mixNote ? (
-        <div className="s-up">
-          <Note>{mixNote}</Note>
-        </div>
-      ) : null}
 
       {groupCatalog(catalog).map((group) => {
         // « Orhan · Enes » sous le groupe, seulement s'il ne mélange pas coiffeurs et apprentis.
