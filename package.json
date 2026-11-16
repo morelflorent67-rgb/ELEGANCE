@@ -19,21 +19,13 @@
     "db:migrate": "drizzle-kit migrate",
     "db:status": "node scripts/db-local.mjs status",
     "db:reset": "node scripts/db-local.mjs reset",
-    "db:migrate:remote": "node scripts/migrate-remote.mjs",
     "db:seed": "node scripts/seed.mjs",
-    "db:seed:remote": "node scripts/seed.mjs --remote",
     "measure:vitrine": "node scripts/measure-vitrine.mjs",
-    "smoke:auth": "node scripts/smoke-supabase-auth.mjs",
-    "smoke:db": "vitest run --config vitest.smoke.config.mts",
     "staff:account": "node scripts/staff-account.mjs",
     "manager:set-code": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/manager-code.mjs",
-    "manager:set-code:remote": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/manager-code.mjs --remote",
-    "customers:import": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/import-customers.mjs",
-    "customers:import:remote": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/import-customers.mjs --remote"
+    "customers:import": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/import-customers.mjs"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.12.7",
-    "@supabase/supabase-js": "^2.118.0",
     "drizzle-orm": "^0.45.4",
     "luxon": "^3.7.2",
     "next": "16.4.2",

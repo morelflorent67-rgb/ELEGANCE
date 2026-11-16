@@ -48,7 +48,8 @@ await client.end();
 const env = {
   ...process.env,
   DATABASE_URL: databaseUrl,
-  AUTH_DRIVER: "memory", // refusé sur Vercel, voir src/modules/auth/index.ts
+  ALLOW_TEST_DRIVERS: "true", // sans elle, la connexion en mémoire, le faux terminal et les emails « journal » sont refusés
+  AUTH_DRIVER: "memory", // voir src/lib/test-drivers.ts
   AUTH_MEMORY_STAFF: "equipe@elegance.test:mot-de-passe-equipe", // compte de la tablette, en mémoire seulement
   APP_SECRET: "secret-des-tests-de-bout-en-bout",
   EMAIL_TRANSPORT: "log", // aucun email ne part
@@ -57,10 +58,6 @@ const env = {
   SUMUP_API_KEY: "",
   SUMUP_WEBHOOK_SECRET: "secret-du-rappel-de-test",
   SITE_URL: `http://127.0.0.1:${SITE_PORT}`,
-  // Aucune clé Supabase réelle ne doit servir ici, même si un fichier .env.local en contient.
-  SUPABASE_URL: "http://127.0.0.1:1",
-  SUPABASE_PUBLISHABLE_KEY: "test",
-  SUPABASE_SECRET_KEY: "test",
   NEXT_TELEMETRY_DISABLED: "1",
 };
 

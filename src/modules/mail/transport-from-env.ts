@@ -1,6 +1,7 @@
 import "server-only";
 import { mailEnv } from "@/lib/env";
 import { SALON } from "@/lib/salon";
+import { logTransportAllowed } from "@/lib/test-drivers";
 import {
   createBrevoTransport,
   createLogTransport,
@@ -18,7 +19,7 @@ export function transportFromEnv(): EmailTransport {
   const env = mailEnv();
   const wantBrevo = env.EMAIL_TRANSPORT ? env.EMAIL_TRANSPORT === "brevo" : !!env.BREVO_API_KEY;
   if (!wantBrevo) {
-    if (process.env.VERCEL_ENV === "production") {
+    if (!logTransportAllowed()) {
       return {
         async send() {
           throw new EmailSendError("Brevo n'est pas configuré (BREVO_API_KEY, EMAIL_FROM).", false);

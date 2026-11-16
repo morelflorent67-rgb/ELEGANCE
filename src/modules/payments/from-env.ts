@@ -1,19 +1,17 @@
 import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { appSecret, siteUrl } from "@/lib/env";
+import { paymentDriverKind } from "@/lib/test-drivers";
 import { sharedFakeTerminal } from "./fake";
 import { createSumupProvider } from "./sumup";
 import type { PaymentProvider } from "./provider";
 
 /**
  * Terminal choisi par l'environnement : SumUp si la clé d'API existe, le faux terminal avec `PAYMENT_DRIVER=fake`
- * (tests de bout en bout, refusé sur Vercel). Sans l'un ni l'autre : `null`, l'encaissement n'est pas disponible.
+ * (tests de bout en bout, refusé sans `ALLOW_TEST_DRIVERS=true`). Sans l'un ni l'autre : `null`, l'encaissement n'est pas disponible.
  */
 export function paymentProviderFromEnv(): PaymentProvider | null {
-  if (process.env.PAYMENT_DRIVER === "fake") {
-    if (process.env.VERCEL) throw new Error("PAYMENT_DRIVER=fake est interdit sur Vercel.");
-    return sharedFakeTerminal();
-  }
+  if (paymentDriverKind() === "fake") return sharedFakeTerminal();
   const apiKey = process.env.SUMUP_API_KEY;
   if (!apiKey) return null;
   return createSumupProvider({

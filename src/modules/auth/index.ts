@@ -2,11 +2,11 @@ import "server-only";
 import { cookies } from "next/headers";
 import { db } from "@/db/client";
 import { siteUrl } from "@/lib/env";
+import { authDriverKind } from "@/lib/test-drivers";
 import { transportFromEnv } from "@/modules/mail/transport-from-env";
 import { renderPasswordResetEmail } from "@/modules/mail/templates/password-reset";
 import { createMemoryDriver } from "./memory-driver";
 import { createPostgresDriver } from "./postgres-driver";
-import { createSupabaseDriver } from "./supabase-driver";
 import type { AuthDriver, SessionStore } from "./types";
 
 const MEMORY_COOKIE = "elegance-test-session";
@@ -36,15 +36,13 @@ function cookieStore(name: string, options: { secure: boolean; maxAge?: number }
 
 /**
  * Pilote d'authentification de la requête en cours : comptes et sessions dans Postgres (D-116).
- * `AUTH_DRIVER=memory` sert aux tests de bout en bout : il est refusé sur toute machine Vercel, pour qu'il ne puisse
- * jamais protéger un vrai site.
+ * `AUTH_DRIVER=memory` sert aux tests de bout en bout : il est refusé sans `ALLOW_TEST_DRIVERS=true` (src/lib/test-drivers.ts),
+ * pour qu'il ne puisse jamais protéger un vrai site.
  */
 export function getAuthDriver(): AuthDriver {
-  if (process.env.AUTH_DRIVER === "memory") {
-    if (process.env.VERCEL) throw new Error("AUTH_DRIVER=memory est interdit sur Vercel.");
+  if (authDriverKind() === "memory") {
     return createMemoryDriver(cookieStore(MEMORY_COOKIE, { secure: false }));
   }
-  if (process.env.AUTH_DRIVER === "supabase") return createSupabaseDriver();
   const base = siteUrl();
   return createPostgresDriver({
     db: db(),

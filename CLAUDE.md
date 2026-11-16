@@ -26,16 +26,14 @@
 ## Commandes
 - `pnpm dev` : serveur de développement ; `pnpm build` puis `pnpm start` : version de production.
 - `pnpm db:start` : démarre la base Postgres locale (sans Docker, données dans `.local-db/`) et applique les migrations ; `pnpm db:stop`, `pnpm db:status`, `pnpm db:reset` (efface tout).
-- `pnpm db:seed` : données de départ (équipe, carte, horaires, réglages), rejouable sans rien écraser ; `pnpm db:seed:remote` et `pnpm db:migrate:remote` visent la base Supabase (modifient la base en ligne : demander l'accord avant).
+- `pnpm db:seed` : données de départ (équipe, carte, horaires, réglages), rejouable sans rien écraser. Les scripts (`db:migrate`, `db:seed`, `staff:account`, `manager:set-code`, `customers:import`) visent la base de `DATABASE_URL` : `.env.production` s'il existe (sur le serveur), sinon `.env.local`. Sur le serveur, ils modifient la vraie base : annoncer avant.
 - `pnpm db:generate` : génère une migration depuis `src/db/schema.ts` ; `pnpm db:generate --custom --name=...` pour du SQL écrit à la main (contraintes) ; `pnpm db:migrate` l'applique.
 - `pnpm lint`, `pnpm typecheck`, `pnpm test` (unitaires), `pnpm test:integration` (Postgres réel, instance temporaire démarrée toute seule), `pnpm test:e2e` (Playwright mobile et tablette ; démarre seul sa base temporaire, l'authentification en mémoire et le site : `scripts/e2e-server.mjs`), `pnpm test:all` : tout.
-- `pnpm staff:account` : crée le compte « équipe » de la tablette sur Supabase ; `pnpm manager:set-code` (ou `:remote`) : définit le code gérant à 6 chiffres. Les deux se tapent dans le terminal, rien dans le chat ni en ligne de commande.
+- `pnpm staff:account` : crée le compte « équipe » de la tablette (table `auth_user`, rôle `staff`) ; `pnpm manager:set-code` : définit le code gérant à 6 chiffres. Les deux se tapent dans le terminal, rien dans le chat ni en ligne de commande.
 - `pnpm measure:vitrine` : mesure ponctuelle de la vitrine (FCP, LCP, CLS, poids) sur un build lancé par `pnpm start -p 3300`.
-- `pnpm smoke:auth` : contrôle manuel de l'authentification Supabase réelle (crée puis supprime un compte jetable sur le projet de test).
-- `pnpm smoke:db` : contrôle manuel, en lecture seule, des chargements de la tablette sur la base en ligne (pooler Supabase). À lancer après tout changement du client de base : les tests locaux n'ont pas de pooler. Jamais le mode transaction (6543), voir `src/db/connection-url.ts`.
-- `/api/diagnostic` : durées mesurées côté serveur (base, planning, authentification), sans données ; à retirer à la bascule.
-- **`pnpm build` lit la base** (la vitrine est prérendue, `DATABASE_URL` requis, comme sur Vercel et en intégration continue).
-- Variables : copier `.env.example` vers `.env.local`. Jamais de `NEXT_PUBLIC_` pour la base ni pour Supabase.
+- **`pnpm build` lit la base** (la vitrine est prérendue, `DATABASE_URL` requis, comme sur le serveur et en intégration continue).
+- Variables : copier `.env.example` vers `.env.local` (`APP_SECRET` est obligatoire). Jamais de `NEXT_PUBLIC_` pour la base.
+- **Faux pilotes** (`AUTH_DRIVER=memory`, `PAYMENT_DRIVER=fake`, emails « journal » en production) : refusés sans `ALLOW_TEST_DRIVERS=true` (`src/lib/test-drivers.ts`). Cette variable n'existe que dans les environnements de test, jamais sur le serveur.
 
 ## Next.js 16
 - Cette version diffère de ce qu'on connaît (Cache Components activé, `proxy` à la place de `middleware`, `LayoutProps` généré par `next typegen`). Lire `node_modules/next/dist/docs/` avant d'écrire du code Next.
@@ -49,7 +47,7 @@
 - `src/modules/booking/salon-changes.ts` : annulation, déplacement et lapins décidés par le salon (R-33, R-51, R-74) : auteur obligatoire, journal. `src/modules/staff` : accès équipe, auteurs, code gérant (R-72, R-73). `src/modules/planning` : planning du jour et fiche RDV. `src/modules/customers/staff-view.ts` : recherche, fiche, blocage, suppression par le gérant. `src/app/equipe` : la tablette ; chaque page et chaque action y vérifie elle-même l'accès (`requireStaff`, `asStaff`, `asManager`).
 - Lot 5 (gestion, tout dans l'espace gérant sauf les absences) : `src/modules/catalog/manage.ts` (carte et habilitations), `src/modules/staff/manage.ts` (équipe), `src/modules/schedule/manage.ts` (horaires et fermetures), `src/modules/absences` (absences, RDV « à traiter » déduits de l'état, retenue et confirmation des emails, R-40 à R-43, D-55 à D-57). Chacune est une transaction qui écrit son entrée au journal, auteur « gérant » (ou « équipe » pour les absences). Pages `/equipe/gerant/{carte,equipe,horaires}` et `/equipe/absences`.
 - `src/modules/mail` : file d'envoi (`email_outbox`), modèles d'emails en TypeScript (tableaux HTML), envoi Brevo, reprise. Un email s'écrit dans la file dans la même transaction que son RDV ; l'envoi se fait après la réponse (`after`) et le cron reprend les échecs. Un email peut être « retenu » (`held_for_manager`) jusqu'à la confirmation du gérant : ni l'envoi immédiat ni le cron ne le prennent.
-- `src/modules/auth` : interface d'authentification (Supabase en production, mémoire pour les tests, refusée sur Vercel). `src/modules/customers` : comptes clients, limitation d'essais, état de réservation, « Mes informations » et suppression de compte (`profile.ts`, anonymisation R-75). `src/modules/audit` : journal d'audit, à écrire dans la transaction de l'action.
+- `src/modules/auth` : interface d'authentification (`postgres-driver.ts` en production : comptes et sessions en base, scrypt, D-116 ; mémoire pour les tests, interdite sans `ALLOW_TEST_DRIVERS`). Un fichier lu directement par Node (scripts) n'a aucun import `@/` : `password.ts`, `staff-account.ts`. `src/modules/customers` : comptes clients, limitation d'essais, état de réservation, « Mes informations » et suppression de compte (`profile.ts`, anonymisation R-75). `src/modules/audit` : journal d'audit, à écrire dans la transaction de l'action.
 - Next 16 garde la page précédente cachée dans le DOM : dans les tests Playwright, filtrer les textes avec `.filter({ visible: true })`.
 
 ## Emails et bilan (lot 7)

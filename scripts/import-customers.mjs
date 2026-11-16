@@ -1,9 +1,7 @@
 // Importe le fichier clients du salon (export Treatwell, CSV) en fiches sans compte (D-70, D-77).
-// Usage : pnpm customers:import "C:\chemin\vers\fichier.csv" (base locale)
-//         pnpm customers:import:remote "C:\chemin\vers\fichier.csv" (base Supabase : modifie la base en ligne)
+// Usage : pnpm customers:import "C:\chemin\vers\fichier.csv" 
 // Le fichier reste où il est : il est refusé s'il se trouve dans le dépôt (public). Rien de personnel n'est affiché :
 // seulement des nombres. Un bilan s'affiche d'abord, et rien n'est écrit sans « oui ». Rejouable sans doublons.
-import { config } from "dotenv";
 import { readFileSync } from "node:fs";
 import { isAbsolute, relative, resolve } from "node:path";
 import postgres from "postgres";
@@ -11,10 +9,10 @@ import { normalizePhone } from "../src/lib/phone.ts";
 import { applyImport } from "../src/modules/customers/import-apply.ts";
 import { importSince, parseCsv, planImport } from "../src/modules/customers/import-file.ts";
 import { ask } from "./lib/ask.mjs";
+import { loadEnv } from "./lib/load-env.mjs";
 
-config({ path: ".env.local", quiet: true });
+const envFile = loadEnv();
 
-const remote = process.argv.includes("--remote");
 const fileArg = process.argv.slice(2).find((arg) => !arg.startsWith("--"));
 if (!fileArg) {
   console.error('Indiquez le fichier : pnpm customers:import "C:\\chemin\\vers\\fichier.csv"');
@@ -30,9 +28,9 @@ if (!inRepo.startsWith("..") && !isAbsolute(inRepo)) {
   process.exit(1);
 }
 
-const raw = remote ? process.env.REMOTE_DATABASE_URL : process.env.DATABASE_URL;
-if (!raw || raw.includes("[YOUR-PASSWORD]")) {
-  console.error(`${remote ? "REMOTE_DATABASE_URL" : "DATABASE_URL"} manque dans .env.local.`);
+const raw = process.env.DATABASE_URL;
+if (!raw) {
+  console.error(`DATABASE_URL manque dans ${envFile}.`);
   process.exit(1);
 }
 const url = new URL(raw);
@@ -58,7 +56,7 @@ Fichier lu : ${report.read} clients.
   Dont sans email (aucun email ne leur sera envoyé) : ${candidates.filter((c) => !c.email).length}
 `);
 console.log(
-  `Base visée : ${url.hostname}:${url.port || 5432}${remote ? " (distante, EN LIGNE)" : " (locale)"}`,
+  `Base visée : ${url.hostname}:${url.port || 5432}`,
 );
 
 const answer = await ask(`Importer ces ${report.kept} fiches ? Tapez « oui » pour confirmer : `);
@@ -67,7 +65,7 @@ if (answer.toLowerCase() !== "oui") {
   process.exit(0);
 }
 
-const sql = postgres(url.toString(), { prepare: false, max: 1, ssl: remote ? "require" : false });
+const sql = postgres(url.toString(), { prepare: false, max: 1, ssl: false });
 try {
   const result = await applyImport(sql, candidates);
   console.log(`

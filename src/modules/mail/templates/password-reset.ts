@@ -7,7 +7,7 @@ export interface PasswordResetData {
   logoUrl: string;
 }
 
-/** Email « mot de passe oublié » : remplace celui de Supabase (D-117). Doré comme les autres emails. */
+/** Email « mot de passe oublié » : envoyé par l'app via Brevo, hors de la file (D-117). Doré comme les autres emails. */
 export function renderPasswordResetEmail(data: PasswordResetData): RenderedEmail {
   const subject = "Réinitialisez votre mot de passe";
   const preheader = "Ce lien est valable 1 heure et ne sert qu'une fois.";
