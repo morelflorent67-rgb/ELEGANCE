@@ -26,7 +26,10 @@ const data: VitrineData = {
     reviewInvitations: false,
     waitlistHoldMinutes: 15,
     winbackAfterDays: 15,
+    loyaltyEnabled: true,
+    loyaltyThreshold: 100,
   },
+  loyaltyPitch: null,
   reviewCount: null,
   services: [
     service("Coupe homme", 1800),

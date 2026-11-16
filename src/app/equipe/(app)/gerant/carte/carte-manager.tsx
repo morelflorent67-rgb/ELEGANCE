@@ -41,6 +41,9 @@ interface Draft {
   performedBy: Role;
   bookableOnline: boolean;
   staffIds: string[];
+  /** Fidélité (R-96, R-98) : points par passage (texte du champ) et coupe offerte possible. */
+  loyaltyPoints: string;
+  loyaltyRewardEligible: boolean;
 }
 
 const blankDraft = (team: Member[]): Draft => ({
@@ -51,6 +54,8 @@ const blankDraft = (team: Member[]): Draft => ({
   performedBy: "barber",
   bookableOnline: true,
   staffIds: team.filter((m) => m.role === "barber").map((m) => m.id),
+  loyaltyPoints: "10",
+  loyaltyRewardEligible: false,
 });
 
 const draftOf = (s: ManagedService): Draft => ({
@@ -62,6 +67,8 @@ const draftOf = (s: ManagedService): Draft => ({
   performedBy: s.performedBy,
   bookableOnline: s.bookableOnline,
   staffIds: s.staffIds,
+  loyaltyPoints: String(s.loyaltyPoints ?? 0),
+  loyaltyRewardEligible: s.loyaltyRewardEligible ?? false,
 });
 
 /** « Carte et tarifs » (R-10 à R-13, R-16, R-17) : ajouter, modifier, retirer, ordonner, habiliter. */
@@ -110,8 +117,15 @@ export function CarteManager({ services, team }: { services: ManagedService[]; t
       setFormError("Le prix n’est pas valide. Exemple : 18 ou 12,50.");
       return;
     }
+    const loyaltyPoints = Number(draft.loyaltyPoints.trim() || "0");
+    if (!Number.isInteger(loyaltyPoints) || loyaltyPoints < 0 || loyaltyPoints > 1000) {
+      setFormError("Les points de fidélité sont un nombre entier, de 0 à 1 000.");
+      return;
+    }
     setFormError(null);
     const common = {
+      loyaltyPoints,
+      loyaltyRewardEligible: draft.loyaltyRewardEligible,
       name: draft.name,
       category: draft.category.trim() || null,
       priceCents,
@@ -390,6 +404,33 @@ export function CarteManager({ services, team }: { services: ManagedService[]; t
                 réserver à la tablette.
               </span>
             </fieldset>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Field id="svc-points" label="Points de fidélité">
+                <input
+                  id="svc-points"
+                  className={inputClass}
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={draft.loyaltyPoints}
+                  onChange={(e) => setDraft({ ...draft, loyaltyPoints: e.target.value })}
+                />
+              </Field>
+              <fieldset className="flex flex-col gap-2">
+                <legend className="pb-2 text-body-sm text-ivory-soft">Coupe offerte</legend>
+                <button
+                  type="button"
+                  role="checkbox"
+                  aria-checked={draft.loyaltyRewardEligible}
+                  onClick={() => setDraft({ ...draft, loyaltyRewardEligible: !draft.loyaltyRewardEligible })}
+                  className={`h-12 border text-[14px] ${
+                    draft.loyaltyRewardEligible ? "border-ivory bg-ivory text-ink" : "border-line-strong"
+                  }`}
+                >
+                  {draft.loyaltyRewardEligible ? "Peut être offerte" : "Non"}
+                </button>
+              </fieldset>
+            </div>
 
             <fieldset className="flex flex-col gap-2">
               <legend className="pb-2 text-body-sm text-ivory-soft">Qui la réalise ?</legend>

@@ -52,7 +52,7 @@ export function connectTestDb(): TestDb {
     async reset() {
       await sql.unsafe(`
         truncate appointment_item, appointment, appointment_series, absence, closure, email_outbox, audit_log,
-                 payment, waitlist_offer, waitlist_entry, customer, service_staff, service, staff, opening_hours, salon_settings, rate_limit
+                 loyalty_entry, payment, waitlist_offer, waitlist_entry, customer, service_staff, service, staff, opening_hours, salon_settings, rate_limit
         restart identity cascade`);
       await sql.unsafe(seedSql);
     },

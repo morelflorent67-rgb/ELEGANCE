@@ -5,10 +5,12 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { db } from "@/db/client";
 import { listServicesForManager } from "@/modules/catalog/manage";
+import { loyaltySettings } from "@/modules/loyalty";
 import { listActiveStaff } from "@/modules/staff";
 import { ToHandleNotice } from "../../_components/to-handle-notice";
 import { managerUnlocked, requireStaff } from "../../../_lib/session";
 import { CarteManager } from "./carte-manager";
+import { LoyaltyToggle } from "./loyalty-toggle";
 
 export const metadata: Metadata = { title: "Carte et tarifs · espace gérant" };
 
@@ -31,7 +33,11 @@ async function Carte() {
   const user = await requireStaff();
   // R-73 : sans le code gérant, on revient à la saisie du code.
   if (!(await managerUnlocked(user))) redirect("/equipe/gerant");
-  const [services, team] = await Promise.all([listServicesForManager(db()), listActiveStaff(db())]);
+  const [services, team, loyalty] = await Promise.all([
+    listServicesForManager(db()),
+    listActiveStaff(db()),
+    loyaltySettings(db()),
+  ]);
 
   return (
     <main className="min-h-0 flex-1 overflow-y-auto px-7 py-7">
@@ -53,6 +59,7 @@ async function Carte() {
         <Suspense fallback={null}>
           <ToHandleNotice />
         </Suspense>
+        <LoyaltyToggle enabled={loyalty.enabled} threshold={loyalty.threshold} />
         <CarteManager
           services={services}
           team={team.map((m) => ({ id: m.id, firstName: m.firstName, role: m.role }))}

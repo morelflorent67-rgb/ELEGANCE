@@ -9,6 +9,8 @@ const rules = {
   reviewInvitations: false,
   waitlistHoldMinutes: 15,
   winbackAfterDays: 15,
+  loyaltyEnabled: true,
+  loyaltyThreshold: 100,
 };
 
 const text = (slug: (typeof LEGAL_SLUGS)[number], r = rules) =>
@@ -103,6 +105,17 @@ describe("la politique de confidentialité décrit ce que le site fait vraiment"
     const other = text("confidentialite", { ...rules, waitlistHoldMinutes: 10, winbackAfterDays: 30 });
     expect(other).toContain("gardée pour vous 10 minutes");
     expect(other).toContain("30 jours après votre dernier rendez-vous");
+  });
+
+  it("D-114 : le programme de fidélité est décrit dans les conditions, avec le seuil lu dans les réglages", () => {
+    const conditions = text("conditions", rules);
+    expect(legalDocument("conditions", rules).sections.map((x) => x.title)).toContain("Programme de fidélité");
+    expect(conditions).toContain("À 100 points, une coupe est offerte");
+    expect(conditions).toContain("Aucun point n'est accordé en échange d'un avis");
+    expect(text("conditions", { ...rules, loyaltyThreshold: 80 })).toContain("À 80 points");
+    expect(
+      legalDocument("conditions", { ...rules, loyaltyEnabled: false }).sections.map((x) => x.title),
+    ).not.toContain("Programme de fidélité");
   });
 
   it("cookies : seulement les cookies nécessaires, ni publicité ni mesure d'audience", () => {

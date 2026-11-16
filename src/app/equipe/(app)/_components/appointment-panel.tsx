@@ -22,6 +22,7 @@ import {
   type SeriesCardView,
 } from "../../actions";
 import { AuthorPicker, type TeamMemberView } from "./author-picker";
+import { LoyaltyBlock } from "./loyalty-block";
 import { PaymentBlock } from "./payment-block";
 import { SeriesForm } from "./series-form";
 import { SlotPicker, type PickedSalonSlot } from "./slot-picker";
@@ -524,6 +525,19 @@ export function AppointmentPanel({
               </button>
             ) : null}
             {canAdjust ? (
+              <LoyaltyBlock
+                key={a.id}
+                appointmentId={a.id}
+                customerFirstName={firstName(a.customerName)}
+                team={team}
+                onToast={onToast}
+              />
+            ) : null}
+            {canAdjust && (a.adjustedAmountCents ?? a.totalPriceCents) === 0 ? (
+              <p role="status" className="text-[13px] leading-normal text-stone">
+                Rien à encaisser : le montant est de 0 €.
+              </p>
+            ) : canAdjust ? (
               <PaymentBlock
                 key={`${a.id}:${a.payment?.id ?? ""}:${a.payment?.status ?? ""}:${a.adjustedAmountCents ?? ""}`}
                 appointmentId={a.id}

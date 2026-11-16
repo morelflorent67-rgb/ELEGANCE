@@ -67,6 +67,14 @@ export type DomainErrorCode =
   | "invalid_staff"
   | "staff_name_taken"
   | "staff_needed_for_service"
+  // Carte de fidélité (D-114, R-96 à R-100)
+  | "loyalty_disabled"
+  | "reward_not_available"
+  | "reward_already_used"
+  | "no_reward_service"
+  | "no_reward_to_cancel"
+  | "invalid_adjustment"
+  | "loyalty_negative"
   // Horaires et fermetures (R-01, R-03)
   | "invalid_hours"
   | "invalid_closure"

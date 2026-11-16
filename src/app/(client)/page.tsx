@@ -36,6 +36,14 @@ export default async function HomePage() {
         <Arrival />
         <div className="home-rest">
           <ReviewsBadge count={data.reviewCount} />
+          {data.loyaltyPitch ? (
+            <p
+              data-testid="loyalty-pitch"
+              className="px-6 pb-2 pt-7 text-center text-[11px] font-semibold uppercase tracking-[0.24em] text-ivory-soft"
+            >
+              Carte de fidélité · {data.loyaltyPitch}
+            </p>
+          ) : null}
           <HoursLive week={data.week} closures={data.closures} />
           <Access />
         </div>

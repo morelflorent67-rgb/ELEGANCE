@@ -68,6 +68,14 @@ export const seriesMonthlyMode = pgEnum("series_monthly_mode", [
 /** Encaissement au terminal (D-105) : en cours sur le terminal, réussi, refusé ou expiré, annulé par l'équipe. */
 export const paymentStatus = pgEnum("payment_status", ["pending", "successful", "failed", "cancelled"]);
 export const emailStatus = pgEnum("email_status", ["pending", "sent", "failed"]);
+/** Carte de fidélité (D-114) : gain, retrait d'un gain, coupe offerte utilisée, utilisation annulée, correction du gérant. */
+export const loyaltyEntryKind = pgEnum("loyalty_entry_kind", [
+  "earn",
+  "reversal",
+  "redeem",
+  "redeem_cancel",
+  "adjust",
+]);
 
 /** Réglages du salon : une seule ligne (principe 8, R-01 à R-07). */
 export const salonSettings = pgTable(
@@ -94,12 +102,17 @@ export const salonSettings = pgTable(
     /** Terminal d'encaissement SumUp Solo (D-105) : code marchand et identifiant du terminal appairé. La clé d'API reste dans l'environnement. */
     paymentMerchantCode: text("payment_merchant_code"),
     paymentReaderId: text("payment_reader_id"),
+    /** Carte de fidélité (D-114) : programme actif, points pour une coupe offerte, début du décompte (rien avant). */
+    loyaltyEnabled: boolean("loyalty_enabled").notNull().default(true),
+    loyaltyRewardThreshold: integer("loyalty_reward_threshold").notNull().default(100),
+    loyaltyStartedAt: instant("loyalty_started_at").notNull().defaultNow(),
     managerPinHash: text("manager_pin_hash"), // R-73
   },
   (t) => [
     check("salon_settings_single_row", sql`${t.id} = true`),
     check("salon_settings_review_url", sql`${t.reviewUrl} is null or ${t.reviewUrl} ~ '^https?://[^ ]+$'`),
     check("salon_settings_review_count", sql`${t.reviewCount} is null or ${t.reviewCount} > 0`),
+    check("salon_settings_loyalty", sql`${t.loyaltyRewardThreshold} > 0`),
     check("salon_settings_waitlist", sql`${t.waitlistHoldMinutes} > 0 and ${t.winbackAfterDays} > 0`),
     check("salon_settings_positive", sql`${t.minNoticeMinutes} >= 0 and ${t.maxHorizonDays} > 0`),
     check(
@@ -157,8 +170,13 @@ export const service = pgTable(
     bookableOnline: boolean("bookable_online").notNull().default(true), // R-17
     active: boolean("active").notNull().default(true), // une prestation retirée est désactivée, jamais supprimée (R-16)
     sortOrder: integer("sort_order").notNull().default(0),
+    /** Points de fidélité gagnés par passage (R-96), réglables par le gérant. */
+    loyaltyPoints: integer("loyalty_points").notNull().default(0),
+    /** La coupe offerte peut porter sur cette prestation (R-98) : coupe homme, coupe & barbe. */
+    loyaltyRewardEligible: boolean("loyalty_reward_eligible").notNull().default(false),
   },
   (t) => [
+    check("service_loyalty_points", sql`${t.loyaltyPoints} >= 0`),
     check("service_duration", sql`${t.durationMin} > 0 and ${t.durationMin} % 15 = 0`),
     check("service_price", sql`${t.priceCents} >= 0`),
   ],
@@ -421,6 +439,39 @@ export const payment = pgTable(
     uniqueIndex("payment_one_pending").on(t.status).where(sql`${t.status} = 'pending'`),
     uniqueIndex("payment_provider_reference").on(t.providerReference),
     index("payment_appointment_idx").on(t.appointmentId, t.status),
+  ],
+);
+
+/**
+ * Écritures de la carte de fidélité (R-96 à R-100). Le solde est la somme des points : aucune colonne à tenir à jour.
+ * Les gains se matérialisent à la demande (`settleLoyalty`), un RDV honoré étant un état calculé (R-51).
+ */
+export const loyaltyEntry = pgTable(
+  "loyalty_entry",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    customerId: uuid("customer_id")
+      .notNull()
+      .references(() => customer.id),
+    appointmentId: uuid("appointment_id").references(() => appointment.id),
+    kind: loyaltyEntryKind("kind").notNull(),
+    /** Signé : gain positif, retrait ou utilisation négatif. */
+    points: integer("points").notNull(),
+    /** Remise accordée par une coupe offerte, en centimes (kind = redeem). */
+    discountCents: integer("discount_cents"),
+    /** Montant corrigé du RDV avant la remise : rétabli si l'utilisation est annulée. */
+    previousAdjustedCents: integer("previous_adjusted_cents"),
+    reason: text("reason"),
+    actorType: actorType("actor_type").notNull(),
+    actorId: text("actor_id"),
+    createdAt: instant("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    check("loyalty_entry_points", sql`${t.points} <> 0`),
+    check("loyalty_entry_adjust_reason", sql`${t.kind} <> 'adjust' or char_length(btrim(${t.reason})) > 0`),
+    // R-99 (une seule coupe offerte par RDV) et R-100 (solde jamais négatif) : voir la migration 0015 et `redeemReward`.
+    index("loyalty_entry_customer_idx").on(t.customerId, t.createdAt),
+    index("loyalty_entry_appointment_idx").on(t.appointmentId),
   ],
 );
 

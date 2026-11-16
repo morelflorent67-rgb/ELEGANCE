@@ -78,6 +78,7 @@ export function AppointmentsView({
   maxUpcoming,
   blocked,
   waitlist,
+  loyalty,
 }: {
   firstName: string;
   upcoming: UpcomingCard[];
@@ -88,6 +89,8 @@ export function AppointmentsView({
   maxUpcoming: number;
   blocked: boolean;
   waitlist: WaitlistCard[];
+  /** Carte de fidélité, construite côté serveur (D-114). */
+  loyalty?: React.ReactNode;
 }) {
   const router = useRouter();
   const [toCancel, setToCancel] = useState<UpcomingCard | null>(null);
@@ -157,6 +160,8 @@ export function AppointmentsView({
           </span>
         </div>
       </div>
+
+      {loyalty}
 
       {blocked ? (
         <Problem title="Réservation en ligne indisponible">

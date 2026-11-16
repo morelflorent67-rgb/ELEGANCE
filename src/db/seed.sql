@@ -20,18 +20,18 @@ INSERT INTO staff (id, first_name, role, sort_order) VALUES
   ('00000000-0000-4000-8000-0000000000a4', 'Taha', 'apprentice', 4)
 ON CONFLICT (id) DO NOTHING;
 
--- Carte (10 prestations, prix en centimes).
-INSERT INTO service (id, name, price_cents, duration_min, performed_by, bookable_online, sort_order) VALUES
-  ('00000000-0000-4000-8000-000000000b01', 'Coupe homme', 1800, 30, 'barber', true, 1),
-  ('00000000-0000-4000-8000-000000000b02', 'Coupe & taille de barbe', 2800, 30, 'barber', true, 2),
-  ('00000000-0000-4000-8000-000000000b03', 'Coupe, tarif formation', 1000, 45, 'apprentice', true, 3),
-  ('00000000-0000-4000-8000-000000000b04', 'Coupe & taille de barbe, tarif formation', 1500, 45, 'apprentice', true, 4),
-  ('00000000-0000-4000-8000-000000000b05', 'Taillage barbe', 1200, 15, 'barber', true, 5),
-  ('00000000-0000-4000-8000-000000000b06', 'Soin du visage à la vapeur', 2500, 30, 'barber', true, 6),
-  ('00000000-0000-4000-8000-000000000b07', 'Coloration', 1500, 30, 'barber', false, 7),
-  ('00000000-0000-4000-8000-000000000b08', 'Tribal', 1000, 30, 'barber', false, 8),
-  ('00000000-0000-4000-8000-000000000b09', 'Défrisage', 1000, 30, 'barber', false, 9),
-  ('00000000-0000-4000-8000-000000000b10', 'Lissage brésilien', 6000, 30, 'barber', false, 10)
+-- Carte (10 prestations, prix en centimes) et barème de fidélité (D-114) : points par passage, coupe offerte possible.
+INSERT INTO service (id, name, price_cents, duration_min, performed_by, bookable_online, sort_order, loyalty_points, loyalty_reward_eligible) VALUES
+  ('00000000-0000-4000-8000-000000000b01', 'Coupe homme', 1800, 30, 'barber', true, 1, 10, true),
+  ('00000000-0000-4000-8000-000000000b02', 'Coupe & taille de barbe', 2800, 30, 'barber', true, 2, 10, true),
+  ('00000000-0000-4000-8000-000000000b03', 'Coupe, tarif formation', 1000, 45, 'apprentice', true, 3, 5, false),
+  ('00000000-0000-4000-8000-000000000b04', 'Coupe & taille de barbe, tarif formation', 1500, 45, 'apprentice', true, 4, 5, false),
+  ('00000000-0000-4000-8000-000000000b05', 'Taillage barbe', 1200, 15, 'barber', true, 5, 5, false),
+  ('00000000-0000-4000-8000-000000000b06', 'Soin du visage à la vapeur', 2500, 30, 'barber', true, 6, 10, false),
+  ('00000000-0000-4000-8000-000000000b07', 'Coloration', 1500, 30, 'barber', false, 7, 10, false),
+  ('00000000-0000-4000-8000-000000000b08', 'Tribal', 1000, 30, 'barber', false, 8, 10, false),
+  ('00000000-0000-4000-8000-000000000b09', 'Défrisage', 1000, 30, 'barber', false, 9, 10, false),
+  ('00000000-0000-4000-8000-000000000b10', 'Lissage brésilien', 6000, 30, 'barber', false, 10, 10, false)
 ON CONFLICT (id) DO NOTHING;
 
 -- Groupes d'affichage de la carte (maquette de réservation). Ne remplit que les catégories encore vides.

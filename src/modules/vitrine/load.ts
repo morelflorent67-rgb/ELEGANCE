@@ -4,6 +4,8 @@ import { staff } from "@/db/schema";
 import { loadSettings } from "@/modules/availability";
 import { loadCatalog, type CatalogService } from "@/modules/catalog";
 import { listClosures, loadWeekHours, type ManagedClosure } from "@/modules/schedule/manage";
+import { loyaltyPitch } from "@/modules/loyalty/points";
+import { typicalVisitPoints } from "@/modules/loyalty/labels";
 import type { WeekHours } from "./hours";
 
 // Ce que la vitrine lit en base : la carte, l'équipe, les horaires, les fermetures à venir.
@@ -31,12 +33,17 @@ export interface SalonRules {
   waitlistHoldMinutes: number;
   /** D-74 : « Nous serions ravis de vous revoir » part ce nombre de jours après le dernier rendez-vous honoré. */
   winbackAfterDays: number;
+  /** D-114 : le programme de fidélité est actif ; points d'une coupe offerte. */
+  loyaltyEnabled: boolean;
+  loyaltyThreshold: number;
 }
 
 export interface VitrineData {
   rules: SalonRules;
   /** D-112 : total d'avis cumulés pour le bandeau de l'accueil ; nul = bandeau masqué. */
   reviewCount: number | null;
+  /** D-114 : « 10 passages = une coupe offerte », construit depuis la base ; nul si le programme est arrêté. */
+  loyaltyPitch: string | null;
   services: CatalogService[];
   team: TeamMember[];
   week: WeekHours;
@@ -64,7 +71,12 @@ export async function readVitrine(db: Database, now: Date = new Date()): Promise
       reviewInvitations: !!settings.reviewUrl,
       waitlistHoldMinutes: settings.waitlistHoldMinutes,
       winbackAfterDays: settings.winbackAfterDays,
+      loyaltyEnabled: settings.loyaltyEnabled,
+      loyaltyThreshold: settings.loyaltyRewardThreshold,
     },
+    loyaltyPitch: settings.loyaltyEnabled
+      ? loyaltyPitch(settings.loyaltyRewardThreshold, await typicalVisitPoints(db))
+      : null,
     reviewCount: settings.reviewCount ?? null,
     services,
     team,

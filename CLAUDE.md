@@ -80,3 +80,7 @@
 ## Fond animé et couleurs (lot 18)
 - Côté client, les couleurs sont redéfinies sous `.client` dans `src/app/(client)/client.css` (`--color-ink`, `--color-gold` = bleu, `--accent-rgb`) : les utilitaires `bg-ink`, `text-gold`… les suivent ; un bleu écrit en dur s'écrit `rgb(var(--accent-rgb) / x)`. Jamais dans `theme.css` (la tablette, `/equipe`, garde le doré). Les emails restent dorés.
 - `ClientBackdrop` (gabarit client) : éclipse WebGL sur `/` (`src/lib/eclipse.ts`, calculs dans `eclipse-math.ts`), image figée `public/fond/*.webp` ailleurs. La colonne est transparente : une section qui doit cacher le fond prend `bg-ink` (accueil : `.home-rest`). Ne jamais appeler `loseContext()` au démontage.
+
+## Fidélité (lot 19)
+- `src/modules/loyalty` : « honoré » est calculé (R-51), donc les gains se matérialisent à la demande (`settleLoyalty`, idempotent, sous le verrou de la fiche client) avant toute lecture du solde ; le solde est la somme de `loyalty_entry` (jamais une colonne). `redeemReward` / `cancelReward` (coupe offerte, fiche RDV de la tablette, `loyalty-block.tsx`), `adjustBalance` (gérant), `getLoyaltyCard` (page « Mes rendez-vous », `components/client/loyalty-card.tsx`). Barème et « coupe offerte possible » sont dans `service`, seuil et activation dans `salon_settings` (D-114, R-96 à R-100).
+- Un test d'intégration ou e2e qui pose des RDV passés règle `salon_settings.loyalty_started_at` avant eux (par défaut : l'heure de la migration ou du seed). Le RDV de la coupe offerte ne rapporte aucun point.

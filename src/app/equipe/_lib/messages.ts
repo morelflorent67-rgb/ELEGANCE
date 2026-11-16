@@ -42,6 +42,13 @@ const MESSAGES: Partial<Record<TeamError, string>> = {
   terminal_busy: "Un encaissement est déjà en cours sur le terminal. Terminez-le ou annulez-le d'abord.",
   terminal_unavailable: "Le terminal ne répond pas. Vérifiez qu'il est allumé et connecté, puis réessayez.",
   already_paid: "Ce rendez-vous est déjà encaissé.",
+  loyalty_disabled: "Le programme de fidélité est désactivé.",
+  reward_not_available: "Ce client n'a pas assez de points pour une coupe offerte.",
+  reward_already_used: "Une coupe offerte est déjà utilisée sur ce rendez-vous.",
+  no_reward_service: "Aucune prestation de ce rendez-vous ne peut être offerte (coupe ou coupe & barbe).",
+  no_reward_to_cancel: "Aucune coupe offerte à annuler sur ce rendez-vous.",
+  invalid_adjustment: "Indiquez un nombre de points (positif ou négatif, pas zéro) et un motif.",
+  loyalty_negative: "Le solde ne peut pas descendre sous 0 point.",
   invalid_pairing:
     "Le terminal a refusé ce code. Générez-en un nouveau sur le terminal (Connexions, API) et vérifiez le code marchand.",
   payment_not_found: "Cet encaissement n'existe plus.",

@@ -17,6 +17,10 @@ export interface ServiceFields {
   priceCents: number;
   durationMin: number;
   bookableOnline: boolean;
+  /** Points de fidélité par passage (R-96) ; non précisés : inchangés (0 à la création). */
+  loyaltyPoints?: number;
+  /** La coupe offerte peut porter sur cette prestation (R-98) ; non précisé : inchangé. */
+  loyaltyRewardEligible?: boolean;
 }
 
 export interface ServiceInput extends ServiceFields {
@@ -55,6 +59,8 @@ const fieldsSchema = z.object({
     .max(MAX_DURATION_MIN)
     .refine((minutes) => minutes % 15 === 0), // R-10 : multiple de 15 minutes
   bookableOnline: z.boolean(),
+  loyaltyPoints: z.number().int().min(0).max(1000).optional(),
+  loyaltyRewardEligible: z.boolean().optional(),
 });
 
 function parseFields(input: ServiceFields): ServiceFields {
@@ -64,6 +70,8 @@ function parseFields(input: ServiceFields): ServiceFields {
     priceCents: input.priceCents,
     durationMin: input.durationMin,
     bookableOnline: input.bookableOnline,
+    loyaltyPoints: input.loyaltyPoints,
+    loyaltyRewardEligible: input.loyaltyRewardEligible,
   });
   if (!parsed.success) throw new DomainError("invalid_service");
   return parsed.data;
@@ -77,6 +85,8 @@ const snapshot = (row: typeof service.$inferSelect) => ({
   priceCents: row.priceCents,
   durationMin: row.durationMin,
   bookableOnline: row.bookableOnline,
+  loyaltyPoints: row.loyaltyPoints,
+  loyaltyRewardEligible: row.loyaltyRewardEligible,
 });
 
 async function lockService(tx: Tx, id: string) {
@@ -210,8 +220,13 @@ export async function updateService(
     assertBookable(row.active, fields.bookableOnline, nextStaff.length);
 
     const before = snapshot(row);
-    if (JSON.stringify(before) !== JSON.stringify(fields)) {
-      await tx.update(service).set(fields).where(eq(service.id, id));
+    const next = {
+      ...fields,
+      loyaltyPoints: fields.loyaltyPoints ?? row.loyaltyPoints,
+      loyaltyRewardEligible: fields.loyaltyRewardEligible ?? row.loyaltyRewardEligible,
+    };
+    if (JSON.stringify(before) !== JSON.stringify(next)) {
+      await tx.update(service).set(next).where(eq(service.id, id));
       await recordAudit(tx, {
         actorType: "manager",
         actorId,
@@ -219,7 +234,7 @@ export async function updateService(
         entity: "service",
         entityId: id,
         before,
-        after: fields,
+        after: next,
       });
     }
     if (input.staffIds) await replaceStaff(tx, row, nextStaff, actorId);

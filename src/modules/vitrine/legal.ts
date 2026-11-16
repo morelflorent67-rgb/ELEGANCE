@@ -105,6 +105,14 @@ function conditions(rules: SalonRules): Raw[] {
       "Rendez-vous non honorés",
       `Un rendez-vous non honoré sans prévenir est noté sur votre fiche. À partir de ${rules.noShowBlockThreshold} rendez-vous non honorés, le salon peut décider de suspendre votre réservation en ligne ; vous pouvez toujours prendre rendez-vous en appelant le salon. [Conditions à valider.]`,
     ],
+    ...(rules.loyaltyEnabled
+      ? ([
+          [
+            "Programme de fidélité",
+            `Chaque passage au salon honoré rapporte des points, selon la prestation. À ${rules.loyaltyThreshold} points, une coupe est offerte, utilisable au salon sur une coupe ou une coupe & barbe (hors tarif formation). Un rendez-vous non honoré ou annulé ne rapporte rien, et ses points sont retirés s'il est ensuite signalé comme non honoré. Les points n'expirent pas, n'ont aucune valeur monétaire, ne se transmettent pas et ne s'échangent pas contre de l'argent. Le salon peut modifier ou arrêter le programme. Aucun point n'est accordé en échange d'un avis.`,
+          ],
+        ] as Raw[])
+      : []),
     [
       "Prestations sur devis",
       `Certaines prestations, signalées « sur devis » et affichées « à partir de » un prix, demandent un échange avant le rendez-vous : elles se réservent uniquement par téléphone au ${SALON.phoneDisplay}.`,

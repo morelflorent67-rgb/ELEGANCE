@@ -50,6 +50,14 @@ import {
 } from "@/modules/absences";
 import { loadStaffChoices, loadStaffChoicesFor, type StaffChoice } from "@/modules/catalog";
 import {
+  adjustBalance,
+  cancelReward,
+  redeemReward,
+  rewardPanelFor,
+  setLoyaltyEnabled,
+  type RewardPanel,
+} from "@/modules/loyalty";
+import {
   createService,
   moveService,
   setServiceActive,
@@ -550,6 +558,65 @@ export async function adjustAmountAction(
 }
 
 // ---------------------------------------------------------------------------------------------------------------
+// Carte de fidélité (D-114, R-96 à R-100) : la coupe offerte se donne au salon, signée d'un prénom (R-74)
+
+/** Solde et coupe offerte de la fiche RDV. Met la carte du client à jour au passage. */
+export async function fetchRewardPanelAction(input: unknown): Promise<TeamResult<{ panel: RewardPanel }>> {
+  const parsed = z.object({ appointmentId: uuid }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asStaff(async () => ({ ok: true, panel: await rewardPanelFor(db(), parsed.data.appointmentId) }));
+}
+
+export async function redeemRewardAction(
+  input: unknown,
+): Promise<TeamResult<{ panel: RewardPanel; amountCents: number }>> {
+  const parsed = z.object({ appointmentId: uuid, authorId: z.string() }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asStaff(async () => {
+    const result = await redeemReward(db(), {
+      appointmentId: parsed.data.appointmentId,
+      authorStaffId: parsed.data.authorId,
+    });
+    return { ok: true, amountCents: result.amountCents, panel: await rewardPanelFor(db(), parsed.data.appointmentId) };
+  });
+}
+
+export async function cancelRewardAction(input: unknown): Promise<TeamResult<{ panel: RewardPanel }>> {
+  const parsed = z.object({ appointmentId: uuid, authorId: z.string() }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asStaff(async () => {
+    await cancelReward(db(), { appointmentId: parsed.data.appointmentId, authorStaffId: parsed.data.authorId });
+    return { ok: true, panel: await rewardPanelFor(db(), parsed.data.appointmentId) };
+  });
+}
+
+/** Correction du solde par le gérant (motif obligatoire, journal). */
+export async function adjustLoyaltyAction(input: unknown): Promise<TeamResult<{ balance: number }>> {
+  const parsed = z
+    .object({ customerId: uuid, delta: z.number(), reason: z.string().max(300) })
+    .safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asManager<{ balance: number }>(async (user) => {
+    const result = await adjustBalance(db(), {
+      customerId: parsed.data.customerId,
+      delta: parsed.data.delta,
+      reason: parsed.data.reason,
+      managerActorId: user.id,
+    });
+    return { ok: true, balance: result.balance };
+  });
+}
+
+export async function setLoyaltyEnabledAction(input: unknown): Promise<TeamResult> {
+  const parsed = z.object({ enabled: z.boolean() }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  return asManager(async (user) => {
+    await setLoyaltyEnabled(db(), parsed.data.enabled, user.id);
+    return { ok: true };
+  });
+}
+
+// ---------------------------------------------------------------------------------------------------------------
 // Encaissement au terminal SumUp Solo (D-105, R-89 à R-93) : toute l'équipe, signée d'un prénom (R-74)
 
 function terminalProvider() {
@@ -999,6 +1066,8 @@ const serviceFields = {
   priceCents: z.number(),
   durationMin: z.number(),
   bookableOnline: z.boolean(),
+  loyaltyPoints: z.number().optional(),
+  loyaltyRewardEligible: z.boolean().optional(),
 };
 
 export async function createServiceAction(

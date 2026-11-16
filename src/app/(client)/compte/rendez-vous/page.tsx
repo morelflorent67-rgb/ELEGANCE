@@ -15,6 +15,9 @@ import { currentCustomer, customerBookingState } from "@/modules/customers/accou
 import { calendarSubject, signToken } from "@/modules/security/token";
 import { listCustomerWaitlist, WINDOW_LABELS } from "@/modules/waitlist";
 import { formatTime } from "@/lib/format";
+import { LoyaltyCardView } from "@/components/client/loyalty-card";
+import { getLoyaltyCard } from "@/modules/loyalty";
+import { loyaltyEntryLabel, typicalVisitPoints } from "@/modules/loyalty/labels";
 import { AppointmentsView } from "./appointments-view";
 
 export const metadata: Metadata = { title: "Mes rendez-vous" };
@@ -47,11 +50,13 @@ async function Appointments() {
   if (!customer) return <PanelAuth />;
 
   const now = new Date();
-  const [list, settings, booking, waitlist] = await Promise.all([
+  const [list, settings, booking, waitlist, loyalty, visitPoints] = await Promise.all([
     listCustomerAppointments(database, customer.id),
     loadSettings(database),
     customerBookingState(database, customer.id, now),
     listCustomerWaitlist(database, customer.id, now),
+    getLoyaltyCard(database, customer.id, now),
+    typicalVisitPoints(database),
   ]);
   const { upcoming, past } = splitAppointments(list, now);
 
@@ -90,6 +95,18 @@ async function Appointments() {
       cutoffHours={settings.changeCutoffHours}
       maxUpcoming={settings.maxUpcomingPerCustomer}
       blocked={booking.blocked}
+      loyalty={
+        <LoyaltyCardView
+          card={loyalty}
+          pointsPerVisit={visitPoints}
+          history={loyalty.history.map((h) => ({
+            id: h.id,
+            dateLabel: dayNames(parisDate(h.appointmentStartsAt ?? h.createdAt)).short,
+            label: loyaltyEntryLabel(h),
+            points: h.points,
+          }))}
+        />
+      }
       waitlist={waitlist.map((w) => ({
         id: w.id,
         daysLabel: w.days.map((d) => dayNames(d).short).join(", "),
