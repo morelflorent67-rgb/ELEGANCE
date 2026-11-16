@@ -9,15 +9,15 @@ import { AgendaIcon, ArrowLeft, CloseIcon, Mark } from "./ui";
  */
 export function PanelFrame({ children }: { children: ReactNode }) {
   return (
-    <div className="relative min-h-dvh overflow-hidden bg-[#050404]">
+    <div className="relative min-h-dvh overflow-hidden bg-[#00060e]">
       <HomeBackdrop />
       <Link
         href="/"
         aria-hidden="true"
         tabIndex={-1}
-        className="p-scrim fixed inset-0 bg-[rgb(5_4_4_/_0.6)]"
+        className="p-scrim fixed inset-0 bg-[rgb(0_6_14_/_0.62)]"
       />
-      <div className="p-sheet fixed inset-x-0 bottom-0 top-[52px] mx-auto flex w-full max-w-[430px] flex-col bg-[#11100e]">
+      <div className="p-sheet fixed inset-x-0 bottom-0 top-[52px] mx-auto flex w-full max-w-[430px] flex-col bg-charcoal">
         <span
           aria-hidden="true"
           className="absolute inset-x-0 -top-px h-px bg-[rgb(239_233_221_/_0.1)]"
@@ -88,7 +88,7 @@ function HomeBackdrop() {
   return (
     <div
       aria-hidden="true"
-      className="p-back pointer-events-none fixed inset-x-0 top-0 mx-auto h-dvh w-full max-w-[430px] bg-[#0a0908]"
+      className="p-back pointer-events-none fixed inset-x-0 top-0 mx-auto h-dvh w-full max-w-[430px] bg-ink"
     >
       <div className="absolute left-6 right-3.5 top-[18px] flex h-11 items-center justify-between">
         <span className="flex items-center gap-3 text-[11px] font-medium uppercase tracking-[0.3em] text-ivory-soft">

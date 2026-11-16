@@ -304,7 +304,7 @@ export function DateStep({
                           onClick={() => !slot.lost && pick(slot)}
                           className={`s-sl tap relative h-[46px] border text-[14px] tabular-nums ${
                             slot.lost
-                              ? "border-[rgb(184_147_90_/_0.5)] text-stone-dark opacity-80"
+                              ? "border-[rgb(var(--accent-rgb)_/_0.5)] text-stone-dark opacity-80"
                               : on
                                 ? "border-transparent bg-[rgb(239_233_221_/_0.1)]"
                                 : "border-[rgb(239_233_221_/_0.2)]"

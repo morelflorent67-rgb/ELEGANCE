@@ -76,3 +76,7 @@
 - Hors rendez-vous (lot 15, R-94) : `startWalkInPayment`, page `/equipe/encaisser` (`walk-in-payment.tsx`, pavé `src/lib/keypad.ts`), compté au Bilan par `computeDashboard(…, walkIns)`.
 - Glisser-déposer (lot 16, R-95) : `src/lib/drag-move.ts` (pur), `use-appointment-drag.ts` (pointeurs), `move-confirm.tsx` ; le dépôt ouvre une confirmation, puis `moveAppointmentByDragAction` → `rescheduleAppointmentAsSalon`. Tests Playwright tactiles : événements `PointerEvent` synthétiques (`tests/e2e/glisser.spec.ts`).
 - Fiche RDV : `payment-block.tsx` (relit le résultat toutes les 2,5 s). Gérant : `/equipe/gerant/terminal`. Un test qui compte les erreurs de fournisseur passe par `isProviderError` (jamais `instanceof`, paquets du serveur séparés).
+
+## Fond animé et couleurs (lot 18)
+- Côté client, les couleurs sont redéfinies sous `.client` dans `src/app/(client)/client.css` (`--color-ink`, `--color-gold` = bleu, `--accent-rgb`) : les utilitaires `bg-ink`, `text-gold`… les suivent ; un bleu écrit en dur s'écrit `rgb(var(--accent-rgb) / x)`. Jamais dans `theme.css` (la tablette, `/equipe`, garde le doré). Les emails restent dorés.
+- `ClientBackdrop` (gabarit client) : éclipse WebGL sur `/` (`src/lib/eclipse.ts`, calculs dans `eclipse-math.ts`), image figée `public/fond/*.webp` ailleurs. La colonne est transparente : une section qui doit cacher le fond prend `bg-ink` (accueil : `.home-rest`). Ne jamais appeler `loseContext()` au démontage.

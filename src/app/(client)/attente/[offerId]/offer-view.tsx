@@ -162,7 +162,7 @@ export function OfferView({
       <Eyebrow>Liste d&rsquo;attente</Eyebrow>
       <h1 className="font-display text-[44px] leading-[1.05]">Une place s&rsquo;est libérée.</h1>
 
-      <div className="relative flex flex-col gap-1.5 border border-[rgb(184_147_90_/_0.45)] bg-[rgb(184_147_90_/_0.06)] px-6 py-[22px]">
+      <div className="relative flex flex-col gap-1.5 border border-[rgb(var(--accent-rgb)_/_0.45)] bg-[rgb(var(--accent-rgb)_/_0.06)] px-6 py-[22px]">
         <span aria-hidden="true" className="absolute -inset-px right-auto w-0.5 bg-gold" />
         <span className="font-display text-[30px] leading-[1.1]">{offer.day}</span>
         <span className="text-[20px] tabular-nums">{offer.time}</span>

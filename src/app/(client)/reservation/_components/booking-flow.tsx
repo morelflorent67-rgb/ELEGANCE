@@ -336,7 +336,7 @@ export function BookingFlow({
   }
 
   return (
-    <div className="client-flow fixed inset-y-0 left-1/2 z-10 flex w-full max-w-[430px] -translate-x-1/2 flex-col bg-[#0a0908]">
+    <div className="client-flow fixed inset-y-0 left-1/2 z-10 flex w-full max-w-[430px] -translate-x-1/2 flex-col bg-ink/75">
       <header className="flex h-[60px] shrink-0 items-center justify-between px-2.5">
         <button
           type="button"
@@ -380,7 +380,7 @@ export function BookingFlow({
               <span
                 className="seg absolute inset-0"
                 style={{
-                  background: i === stepIndex ? "#b8935a" : "#efe9dd",
+                  background: i === stepIndex ? "var(--color-gold)" : "#efe9dd",
                   transform: `scaleX(${i <= stepIndex ? 1 : 0})`,
                 }}
               />
@@ -486,7 +486,7 @@ export function BookingFlow({
       </div>
 
       {bar ? (
-        <div className="flex shrink-0 flex-col gap-2.5 border-t border-[rgb(239_233_221_/_0.1)] bg-[#0a0908] px-6 pb-[18px] pt-3">
+        <div className="flex shrink-0 flex-col gap-2.5 border-t border-[rgb(239_233_221_/_0.1)] bg-ink px-6 pb-[18px] pt-3">
           <div aria-live="polite" className="flex min-h-5 items-baseline justify-between gap-3">
             <span className="text-[12px] tabular-nums text-stone">{bar.left}</span>
             <span className="font-display text-[22px] leading-none tabular-nums">{bar.right}</span>

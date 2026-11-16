@@ -80,7 +80,15 @@ Historique (anciens bilans de tests, détail des lots 5 à 11, enquête sur la l
 
 ## Demandes « préfinal » (16 novembre 2026) : lots 17 à 20
 
-Nouvelles demandes du salon avant la mise en ligne : « Sur devis », « Contacter », bandeau « Plus de 1000 avis », nouvelle direction artistique bleue (fond animé « éclipse »), carte de fidélité. Le bonus de 50 points pour un avis Google est abandonné (interdit par Google, invérifiable). **Plan complet, questions à poser et message de démarrage : `docs/plan-prefinal.md`.** Références visuelles : `docs/design/maquette-accueil-bleu.webp`, `docs/design/elegance-fond-anime.html`. **Lot 17 fait le 16 novembre 2026** (voir ci-dessous) ; lots 18 à 20 pas commencés.
+Nouvelles demandes du salon avant la mise en ligne : « Sur devis », « Contacter », bandeau « Plus de 1000 avis », nouvelle direction artistique bleue (fond animé « éclipse »), carte de fidélité. Le bonus de 50 points pour un avis Google est abandonné (interdit par Google, invérifiable). **Plan complet, questions à poser et message de démarrage : `docs/plan-prefinal.md`.** Références visuelles : `docs/design/maquette-accueil-bleu.webp`, `docs/design/elegance-fond-anime.html`. **Lot 17 fait le 16 novembre 2026** ; **lot 18 fait le 16 novembre 2026** (voir ci-dessous, à valider par Florent sur son téléphone) ; lots 19 et 20 pas commencés.
+
+**Lot 18 (fait le 16 novembre 2026) : direction artistique bleue et fond animé (D-111, D-113)**
+- **Réponses de Florent** : les **emails restent dorés** ; halo de l'éclipse avec `breathMin` 0,25 ; bleu d'accent `#3d8bff` (reflet cyan `#5fd8ff`) à ajuster sur capture.
+- **Couleurs** : variables redéfinies sous `.client` (`client.css`), tablette inchangée (un test le vérifie). Les valeurs dorées en dur du côté client passent par `--accent-rgb` / `var(--color-gold)`. Bouton principal crème avec dégradé.
+- **Fond** : éclipse WebGL sur `/` (s'efface en 600 px de défilement, boucle arrêtée ensuite), image figée dimmée (`public/fond/eclipse-portrait.webp` et `-paysage.webp`) sur les autres pages client ; fond vivant retiré. Composant `ClientBackdrop`, code dans `src/lib/eclipse.ts` et `eclipse-math.ts`.
+- **Tests** : 6 unitaires (`eclipse-math.test.ts`) et 3 parcours (couleurs, éclipse sur `/` seulement, effacement au défilement, tablette inchangée) ; accueil, réservation, espace client, attente, avis, vitrine : **183 verts, mobile et tablette**. Lint, typecheck, build verts. `pnpm measure:vitrine` : FCP 0,85 s, LCP 0,85 s, CLS 0, 848 Ko (images 9 Ko) ; FCP un peu au-dessus des 0,75 s du 20 octobre.
+- **Vérifié par captures** à 375 px et 1440 px (accueil, plan, réservation). **Pas sur un appareil réel** : fluidité de l'animation sur un téléphone moyen à confirmer par Florent. Aucune migration.
+- **À savoir** : ne jamais appeler `loseContext()` au démontage (voir `decisions.md`). `pnpm test:all` complet non relancé ce jour (seulement les fichiers touchés) : à faire au lot 20.
 
 **Lot 17 (fait le 16 novembre 2026) : textes de l'accueil et bandeau d'avis (D-112)**
 - **Réponses de Florent** : « Sur devis » affiché **« à partir de X € »** (le prix de la carte) ; bandeau « Plus de 1 000 avis » = total cumulé de plusieurs plateformes, **sans citer aucune source, sans note chiffrée ni lien** : 5 étoiles pleines, texte « Des clients qui nous font confiance ».

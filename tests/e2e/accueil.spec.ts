@@ -206,7 +206,7 @@ test("D-72 : sur ordinateur, la même page dans une colonne de téléphone, le f
   });
   expect(column.width).toBe(430);
   expect(Math.round(column.x)).toBe(Math.round((1440 - 430) / 2));
-  await expect(page.locator(".bg-live")).toBeVisible();
+  await expect(page.locator("canvas.eclipse-canvas")).toBeVisible(); // lot 18 : l'éclipse remplace le fond vivant
   await noHorizontalScroll(page);
   await context.close();
 });
@@ -239,4 +239,49 @@ test("D-112 : le bandeau « Plus de 1 000 avis » vient de la base, sans source 
   await refreshVitrine();
   await page.reload();
   await expect(page.getByRole("region", { name: "Avis des clients" })).toHaveCount(0);
+});
+
+// Lot 18 (D-111, D-113) : direction artistique bleue et fond animé.
+test("lot 18 : fond bleu nuit et accent bleu côté client, éclipse animée sur l'accueil seulement", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const vars = await page.locator(".client").first().evaluate((el) => {
+    const s = getComputedStyle(el);
+    return { ink: s.getPropertyValue("--color-ink").trim(), gold: s.getPropertyValue("--color-gold").trim() };
+  });
+  expect(vars).toEqual({ ink: "#000d1d", gold: "#3d8bff" });
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor)).toBe(
+    "rgb(0, 13, 29)",
+  );
+  // Décoratif : caché des lecteurs d'écran, sans effet sur les clics.
+  const layer = page.locator("canvas.eclipse-canvas").locator("..");
+  await expect(layer).toHaveAttribute("aria-hidden", "true");
+  await expect(layer).toHaveCSS("pointer-events", "none");
+  await expect(page.locator(".eclipse-still")).toHaveCount(0);
+
+  // Les autres pages : image figée, aucun WebGL.
+  await page.goto("/reservation");
+  await expect(page.locator(".eclipse-still")).toHaveCount(1);
+  await expect(page.locator("canvas")).toHaveCount(0);
+});
+
+test("lot 18 : l'éclipse s'efface au défilement et revient en haut de page", async ({ page }) => {
+  await page.goto("/");
+  const layer = page.locator("canvas.eclipse-canvas").locator("..");
+  await expect(layer).toHaveCSS("opacity", "1");
+  await page.evaluate(() => window.scrollTo(0, 700));
+  await expect(layer).toHaveCSS("opacity", "0");
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect(layer).toHaveCSS("opacity", "1");
+  await noHorizontalScroll(page);
+});
+
+test("lot 18 : la tablette du salon garde ses couleurs", async ({ page }) => {
+  await page.goto("/equipe/connexion");
+  const gold = await page.evaluate(() =>
+    getComputedStyle(document.body).getPropertyValue("--color-gold").trim(),
+  );
+  expect(gold).toBe("#b8935a");
+  expect(await page.locator(".client").count()).toBe(0);
 });

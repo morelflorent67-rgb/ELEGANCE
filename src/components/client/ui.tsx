@@ -94,7 +94,7 @@ export function Note({ children, role = "note" }: { children: ReactNode; role?: 
   return (
     <div
       role={role}
-      className="flex gap-3 border border-[rgb(184_147_90_/_0.45)] px-4 py-3.5 text-[13px] leading-[1.55] text-ivory-soft"
+      className="flex gap-3 border border-[rgb(var(--accent-rgb)_/_0.45)] px-4 py-3.5 text-[13px] leading-[1.55] text-ivory-soft"
     >
       <InfoIcon />
       <span>{children}</span>
@@ -123,7 +123,7 @@ export function GoldBanner({ children }: { children: ReactNode }) {
   return (
     <div
       role="alert"
-      className="e-ban relative flex flex-col gap-3 bg-[rgb(184_147_90_/_0.08)] p-4 pl-5"
+      className="e-ban relative flex flex-col gap-3 bg-[rgb(var(--accent-rgb)_/_0.08)] p-4 pl-5"
     >
       <span aria-hidden="true" className="e-edge absolute inset-y-0 left-0 w-0.5 bg-gold" />
       {children}
@@ -183,10 +183,10 @@ export function Hexagon({
     >
       <path
         d="M4.25 0.5H11.75L15.5 7L11.75 13.5H4.25L0.5 7Z"
-        fill="#b8935a"
+        fill="var(--color-gold)"
         style={{ opacity: filled ? 1 : 0, transition: "opacity .45s ease" }}
       />
-      <path d="M4.25 0.5H11.75L15.5 7L11.75 13.5H4.25L0.5 7Z" stroke="#b8935a" />
+      <path d="M4.25 0.5H11.75L15.5 7L11.75 13.5H4.25L0.5 7Z" stroke="var(--color-gold)" />
     </svg>
   );
 }
@@ -274,7 +274,7 @@ export function AgendaIcon() {
     >
       <rect x="3.5" y="5" width="17" height="15.5" />
       <path d="M3.5 10h17M8 3v4M16 3v4" />
-      <circle cx="16" cy="15" r="1" fill="#b8935a" stroke="none" />
+      <circle cx="16" cy="15" r="1" fill="var(--color-gold)" stroke="none" />
     </svg>
   );
 }
@@ -286,7 +286,7 @@ export function InfoIcon() {
       height="16"
       viewBox="0 0 24 24"
       fill="none"
-      stroke="#b8935a"
+      stroke="var(--color-gold)"
       strokeWidth="1.4"
       className="mt-0.5 shrink-0"
       aria-hidden="true"
@@ -304,7 +304,7 @@ export function ClockIcon() {
       height="16"
       viewBox="0 0 24 24"
       fill="none"
-      stroke="#b8935a"
+      stroke="var(--color-gold)"
       strokeWidth="1.4"
       className="mt-0.5 shrink-0"
       aria-hidden="true"

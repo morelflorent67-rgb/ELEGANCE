@@ -38,9 +38,9 @@ export function LimitScreen({ max, onBack }: { max: number; onBack: () => void }
           >
             <path
               d="M9 1H25L33 15L25 29H9L1 15Z"
-              stroke="#b8935a"
+              stroke="var(--color-gold)"
               strokeWidth="1.2"
-              fill="rgb(184 147 90 / 0.16)"
+              fill="rgb(var(--accent-rgb) / 0.16)"
             />
           </svg>
         ))}

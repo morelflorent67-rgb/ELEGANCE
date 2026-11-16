@@ -70,7 +70,7 @@ async function Confirmation({
           className="c-glow absolute -inset-[30px]"
           style={{
             background:
-              "radial-gradient(circle, rgb(184 147 90 / 0.42) 0%, rgb(184 147 90 / 0.12) 42%, rgb(184 147 90 / 0) 70%)",
+              "radial-gradient(circle, rgb(var(--accent-rgb) / 0.42) 0%, rgb(var(--accent-rgb) / 0.12) 42%, rgb(var(--accent-rgb) / 0) 70%)",
           }}
         />
         <div className="c-ring absolute left-[70px] top-[60px] h-20 w-20 rounded-[50%] border border-gold" />
@@ -97,7 +97,7 @@ async function Confirmation({
             className="c-hex"
             pathLength="1"
             d="M66 24H154L198 100L154 176H66L22 100Z"
-            stroke="#b8935a"
+            stroke="var(--color-gold)"
             strokeWidth="1.5"
           />
           <path

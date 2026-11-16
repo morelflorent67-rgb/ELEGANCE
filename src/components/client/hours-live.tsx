@@ -95,7 +95,7 @@ export function HoursLive({ week, closures }: { week: WeekHours; closures: Closu
                     className="h-fill absolute -inset-x-2.5 inset-y-1"
                     style={{
                       background:
-                        "linear-gradient(90deg, rgb(184 147 90 / 0.14), rgb(184 147 90 / 0.04))",
+                        "linear-gradient(90deg, rgb(var(--accent-rgb) / 0.14), rgb(var(--accent-rgb) / 0.04))",
                     }}
                   />
                   <svg
@@ -112,7 +112,7 @@ export function HoursLive({ week, closures }: { week: WeekHours; closures: Closu
                       y="4.5"
                       width="361"
                       height="55"
-                      stroke="rgb(184 147 90 / 0.55)"
+                      stroke="rgb(var(--accent-rgb) / 0.55)"
                       vectorEffect="non-scaling-stroke"
                     />
                   </svg>
@@ -148,7 +148,7 @@ export function HoursLive({ week, closures }: { week: WeekHours; closures: Closu
 
       {next ? (
         <div
-          className="s-up flex items-center gap-3 border border-[rgb(184_147_90_/_0.4)] px-4 py-3.5"
+          className="s-up flex items-center gap-3 border border-[rgb(var(--accent-rgb)_/_0.4)] px-4 py-3.5"
           style={{ animationDelay: "1300ms" }}
         >
           <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gold">

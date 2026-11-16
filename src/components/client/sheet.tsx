@@ -38,7 +38,7 @@ export function ClientSheet({
         // Un toucher sur le voile (et non sur le contenu) ferme la feuille.
         if (event.target === ref.current) onClose();
       }}
-      className="client mx-auto mb-0 mt-auto w-full max-w-[430px] border-0 border-t border-[rgb(184_147_90_/_0.6)] bg-[#171512] p-0 text-ivory backdrop:bg-[rgb(5_4_4_/_0.7)] open:animate-sheet-up"
+      className="client mx-auto mb-0 mt-auto w-full max-w-[430px] border-0 border-t border-[rgb(var(--accent-rgb)_/_0.6)] bg-graphite p-0 text-ivory backdrop:bg-[rgb(0_6_14_/_0.72)] open:animate-sheet-up"
     >
       {open ? (
         <div className="flex flex-col gap-[18px] px-6 pb-[26px] pt-2.5">

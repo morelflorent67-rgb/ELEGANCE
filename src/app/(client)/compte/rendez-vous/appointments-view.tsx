@@ -175,7 +175,7 @@ export function AppointmentsView({
               <div key={a.id} className="s-up" style={{ animationDelay: `${240 + i * 60}ms` }}>
                 <article
                   aria-label={`Rendez-vous du ${a.longLabel}`}
-                  className={`relative border ${locked ? "border-[rgb(184_147_90_/_0.45)] bg-[rgb(184_147_90_/_0.05)]" : "border-[rgb(239_233_221_/_0.14)]"} ${leaving === a.id ? "card-out" : ""}`}
+                  className={`relative border ${locked ? "border-[rgb(var(--accent-rgb)_/_0.45)] bg-[rgb(var(--accent-rgb)_/_0.05)]" : "border-[rgb(239_233_221_/_0.14)]"} ${leaving === a.id ? "card-out" : ""}`}
                 >
                   {locked ? (
                     <span
@@ -261,7 +261,7 @@ export function AppointmentsView({
                   )}
                   <span
                     aria-hidden="true"
-                    className="strike absolute inset-x-0 top-1/2 h-px bg-gold shadow-[0_0_8px_rgb(184_147_90_/_0.8)]"
+                    className="strike absolute inset-x-0 top-1/2 h-px bg-gold shadow-[0_0_8px_rgb(var(--accent-rgb)_/_0.8)]"
                   />
                 </article>
               </div>
@@ -301,12 +301,12 @@ export function AppointmentsView({
               {w.offer ? (
                 <Link
                   href={`/attente/${w.offer.id}`}
-                  className="flex min-h-11 items-center justify-between gap-3 border border-[rgb(184_147_90_/_0.5)] bg-[rgb(184_147_90_/_0.08)] px-3.5 text-[13px]"
+                  className="flex min-h-11 items-center justify-between gap-3 border border-[rgb(var(--accent-rgb)_/_0.5)] bg-[rgb(var(--accent-rgb)_/_0.08)] px-3.5 text-[13px]"
                 >
                   <span>
                     Une place vous est gardée : {w.offer.label}, jusqu&rsquo;à {w.offer.until}
                   </span>
-                  <ArrowRight size={16} color="#b8935a" />
+                  <ArrowRight size={16} color="var(--color-gold)" />
                 </Link>
               ) : (
                 <span className="text-[12px] text-stone">
@@ -398,7 +398,7 @@ export function AppointmentsView({
             height="18"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#b8935a"
+            stroke="var(--color-gold)"
             strokeWidth="1.3"
             aria-hidden="true"
           >

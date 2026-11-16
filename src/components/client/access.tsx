@@ -18,7 +18,7 @@ export function Access() {
     <InView aria-labelledby="acces-titre" className="flex flex-col gap-6 pb-16 pt-14">
       <Eyebrow className="s-up px-6">Accès</Eyebrow>
 
-      <div className="relative h-[350px] w-full overflow-hidden bg-[#0c0b0a]">
+      <div className="relative h-[350px] w-full overflow-hidden bg-[#00101f]">
         <div aria-hidden="true" className="m-cam absolute inset-0">
           <svg
             className="m-bg absolute inset-0 h-full w-full"
@@ -61,12 +61,12 @@ export function Access() {
                 pathLength="1"
                 vectorEffect="non-scaling-stroke"
                 d={route.d}
-                stroke={route.main ? "#b8935a" : "rgb(184 147 90 / 0.6)"}
+                stroke={route.main ? "var(--color-gold)" : "rgb(var(--accent-rgb) / 0.6)"}
                 strokeWidth={route.main ? 2 : 1.4}
                 strokeLinecap="round"
                 style={{
                   animationDelay: route.delay,
-                  filter: route.main ? "drop-shadow(0 0 4px rgb(184 147 90 / 0.8))" : undefined,
+                  filter: route.main ? "drop-shadow(0 0 4px rgb(var(--accent-rgb) / 0.8))" : undefined,
                 }}
               />
             ))}
@@ -76,7 +76,7 @@ export function Access() {
             style={{
               transform: "translate(-50%, -50%)",
               background:
-                "radial-gradient(circle, rgb(184 147 90 / 0.5) 0%, rgb(184 147 90 / 0.16) 40%, rgb(184 147 90 / 0) 70%)",
+                "radial-gradient(circle, rgb(var(--accent-rgb) / 0.5) 0%, rgb(var(--accent-rgb) / 0.16) 40%, rgb(var(--accent-rgb) / 0) 70%)",
             }}
           />
           {["2.2s", "3.2s", "4.2s"].map((delay) => (
@@ -87,7 +87,7 @@ export function Access() {
             />
           ))}
           <div
-            className="m-pin absolute left-[58%] top-[45%] flex h-[18px] w-[18px] items-center justify-center rounded-[50%] border-[1.5px] border-gold bg-ink shadow-[0_0_14px_rgb(184_147_90_/_0.8)]"
+            className="m-pin absolute left-[58%] top-[45%] flex h-[18px] w-[18px] items-center justify-center rounded-[50%] border-[1.5px] border-gold bg-ink shadow-[0_0_14px_rgb(var(--accent-rgb)_/_0.8)]"
             style={{ transform: "translate(-50%, -50%)" }}
           >
             <span className="h-1.5 w-1.5 rounded-[50%] bg-ivory" />
@@ -194,7 +194,7 @@ export function Access() {
 function AccessIcon({ kind }: { kind: (typeof SALON_ACCESS)[number]["kind"] }) {
   const common = {
     fill: "none",
-    stroke: "#b8935a",
+    stroke: "var(--color-gold)",
     strokeWidth: 1.3,
     "aria-hidden": true,
   } as const;

@@ -100,7 +100,7 @@ export function StaffStep({
                 className="rowfill absolute -inset-x-6 inset-y-0"
                 style={{
                   background:
-                    "linear-gradient(90deg, rgb(184 147 90 / 0.13), rgb(184 147 90 / 0.02))",
+                    "linear-gradient(90deg, rgb(var(--accent-rgb) / 0.13), rgb(var(--accent-rgb) / 0.02))",
                   transform: `scaleX(${on ? 1 : 0})`,
                 }}
               />
@@ -120,7 +120,7 @@ export function StaffStep({
                     className="hexsel"
                     pathLength="1"
                     d={HEX}
-                    stroke="#b8935a"
+                    stroke="var(--color-gold)"
                     strokeWidth="1.4"
                     style={{ strokeDashoffset: on ? 0 : 1 }}
                   />

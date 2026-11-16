@@ -34,11 +34,13 @@ export default async function HomePage() {
       />
       <main>
         <Arrival />
-        <ReviewsBadge count={data.reviewCount} />
-        <HoursLive week={data.week} closures={data.closures} />
-        <Access />
+        <div className="home-rest">
+          <ReviewsBadge count={data.reviewCount} />
+          <HoursLive week={data.week} closures={data.closures} />
+          <Access />
+        </div>
       </main>
-      <footer className="flex flex-wrap justify-center gap-x-[18px] border-t border-[rgb(239_233_221_/_0.08)] px-6 pb-[120px] pt-6">
+      <footer className="flex bg-ink flex-wrap justify-center gap-x-[18px] border-t border-[rgb(239_233_221_/_0.08)] px-6 pb-[120px] pt-6">
         <LegalLinks />
       </footer>
       <BookingBar />
@@ -115,7 +117,7 @@ function Arrival() {
         <Link
           id="arrivee-reserver"
           href="/reservation"
-          className="o-b1 flex h-[58px] items-center justify-center gap-4 bg-ivory pl-[0.3em] text-[13px] font-semibold uppercase tracking-[0.3em] text-ink"
+          className="o-b1 flex h-[58px] items-center justify-center gap-4 bg-[linear-gradient(180deg,#f7ead6,#e9d7bc)] pl-[0.3em] text-[13px] font-semibold uppercase tracking-[0.3em] text-ink"
         >
           Réserver
           <ArrowRight color="#0b0a09" />
@@ -160,12 +162,12 @@ function BookingBar() {
       <div
         id="barre-reserver"
         data-show="false"
-        className="c-bar fixed bottom-0 left-1/2 z-20 flex w-full max-w-[430px] -translate-x-1/2 gap-2.5 border-t border-[rgb(239_233_221_/_0.1)] bg-[rgb(10_9_8_/_0.94)] px-6 pb-[18px] pt-3"
+        className="c-bar fixed bottom-0 left-1/2 z-20 flex w-full max-w-[430px] -translate-x-1/2 gap-2.5 border-t border-[rgb(239_233_221_/_0.1)] bg-bar px-6 pb-[18px] pt-3"
       >
         <Link
           href="/reservation"
           tabIndex={-1}
-          className="flex h-14 flex-1 items-center justify-center gap-3.5 bg-ivory text-[13px] font-semibold uppercase tracking-[0.28em] text-ink"
+          className="flex h-14 flex-1 items-center justify-center gap-3.5 bg-[linear-gradient(180deg,#f7ead6,#e9d7bc)] text-[13px] font-semibold uppercase tracking-[0.28em] text-ink"
         >
           Réserver
           <ArrowRight color="#0b0a09" />

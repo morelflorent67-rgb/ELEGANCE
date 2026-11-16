@@ -8,6 +8,63 @@
  * Chaque classe a pour style de base son état final : « animation: none » montre directement la fin.
  */
 
+/*
+ * Direction artistique bleue (lot 18, D-111) : les couleurs du côté client sont redéfinies ici, sous `.client`, et
+ * jamais dans theme.css, pour que la tablette (/equipe) garde ses couleurs. Les utilitaires Tailwind (bg-ink,
+ * bg-gold…) lisent ces variables.
+ */
+.client {
+  --color-ink: #000d1d; /* bleu nuit de l'éclipse, mesuré sur la maquette */
+  --color-charcoal: #04172e;
+  --color-graphite: #0a1f3a;
+  --color-graphite-light: #102a4d;
+  --color-disabled: #16283f;
+  --color-gold: #3d8bff; /* bleu lumineux du halo : remplace le doré */
+  --color-gold-shine: #5fd8ff; /* reflet cyan de la confirmation */
+  --accent-rgb: 61 139 255;
+  --color-scrim: rgb(0 6 14 / 0.78);
+  --color-bar: rgb(0 13 29 / 0.94);
+}
+html:has(.client) {
+  background: #000d1d;
+}
+
+/* ---------- Fond : éclipse animée (accueil) et image figée (autres pages) ---------- */
+.client .eclipse-canvas {
+  background: radial-gradient(120% 80% at 60% 45%, #00122a 0%, #000d1d 60%, #000a17 100%);
+  animation: c-fade 1.4s ease 0.15s both;
+}
+.opening-skip .client .eclipse-canvas {
+  animation: none;
+}
+.client .eclipse-still {
+  background: #000d1d url("/fond/eclipse-portrait.webp") center / cover no-repeat;
+}
+.client .eclipse-still::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgb(0 13 29 / 0.5); /* discrète : la lisibilité d'abord */
+}
+@media (min-aspect-ratio: 1/1) {
+  .client .eclipse-still {
+    background-image: url("/fond/eclipse-paysage.webp");
+  }
+}
+/* Sous l'arrivée, le fond opaque recouvre l'éclipse en montant, avec un fondu. */
+.client .home-rest {
+  position: relative;
+  background: var(--color-ink);
+}
+.client .home-rest::before {
+  content: "";
+  position: absolute;
+  inset: -72px 0 auto;
+  height: 72px;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgb(0 13 29 / 0), var(--color-ink));
+}
+
 /* Chiffres de Cormorant Garamond alignés (prix, heures, dates), comme les maquettes. */
 .client .font-display {
   font-variant-numeric: lining-nums tabular-nums;
@@ -432,84 +489,6 @@
   transform: none;
 }
 
-/* ---------- Ordinateur : le fond vit autour de la colonne ---------- */
-@keyframes bg-x {
-  from {
-    transform: translateX(-18vw);
-  }
-  to {
-    transform: translateX(18vw);
-  }
-}
-@keyframes bg-y {
-  from {
-    transform: translateY(-14vh);
-  }
-  to {
-    transform: translateY(14vh);
-  }
-}
-@keyframes bg-turn {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-@keyframes bg-sweep {
-  0% {
-    transform: scaleX(0);
-    opacity: 0;
-  }
-  8% {
-    opacity: 0.5;
-  }
-  30% {
-    transform: scaleX(1);
-    opacity: 0.35;
-  }
-  45%,
-  100% {
-    transform: scaleX(1);
-    opacity: 0;
-  }
-}
-.bg-live {
-  animation: c-fade 1.6s ease 0.6s both;
-}
-.bg-live .bg-x {
-  will-change: transform;
-  animation: bg-x 32s ease-in-out infinite alternate;
-}
-.bg-live .bg-x2 {
-  animation-duration: 44s;
-  animation-delay: -12s;
-}
-.bg-live .bg-x3 {
-  animation-duration: 27s;
-  animation-delay: -20s;
-}
-.bg-live .bg-y {
-  will-change: transform;
-  animation: bg-y 38s ease-in-out infinite alternate;
-}
-.bg-live .bg-y2 {
-  animation-duration: 50s;
-  animation-delay: -18s;
-}
-.bg-live .bg-turn {
-  animation: bg-turn 180s linear infinite;
-}
-.bg-live .bg-turn-back {
-  animation: bg-turn 240s linear infinite reverse;
-}
-.bg-live .bg-sweep {
-  opacity: 0;
-  transform-origin: 0 50%;
-  animation: bg-sweep 9s var(--ease-draw) 2s infinite;
-}
-
 /* ---------- Réservation : changement d'étape (520 ms), titres, cascade des créneaux ---------- */
 @keyframes sw-line {
   0% {
@@ -860,5 +839,5 @@
   animation: c-fade 0.5s ease both;
 }
 .client .r-star {
-  filter: drop-shadow(0 0 5px rgb(184 147 90 / 0.45));
+  filter: drop-shadow(0 0 5px rgb(var(--accent-rgb) / 0.45));
 }
