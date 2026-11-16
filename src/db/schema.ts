@@ -200,7 +200,9 @@ export const customer = pgTable(
   "customer",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    authUserId: uuid("auth_user_id").unique(), // compte Supabase ; vidé à l'anonymisation (R-75)
+    // Compte de connexion (D-116), sans clé étrangère : le pilote mémoire des tests invente ses identifiants.
+    // Vidé à l'anonymisation (R-75), avant la suppression du compte.
+    authUserId: uuid("auth_user_id").unique(),
     firstName: text("first_name"),
     lastName: text("last_name"),
     phone: text("phone"),
@@ -505,4 +507,45 @@ export const rateLimit = pgTable("rate_limit", {
   key: text("key").primaryKey(),
   count: integer("count").notNull(),
   windowEndsAt: instant("window_ends_at").notNull(),
+});
+
+/** Compte de connexion (D-116) : client ou équipe de la tablette. Email toujours en minuscules. */
+export const authUser = pgTable(
+  "auth_user",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    email: text("email").notNull(),
+    passwordHash: text("password_hash").notNull(), // scrypt, voir src/modules/auth/password.ts
+    role: text("role").notNull().default("customer"),
+    createdAt: instant("created_at").notNull().defaultNow(),
+    updatedAt: instant("updated_at").notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("auth_user_email_idx").on(t.email),
+    check("auth_user_role", sql`${t.role} in ('customer', 'staff')`),
+  ],
+);
+
+/** Session ouverte : seule l'empreinte SHA-256 du jeton est gardée (le jeton vit dans le cookie). */
+export const authSession = pgTable(
+  "auth_session",
+  {
+    tokenHash: text("token_hash").primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => authUser.id, { onDelete: "cascade" }),
+    expiresAt: instant("expires_at").notNull(),
+    createdAt: instant("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("auth_session_user_idx").on(t.userId)],
+);
+
+/** Code de réinitialisation du mot de passe : à usage unique, valable 1 h (D-116). */
+export const authRecovery = pgTable("auth_recovery", {
+  tokenHash: text("token_hash").primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => authUser.id, { onDelete: "cascade" }),
+  expiresAt: instant("expires_at").notNull(),
+  usedAt: instant("used_at"),
 });

@@ -18,6 +18,9 @@ describe("principe 5 : aucun accès direct depuis le navigateur", () => {
       "appointment_item",
       "appointment_series",
       "audit_log",
+      "auth_recovery",
+      "auth_session",
+      "auth_user",
       "closure",
       "customer",
       "email_outbox",
@@ -136,5 +139,31 @@ describe("réglages du salon : une seule ligne", () => {
       no_show_block_threshold: 2,
       reminder_hours: 24,
     });
+  });
+});
+
+describe("comptes de connexion (D-116)", () => {
+  const hash = "scrypt$32768$8$1$c2VsCg==$aGFzaAo=";
+
+  it("refuse deux comptes avec le même email", async () => {
+    await t.sql`insert into auth_user (email, password_hash) values ('a@b.fr', ${hash})`;
+    await expect(t.sql`insert into auth_user (email, password_hash) values ('a@b.fr', ${hash})`).rejects.toThrow();
+  });
+
+  it("refuse un rôle inconnu", async () => {
+    await expect(
+      t.sql`insert into auth_user (email, password_hash, role) values ('x@b.fr', ${hash}, 'admin')`,
+    ).rejects.toThrow();
+  });
+
+  it("supprimer un compte supprime ses sessions et ses codes", async () => {
+    const [{ id }] = await t.sql`insert into auth_user (email, password_hash) values ('c@b.fr', ${hash}) returning id`;
+    await t.sql`insert into auth_session (token_hash, user_id, expires_at) values ('s1', ${id}, now() + interval '1 day')`;
+    await t.sql`insert into auth_recovery (token_hash, user_id, expires_at) values ('r1', ${id}, now() + interval '1 hour')`;
+
+    await t.sql`delete from auth_user where id = ${id}`;
+
+    expect(await t.sql`select 1 from auth_session`).toHaveLength(0);
+    expect(await t.sql`select 1 from auth_recovery`).toHaveLength(0);
   });
 });
