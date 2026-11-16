@@ -29,7 +29,7 @@ export interface LegalDocument {
 }
 
 /** Date de la dernière rédaction des textes (à changer quand un texte change). */
-export const LEGAL_UPDATED = "22 octobre 2026";
+export const LEGAL_UPDATED = "16 novembre 2026";
 
 const hoursToWords = (hours: number) =>
   hours % 24 === 0 ? `${hours / 24} ${hours / 24 > 1 ? "jours" : "jour"}` : `${hours} h`;
@@ -45,7 +45,7 @@ function mentions(): Raw[] {
     ["Directeur de la publication", "Orhan Sevig, gérant."],
     [
       "Hébergement",
-      "Le site est hébergé par Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723, États-Unis.\nLes comptes et les rendez-vous sont enregistrés par Supabase, dans l'Union européenne.\nLes emails sont envoyés par Brevo (France).",
+      "Le site, sa base de données (comptes et rendez-vous) et les connexions sont hébergés par Contabo GmbH, Welfenstraße 22, 81541 Munich, Allemagne (Union européenne). [Ville du centre de données]\nLes copies de sauvegarde sont chiffrées avant leur envoi chez Backblaze, à Amsterdam (Pays-Bas).\nLes emails sont envoyés par Brevo (France).",
     ],
     [
       "Propriété intellectuelle",
@@ -66,7 +66,7 @@ function privacy(rules: SalonRules): Raw[] {
     ],
     [
       "Données collectées",
-      "À la création de votre compte : prénom, nom, numéro de téléphone, adresse email et mot de passe. Votre mot de passe est chiffré par le service d'authentification : le salon ne le voit jamais et il n'est jamais lisible.\nLors d'une réservation : les prestations, le coiffeur, la date et l'heure, le prénom du proche pour qui vous réservez et la note que vous laissez éventuellement au salon.\nSi vous réservez par téléphone ou au salon sans compte, le salon enregistre votre prénom, votre nom, votre téléphone et, si vous le donnez, votre email.\nLe salon a aussi repris le fichier clients de son ancien outil de réservation, pour les clients venus ces trois dernières années : prénom, nom, téléphone, email, nombre de visites et date de la dernière visite. Le premier email que vous recevez du site le rappelle. Si vous créez un compte avec la même adresse email, cette fiche devient votre compte.\nLe salon peut noter sur votre fiche qu'un rendez-vous n'a pas été honoré.\nSi vous vous inscrivez à la liste d'attente : les jours, la plage de la journée, les prestations et le coiffeur que vous avez choisis.",
+      "À la création de votre compte : prénom, nom, numéro de téléphone, adresse email et mot de passe. Votre mot de passe est transformé par le site en une empreinte à sens unique : le salon ne le voit jamais et il n'est jamais lisible.\nLors d'une réservation : les prestations, le coiffeur, la date et l'heure, le prénom du proche pour qui vous réservez et la note que vous laissez éventuellement au salon.\nSi vous réservez par téléphone ou au salon sans compte, le salon enregistre votre prénom, votre nom, votre téléphone et, si vous le donnez, votre email.\nLe salon a aussi repris le fichier clients de son ancien outil de réservation, pour les clients venus ces trois dernières années : prénom, nom, téléphone, email, nombre de visites et date de la dernière visite. Le premier email que vous recevez du site le rappelle. Si vous créez un compte avec la même adresse email, cette fiche devient votre compte.\nLe salon peut noter sur votre fiche qu'un rendez-vous n'a pas été honoré.\nSi vous vous inscrivez à la liste d'attente : les jours, la plage de la journée, les prestations et le coiffeur que vous avez choisis.",
     ],
     [
       "Utilisation",
@@ -74,7 +74,7 @@ function privacy(rules: SalonRules): Raw[] {
     ],
     [
       "Prestataires",
-      "Vercel (hébergement du site), Supabase (base de données et comptes, dans l'Union européenne) et Brevo (envoi des emails) traitent vos données pour le compte du salon, uniquement pour faire fonctionner le service.",
+      "Contabo (hébergement du site et de la base de données, dans l'Union européenne), Backblaze (copies de sauvegarde chiffrées, aux Pays-Bas) et Brevo (envoi des emails) traitent vos données pour le compte du salon, uniquement pour faire fonctionner le service.",
     ],
     [
       "Durée de conservation",

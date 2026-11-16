@@ -6,10 +6,9 @@ import { emailOutbox } from "@/db/schema";
 
 /**
  * Un email dû depuis plus longtemps n'est pas parti alors qu'il aurait dû (cron arrêté, Brevo injoignable, clé
- * retirée). 25 h : le cron passe une fois par jour sur l'offre Hobby de Vercel, donc un rappel dû peut attendre
- * presque 24 h normalement. À ramener à 1 h quand le cron passera chaque minute (Vercel Pro).
+ * retirée). 1 h : le minuteur du serveur appelle le cron chaque minute, un email dû part en quelques minutes.
  */
-export const OVERDUE_AFTER_HOURS = 25;
+export const OVERDUE_AFTER_HOURS = 1;
 const FAILED_WINDOW_DAYS = 7;
 
 export interface OutboxHealth {

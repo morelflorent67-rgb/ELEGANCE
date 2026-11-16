@@ -1,5 +1,7 @@
 # Plan de migration vers le VPS (lots 21 à 23)
 
+> **État au 16 novembre 2026 : lot 21 fait** (voir `docs/reprise.md`). Réponses de Florent : section 0 tranchée (voir D-115 à D-118). **Écart : le VPS n'est pas réinstallé** (il héberge déjà n8n, un site et Docker) : la tâche 22.1 devient « relever l'existant et sécuriser sans casser », et 22.2 « installer à côté » (ports, proxy et PostgreSQL existants à relever d'abord).
+
 > **Pour l'assistant qui exécute ce plan :** utiliser `superpowers:executing-plans` (une tâche après l'autre, TDD). Les étapes sont des cases `- [ ]` à cocher dans ce fichier au fil de l'eau. Lire d'abord `CLAUDE.md`, puis `docs/reprise.md`, puis ce plan en entier.
 
 **Objectif :** faire tourner tout Elegance Strasbourg (site Next.js, base Postgres, comptes, cron, sauvegardes) sur le VPS de Florent, sans Vercel ni Supabase.

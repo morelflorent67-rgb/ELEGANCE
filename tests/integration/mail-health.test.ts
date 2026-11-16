@@ -26,7 +26,7 @@ async function addEmail(options: {
 
 describe("outboxHealth", () => {
   it("file vide ou à jour : rien à signaler", async () => {
-    await addEmail({ nextAttemptAt: hoursBefore(1) }); // dû depuis peu : le prochain passage l'enverra
+    await addEmail({ nextAttemptAt: hoursBefore(0.5) }); // dû depuis 30 min : le prochain passage l'enverra
     await addEmail({ nextAttemptAt: new Date(NOW.getTime() + 3_600_000) }); // rappel programmé
     await addEmail({ status: "sent", nextAttemptAt: hoursBefore(100) });
     expect(await outboxHealth(t.db, NOW)).toEqual({ overdue: 0, failedLastWeek: 0 });

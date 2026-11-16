@@ -9,7 +9,7 @@ import { processWaitlist } from "@/modules/waitlist";
 
 // Passage du cron : fait avancer la liste d'attente (offres expirées, places à proposer, D-100), programme les
 // invitations à un avis du lendemain (R-64) et les relances (D-74), puis envoie les emails dus (rappels R-61,
-// invitations) et reprend ceux en échec passager (principe 7). Appelé par le cron de Vercel, qui envoie
+// invitations) et reprend ceux en échec passager (principe 7). Appelé chaque minute par le minuteur du serveur, qui envoie
 // « Authorization: Bearer <CRON_SECRET> ».
 export async function GET(request: Request) {
   await connection();
