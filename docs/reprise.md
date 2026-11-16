@@ -80,7 +80,15 @@ Historique (anciens bilans de tests, détail des lots 5 à 11, enquête sur la l
 
 ## Demandes « préfinal » (16 novembre 2026) : lots 17 à 20
 
-Nouvelles demandes du salon avant la mise en ligne : « Sur devis », « Contacter », bandeau « Plus de 1000 avis », nouvelle direction artistique bleue (fond animé « éclipse »), carte de fidélité. Le bonus de 50 points pour un avis Google est abandonné (interdit par Google, invérifiable). **Plan complet, questions à poser et message de démarrage : `docs/plan-prefinal.md`.** Références visuelles : `docs/design/maquette-accueil-bleu.webp`, `docs/design/elegance-fond-anime.html`. **Lot 17 fait le 16 novembre 2026** ; **lot 18 fait le 16 novembre 2026** (voir ci-dessous, à valider par Florent sur son téléphone) ; **lot 19 fait le 16 novembre 2026** (carte de fidélité, voir ci-dessous, à valider par Florent) ; lot 20 pas commencé.
+Nouvelles demandes du salon avant la mise en ligne : « Sur devis », « Contacter », bandeau « Plus de 1000 avis », nouvelle direction artistique bleue (fond animé « éclipse »), carte de fidélité. Le bonus de 50 points pour un avis Google est abandonné (interdit par Google, invérifiable). **Plan complet, questions à poser et message de démarrage : `docs/plan-prefinal.md`.** Références visuelles : `docs/design/maquette-accueil-bleu.webp`, `docs/design/elegance-fond-anime.html`. **Lot 17 fait le 16 novembre 2026** ; **lot 18 fait le 16 novembre 2026** (voir ci-dessous, à valider par Florent sur son téléphone) ; **lot 19 fait le 16 novembre 2026** (carte de fidélité, voir ci-dessous, à valider par Florent) ; **lot 20 (recette d'ensemble) fait le 16 novembre 2026** (voir ci-dessous).
+
+**Lot 20 (fait le 16 novembre 2026) : recette d'ensemble**
+- **`pnpm test:all` entièrement vert** : lint, typecheck, **992 tests Vitest** (75 fichiers : unitaires et intégration sur Postgres réel), **312 parcours Playwright** mobile et tablette (84 sautés selon le profil, aucun en échec). `pnpm build` vert.
+- **`pnpm measure:vitrine`** (mobile, 4G lente, CPU ×4) : accueil TTFB 52 ms, **FCP 824 ms, LCP 824 ms, CLS 0**, 850 Ko (JS 568 Ko, images 9 Ko) ; `/conditions` FCP 792 ms. Lot 18 : 850 ms ; lot 12 : environ 750 ms. Pas de dégradation due au lot 19.
+- **Vérifié à l'écran à 375 px** (accueil : éclipse, « Contacter », bandeau « Plus de 1 000 avis », phrase de fidélité). Les autres écrans (réservation « Sur devis », carte de fidélité, fiche RDV et coupe offerte, encaissement, Bilan) sont couverts par les parcours Playwright mobile et tablette, tous verts.
+- **Piège** : `pnpm build` lit la base locale (`.env.local`) ; après avoir tiré de nouvelles migrations, lancer `pnpm db:start` (applique les migrations locales) puis `pnpm db:seed`, sinon le build échoue sur « colonne manquante » (c'est arrivé : migrations 0014 et 0015 absentes de la base locale).
+- **Migrations à appliquer à Supabase avant la bascule : aucune en attente.** 0014 (avis) et 0015 (fidélité) sont déjà appliquées (16 novembre 2026), le code est poussé.
+- **Reste pour Florent (appareils réels, impossible à vérifier par captures)** : fluidité de l'éclipse sur un téléphone moyen ; appui long du glisser-déposer sur l'iPad (lot 16) ; essai du vrai terminal SumUp (action 20) ; rappel de la carte de fidélité sur la vraie tablette. Puis le lot 8 (recette et bascule).
 
 **Lot 19 (fait le 16 novembre 2026) : carte de fidélité (D-114, R-96 à R-100)**
 - **Réponses de Florent** : coupe **et** coupe & barbe offertes en entier (pas les tarifs formation) ; points sans expiration ; tout le monde part de zéro ; barème du plan tel quel (10 points coupe, coupe & barbe, soin, devis ; 5 points taillage et formation), 100 points = une coupe offerte. Pas de points pour un avis Google.
@@ -231,7 +239,7 @@ Visuel de l'accueil : ok. Base de production : on **vide celle de test**. Domain
 
 ```text
 Tu es le développeur principal du site et de l'application de réservation d'Elegance Strasbourg.
-Lis CLAUDE.md, puis docs/reprise.md : les lots 0 à 7 et 9 à 15 sont validés, le lot 16 (glisser-déposer d'un RDV) est fait et commité en local, sans migration. Le lot 8 (recette et bascule) suit son plan (section « Réponses de Florent pour le lot 8 »).
+Lis CLAUDE.md, puis docs/reprise.md : les lots 0 à 7 et 9 à 15 sont validés ; les lots 16 (glisser-déposer) et 17 à 20 (préfinal : Sur devis, avis, direction artistique bleue, fidélité, recette) sont faits, tests verts, migrations 0014 et 0015 appliquées. Le lot 8 (recette et bascule) suit son plan (section « Réponses de Florent pour le lot 8 »).
 Retour sur le lot 16 (glisser-déposer sur l'iPad : appui long, défilement, confirmation) : [ok / à revoir : ...]. Prochain chantier : le lot 8.
 SumUp : clé d'API et code marchand [reçus, posés dans Vercel / pas encore] ; terminal relié [oui / non] ; essai à 1 € [ok / à revoir : ...].
 Commence par l'étape 1 du plan : surveillance externe, retrait de /api/diagnostic, guide d'exploitation et liste de contrôle. Puis la fiche de recette et le guide de bascule.
