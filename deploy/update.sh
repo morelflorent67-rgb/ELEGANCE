@@ -5,14 +5,18 @@
 # dans un volume à part, recopié seulement en cas de succès). Le site est coupé quelques secondes au redémarrage :
 # déployer en dehors des heures d'ouverture.
 set -euo pipefail
-cd "$(dirname "$0")/.."
-C="docker compose -f deploy/docker-compose.yml"
-git pull --ff-only
-$C build tools
-$C up -d --wait elegance-db
-$C run --rm tools sh -c "pnpm db:migrate && pnpm db:seed && pnpm build"
-$C run --rm publish
-$C up -d --force-recreate elegance
-docker image prune -f >/dev/null
-docker builder prune -f --keep-storage 2GB >/dev/null
-echo "OK : site à jour."
+# Tout le script est lu avant d'être exécuté : `git pull` peut le réécrire sans fausser l'exécution en cours.
+main() {
+  cd "$(dirname "$0")/.."
+  C="docker compose -f deploy/docker-compose.yml"
+  git pull --ff-only
+  $C build tools
+  $C up -d --wait elegance-db
+  $C run --rm tools sh -c "pnpm db:migrate && pnpm db:seed && pnpm build"
+  $C run --rm publish
+  $C up -d --force-recreate elegance
+  docker image prune -f >/dev/null
+  docker builder prune -f --keep-storage 2GB >/dev/null
+  echo "OK : site à jour."
+}
+main "$@"
