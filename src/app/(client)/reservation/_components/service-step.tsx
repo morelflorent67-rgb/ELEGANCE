@@ -24,8 +24,8 @@ export function totals(catalog: CatalogService[], ids: string[]) {
 }
 
 /**
- * Étape 1 : « Que souhaitez-vous ? ». R-14 : plusieurs prestations à la suite. R-17 : « sur appel » avec un bouton
- * d'appel. R-18 : coiffeurs et apprentis ne se mélangent pas, l'autre catégorie se grise.
+ * Étape 1 : « Que souhaitez-vous ? ». R-14 : plusieurs prestations à la suite. R-17 : « sur devis » (« à partir de ») avec
+ * un bouton d'appel. R-18 : coiffeurs et apprentis ne se mélangent pas, l'autre catégorie se grise.
  */
 export function ServiceStep({
   catalog,
@@ -112,17 +112,17 @@ export function ServiceStep({
                       <span className="flex min-w-0 flex-1 flex-col gap-1">
                         <span className="text-[15px] text-ivory-soft">{item.name}</span>
                         <span className="text-[12px] text-stone-dark">
-                          {formatDuration(item.durationMin)} · {formatPrice(item.priceCents)} · par
-                          téléphone
+                          {formatDuration(item.durationMin)} · à partir de{" "}
+                          {formatPrice(item.priceCents)} · par téléphone
                         </span>
                       </span>
                       <a
                         href={SALON.phoneHref}
-                        aria-label={`Appeler le salon pour ${item.name}`}
+                        aria-label={`Demander un devis pour ${item.name}`}
                         className={chip}
                       >
                         <PhoneIcon size={12} />
-                        Sur appel
+                        Sur devis
                       </a>
                     </div>
                   ) : (

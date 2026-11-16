@@ -176,7 +176,7 @@ Ces 52 règles fixent le comportement du moteur de réservation : toutes sont d�
 | R-14 | Le client ajoute des prestations à la suite dans un même RDV, avec le même coiffeur : durées et prix s'additionnent. | Décidé |
 | R-15 | Toutes les prestations ont un prix fixe : aucune n'est sur devis. | Décidé |
 | R-16 | Prix et durée sont figés dans le RDV ; une prestation retirée reste visible dans l'historique. | Décidé |
-| R-17 | Une prestation non réservable en ligne reste affichée, avec prix, durée et bouton d'appel du salon. | Décidé |
+| R-17 | Une prestation non réservable en ligne est présentée « Sur devis » : elle reste affichée, avec « à partir de » son prix, sa durée et un bouton d'appel du salon (D-112). | Décidé |
 | R-18 | Un RDV ne mélange pas prestations « Coiffeurs » et « Apprentis » : personne ne peut réaliser les deux ; l'autre catégorie est grisée, avec un message. | Décidé |
 
 ### Réservation
@@ -380,6 +380,8 @@ Le 20 octobre 2026, 57 décisions ont fixé le cadre du projet ; le 21 octobre 2
 | D-108 | Le terminal se relie dans l'espace gérant (« Terminal d'encaissement ») : code marchand du compte SumUp et code d'appairage affiché sur le terminal (Connexions, API, valable 5 minutes). Le client SumUp est écrit d'après la documentation et **pas encore essayé sur un vrai compte** (clé d'API en attente) | Lot 14 |
 | D-109 | Encaissement hors rendez-vous : table `payment` sans RDV (`appointment_id` nul, `staff_id` et `label`), compté au Bilan par le coiffeur choisi. Pas de faux client ni de faux RDV « de passage » (R-07, chiffres de RDV faussés). Réponses de Florent, 3 novembre 2026 : il compte dans le chiffre d'affaires ; le coiffeur se choisit à chaque fois ; des raccourcis de la carte s'ajoutent au pavé numérique libre | Lot 15 |
 | D-110 | Glisser-déposer : événements de pointeur, sans bibliothèque ; appui long de 250 ms au toucher (un doigt qui bouge avant fait défiler), 5 px à la souris ; confirmation obligatoire avant tout déplacement, pour ne pas écrire au client sur un faux geste de la tablette partagée ; pas de changement de jour par glissement. Demande du client, étude du 3 novembre 2026 | Lot 16 |
+| D-111 | Direction artistique bleue côté client (fond, couleur d'accent, éclipse animée) : décidée avec le salon le 16 novembre 2026, détail et exécution au lot 18 ; tablette inchangée | Lot 18 |
+| D-112 | Lot 17 : « Sur appel » devient « Sur devis », affiché « à partir de X € » (le bouton lance toujours l'appel) ; le bouton « Appeler » de l'accueil devient « Contacter » (appel) ; bandeau « Plus de 1 000 avis » : total cumulé de plusieurs plateformes **sans en citer aucune ni mettre de lien**, cinq étoiles pleines sans note chiffrée, total en base (`salon_settings.review_count`, nul = masqué, arrondi à la centaine inférieure) ; pas de `aggregateRating` dans les données structurées. Réponses de Florent, 16 novembre 2026 | Lot 17 |
 
 ## Documents liés
 

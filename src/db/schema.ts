@@ -85,6 +85,8 @@ export const salonSettings = pgTable(
     reminderHours: integer("reminder_hours").notNull().default(24), // R-61, D-64
     /** Page d'avis externe vers laquelle mène l'invitation (R-64). Vide : aucune invitation n'est envoyée. */
     reviewUrl: text("review_url"),
+    /** Bandeau « Plus de 1 000 avis » de l'accueil (D-112) : total cumulé, sans source ni lien. Nul : bandeau masqué. */
+    reviewCount: integer("review_count").default(1000),
     /** Durée pendant laquelle une place libérée est gardée pour une seule personne de la liste d'attente (D-100). */
     waitlistHoldMinutes: integer("waitlist_hold_minutes").notNull().default(15),
     /** Délai après le dernier RDV honoré avant « Nous serions ravis de vous revoir » (D-74). */
@@ -97,6 +99,7 @@ export const salonSettings = pgTable(
   (t) => [
     check("salon_settings_single_row", sql`${t.id} = true`),
     check("salon_settings_review_url", sql`${t.reviewUrl} is null or ${t.reviewUrl} ~ '^https?://[^ ]+$'`),
+    check("salon_settings_review_count", sql`${t.reviewCount} is null or ${t.reviewCount} > 0`),
     check("salon_settings_waitlist", sql`${t.waitlistHoldMinutes} > 0 and ${t.winbackAfterDays} > 0`),
     check("salon_settings_positive", sql`${t.minNoticeMinutes} >= 0 and ${t.maxHorizonDays} > 0`),
     check(

@@ -851,3 +851,14 @@
 .client .soon {
   animation: c-beat 2.2s ease-in-out 1s infinite;
 }
+
+/* ---------- Bandeau d'avis (D-112) : les étoiles s'allument l'une après l'autre ---------- */
+.client [data-inview="wait"] .r-star {
+  opacity: 0;
+}
+.client [data-inview="vis"] .r-star {
+  animation: c-fade 0.5s ease both;
+}
+.client .r-star {
+  filter: drop-shadow(0 0 5px rgb(184 147 90 / 0.45));
+}

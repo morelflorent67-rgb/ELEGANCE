@@ -218,17 +218,17 @@ test.describe("la carte (R-10 à R-18)", () => {
     await expect(serviceButton(page, "Coupe homme")).toContainText("30 min");
     await expect(serviceButton(page, "Taillage barbe")).toContainText("15 min");
     await expect(page.getByText("Lissage brésilien", { exact: true })).toBeVisible();
-    await expect(page.getByText(/60 € · par téléphone/)).toBeVisible();
+    await expect(page.getByText(/à partir de 60 € · par téléphone/)).toBeVisible();
   });
 
-  test("R-17, D-36 : une prestation sur appel garde son bouton d'appel ; le soin se réserve en ligne", async ({
+  test("R-17, D-36 : une prestation sur devis garde son bouton d appel ; le soin se réserve en ligne", async ({
     page,
   }) => {
     await page.goto("/reservation");
     for (const name of ["Coloration", "Tribal", "Défrisage", "Lissage brésilien"]) {
       await expect(page.getByText(name, { exact: true })).toBeVisible();
       await expect(
-        page.getByRole("link", { name: `Appeler le salon pour ${name}` }),
+        page.getByRole("link", { name: `Demander un devis pour ${name}` }),
       ).toHaveAttribute("href", phoneLink);
       await expect(serviceButton(page, name)).toHaveCount(0);
     }

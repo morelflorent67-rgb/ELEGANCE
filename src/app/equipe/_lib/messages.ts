@@ -52,11 +52,11 @@ const MESSAGES: Partial<Record<TeamError, string>> = {
   staff_role_mismatch:
     "Les coiffeurs réalisent les prestations des coiffeurs, les apprentis celles du tarif formation.",
   no_staff_for_service:
-    "Une prestation réservable en ligne a besoin d'au moins un coiffeur habilité. Cochez un nom, ou passez-la « sur appel ».",
+    "Une prestation réservable en ligne a besoin d'au moins un coiffeur habilité. Cochez un nom, ou passez-la « sur devis ».",
   invalid_staff: "Le prénom doit faire entre 1 et 40 caractères.",
   staff_name_taken: "Un membre de l'équipe porte déjà ce prénom.",
   staff_needed_for_service:
-    "Cette personne est la dernière à réaliser une prestation réservable en ligne. Passez cette prestation « sur appel » ou retirez-la de la carte, puis réessayez.",
+    "Cette personne est la dernière à réaliser une prestation réservable en ligne. Passez cette prestation « sur devis » ou retirez-la de la carte, puis réessayez.",
   invalid_hours:
     "Vérifiez les horaires : chaque plage finit après son début, sur la grille de 15 minutes, sans toucher la suivante, et au moins un jour doit rester ouvert.",
   invalid_closure:

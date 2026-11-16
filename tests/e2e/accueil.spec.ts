@@ -16,7 +16,7 @@ const noHorizontalScroll = async (page: Page) =>
 
 const hoursHeading = (page: Page) => page.locator("#horaires-titre");
 
-test("l'arrivée : logo, signature, Réserver, Appeler et Mes rendez-vous", async ({ page }) => {
+test("l'arrivée : logo, signature, Réserver, Contacter et Mes rendez-vous", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("img", { name: "Elegance Strasbourg" }).first()).toBeVisible();
   await expect(
@@ -24,7 +24,7 @@ test("l'arrivée : logo, signature, Réserver, Appeler et Mes rendez-vous", asyn
   ).toBeVisible();
   await expect(page.getByText("Coiffure homme et barbe · Schiltigheim")).toBeVisible();
   await expect(page.locator("#arrivee-reserver")).toHaveAttribute("href", "/reservation");
-  await expect(page.getByRole("link", { name: "Appeler", exact: true }).first()).toHaveAttribute(
+  await expect(page.getByRole("link", { name: "Contacter", exact: true }).first()).toHaveAttribute(
     "href",
     "tel:+33388977468",
   );
@@ -146,7 +146,7 @@ test("D-72 : les pages légales en liens discrets, en bas de page", async ({ pag
   }
 });
 
-test("la barre Réserver + Appeler monte quand le bouton de l'arrivée sort de l'écran", async ({
+test("la barre Réserver + Contacter monte quand le bouton de l'arrivée sort de l'écran", async ({
   page,
 }) => {
   await page.goto("/");
@@ -155,7 +155,7 @@ test("la barre Réserver + Appeler monte quand le bouton de l'arrivée sort de l
   await page.getByRole("list", { name: "Horaires de la semaine" }).scrollIntoViewIfNeeded();
   await expect(bar).toHaveAttribute("data-show", "true");
   await expect(bar.getByRole("link", { name: /Réserver/ })).toHaveAttribute("href", "/reservation");
-  await expect(bar.getByRole("link", { name: "Appeler le salon" })).toHaveAttribute(
+  await expect(bar.getByRole("link", { name: "Contacter le salon" })).toHaveAttribute(
     "href",
     "tel:+33388977468",
   );
@@ -216,4 +216,27 @@ test("D-94 : les anciennes pages Prestations et Le salon mènent à l'accueil", 
     await page.goto(path);
     await expect(page).toHaveURL(/127\.0\.0\.1:3100\/$/);
   }
+});
+
+test("D-112 : le bandeau « Plus de 1 000 avis » vient de la base, sans source ni lien", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const banner = page.getByRole("region", { name: "Avis des clients" });
+  await expect(banner).toContainText(/Plus de 1.000 avis/);
+  await expect(banner.getByRole("link")).toHaveCount(0);
+  await expect(banner).not.toContainText(/google|planity|treatwell/i);
+  await noHorizontalScroll(page);
+
+  await sql`update salon_settings set review_count = 2350`;
+  await refreshVitrine();
+  await page.reload();
+  await expect(page.getByRole("region", { name: "Avis des clients" })).toContainText(
+    /Plus de 2.300 avis/,
+  );
+
+  await sql`update salon_settings set review_count = null`;
+  await refreshVitrine();
+  await page.reload();
+  await expect(page.getByRole("region", { name: "Avis des clients" })).toHaveCount(0);
 });

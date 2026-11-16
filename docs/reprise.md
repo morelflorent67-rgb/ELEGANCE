@@ -80,7 +80,13 @@ Historique (anciens bilans de tests, détail des lots 5 à 11, enquête sur la l
 
 ## Demandes « préfinal » (16 novembre 2026) : lots 17 à 20
 
-Nouvelles demandes du salon avant la mise en ligne : « Sur devis », « Contacter », bandeau « Plus de 1000 avis », nouvelle direction artistique bleue (fond animé « éclipse »), carte de fidélité. Le bonus de 50 points pour un avis Google est abandonné (interdit par Google, invérifiable). **Plan complet, questions à poser et message de démarrage : `docs/plan-prefinal.md`.** Références visuelles : `docs/design/maquette-accueil-bleu.webp`, `docs/design/elegance-fond-anime.html`. Rien n'est commencé.
+Nouvelles demandes du salon avant la mise en ligne : « Sur devis », « Contacter », bandeau « Plus de 1000 avis », nouvelle direction artistique bleue (fond animé « éclipse »), carte de fidélité. Le bonus de 50 points pour un avis Google est abandonné (interdit par Google, invérifiable). **Plan complet, questions à poser et message de démarrage : `docs/plan-prefinal.md`.** Références visuelles : `docs/design/maquette-accueil-bleu.webp`, `docs/design/elegance-fond-anime.html`. **Lot 17 fait le 16 novembre 2026** (voir ci-dessous) ; lots 18 à 20 pas commencés.
+
+**Lot 17 (fait le 16 novembre 2026) : textes de l'accueil et bandeau d'avis (D-112)**
+- **Réponses de Florent** : « Sur devis » affiché **« à partir de X € »** (le prix de la carte) ; bandeau « Plus de 1 000 avis » = total cumulé de plusieurs plateformes, **sans citer aucune source, sans note chiffrée ni lien** : 5 étoiles pleines, texte « Des clients qui nous font confiance ».
+- Fait : « Sur appel » → « Sur devis » (réservation, carte du gérant, réserver du salon, messages, conditions, email de relance) ; bouton d'accueil « Appeler » → « Contacter » (appel, `aria-label` « Contacter le salon » sur la barre fixe) ; `salon_settings.review_count` (défaut 1000, nul = masqué, > 0), lu par `getVitrine`, texte `reviewHeadline` (`src/modules/vitrine/reviews.ts`), composant `reviews-badge.tsx` entre l'arrivée et les horaires. Pas de `aggregateRating`.
+- **Migration 0014 écrite et testée en local, PAS appliquée à Supabase** : à appliquer avec l'accord de Florent (`pnpm db:migrate:remote`) avant de pousser le code, puis `pnpm smoke:db`. Le total se change en SQL (pas d'écran du gérant, comme `review_url`).
+- Tests : 314 unitaires, 636 d'intégration, parcours accueil + réservation verts (mobile et tablette), lint, typecheck, build verts. Vérifié à 375 px (bandeau, lignes « Sur devis »). Les étoiles gardent un halo doré : il passera au bleu au lot 18.
 
 ## Demandes du salon (21 octobre 2026) : lots 9 à 14
 

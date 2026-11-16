@@ -11,7 +11,7 @@ export interface CatalogService {
   durationMin: number;
   /** « barber » : prestations coiffeurs ; « apprentice » : tarif formation (R-12, R-18). */
   performedBy: "barber" | "apprentice";
-  /** Faux : prestation sur appel, affichée avec un bouton d'appel (R-17). */
+  /** Faux : prestation sur devis, affichée avec un bouton d'appel (R-17). */
   bookableOnline: boolean;
 }
 

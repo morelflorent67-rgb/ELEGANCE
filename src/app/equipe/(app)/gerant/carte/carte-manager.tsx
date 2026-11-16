@@ -169,7 +169,7 @@ export function CarteManager({ services, team }: { services: ManagedService[]; t
               <span
                 className={`w-20 text-[12px] ${s.bookableOnline ? "text-ivory-soft" : "text-gold"}`}
               >
-                {s.bookableOnline ? "En ligne" : "Sur appel"}
+                {s.bookableOnline ? "En ligne" : "Sur devis"}
               </span>
               <div className="flex items-center gap-1.5">
                 <button
@@ -368,7 +368,7 @@ export function CarteManager({ services, team }: { services: ManagedService[]; t
               <div className="grid grid-cols-2 gap-2">
                 {[
                   { value: true, label: "En ligne" },
-                  { value: false, label: "Sur appel" },
+                  { value: false, label: "Sur devis" },
                 ].map((o) => (
                   <button
                     key={o.label}
@@ -386,7 +386,7 @@ export function CarteManager({ services, team }: { services: ManagedService[]; t
                 ))}
               </div>
               <span className="text-[12px] text-stone">
-                « Sur appel » : la prestation reste affichée avec un bouton d’appel, le salon peut la
+                « Sur devis » : la prestation reste affichée avec un bouton d’appel, le salon peut la
                 réserver à la tablette.
               </span>
             </fieldset>

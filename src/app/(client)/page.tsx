@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Access } from "@/components/client/access";
+import { ReviewsBadge } from "@/components/client/reviews-badge";
 import { HoursLive } from "@/components/client/hours-live";
 import { BookingBarWatcher, OpeningController } from "@/components/client/in-view";
 import { AgendaIcon, ArrowRight, Mark, PhoneIcon } from "@/components/client/ui";
@@ -33,6 +34,7 @@ export default async function HomePage() {
       />
       <main>
         <Arrival />
+        <ReviewsBadge count={data.reviewCount} />
         <HoursLive week={data.week} closures={data.closures} />
         <Access />
       </main>
@@ -123,7 +125,7 @@ function Arrival() {
           className="o-b2 flex h-[54px] items-center justify-center gap-3 border border-[rgb(239_233_221_/_0.32)] text-[12px] font-medium uppercase tracking-[0.28em]"
         >
           <PhoneIcon />
-          Appeler
+          Contacter
         </a>
       </div>
 
@@ -171,7 +173,7 @@ function BookingBar() {
         <a
           href={SALON.phoneHref}
           tabIndex={-1}
-          aria-label="Appeler le salon"
+          aria-label="Contacter le salon"
           className="flex h-14 w-14 items-center justify-center border border-[rgb(239_233_221_/_0.32)]"
         >
           <PhoneIcon size={18} />

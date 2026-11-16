@@ -62,8 +62,8 @@ describe("les conditions citent les règles du salon, lues dans les réglages", 
     expect(conditions).not.toMatch(/paiement en ligne/i);
   });
 
-  it("R-17, D-19 : les prestations sur appel se réservent par téléphone", () => {
-    expect(text("conditions")).toMatch(/sur appel/);
+  it("R-17, D-19 : les prestations sur devis se réservent par téléphone", () => {
+    expect(text("conditions")).toMatch(/sur devis/);
   });
 });
 

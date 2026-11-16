@@ -152,7 +152,7 @@ export async function renameStaffMember(
 /**
  * Retire un membre de l'équipe (il part) ou le remet (D-57). Retiré, il n'a plus de colonne, ne reçoit plus de
  * réservation et ne peut plus signer. Ses rendez-vous à venir restent en place : ils sont à traiter.
- * Refusé s'il est le dernier à réaliser une prestation réservable en ligne : il faut d'abord la passer « sur appel »
+ * Refusé s'il est le dernier à réaliser une prestation réservable en ligne : il faut d'abord la passer « sur devis »
  * ou la retirer de la carte, sinon un client la choisirait sans personne pour la faire (R-13, R-20).
  */
 export async function setStaffActive(

@@ -82,3 +82,17 @@ describe("lecture de la vitrine", () => {
     expect(closures).toEqual([{ startsOn: "2026-12-24", endsOn: "2026-12-26", reason: "Fêtes" }]);
   });
 });
+
+describe("D-112 : total d'avis du bandeau de l'accueil", () => {
+  it("vient des réglages, à 1 000 au départ, et se masque à nul", async () => {
+    expect((await readVitrine(t.db, NOW)).reviewCount).toBe(1000);
+    await t.sql`update salon_settings set review_count = 1043`;
+    expect((await readVitrine(t.db, NOW)).reviewCount).toBe(1043);
+    await t.sql`update salon_settings set review_count = null`;
+    expect((await readVitrine(t.db, NOW)).reviewCount).toBeNull();
+  });
+
+  it("refuse un total nul ou négatif", async () => {
+    await expect(t.sql`update salon_settings set review_count = 0`).rejects.toThrow();
+  });
+});

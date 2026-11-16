@@ -54,7 +54,7 @@ export function renderWinbackEmail(data: WinbackData): RenderedEmail {
 
 <div style="margin-top:28px;">${button("Réserver à nouveau", data.bookUrl, "primary")}</div>
 
-<p style="margin:22px 0 0;font-size:14px;line-height:1.6;color:${COLORS.ivorySoft};">Même prestation, même coiffeur : <a href="${escapeHtml(data.rebookUrl)}" style="color:${COLORS.ivory};text-decoration:none;border-bottom:1px solid ${COLORS.gold};">Reprendre le même RDV</a>. Un autre coiffeur, une autre prestation ? Choisissez-les sur la page de réservation. Pour une prestation sur appel : ${escapeHtml(SALON.phoneDisplay)}.</p>
+<p style="margin:22px 0 0;font-size:14px;line-height:1.6;color:${COLORS.ivorySoft};">Même prestation, même coiffeur : <a href="${escapeHtml(data.rebookUrl)}" style="color:${COLORS.ivory};text-decoration:none;border-bottom:1px solid ${COLORS.gold};">Reprendre le même RDV</a>. Un autre coiffeur, une autre prestation ? Choisissez-les sur la page de réservation. Pour une prestation sur devis : ${escapeHtml(SALON.phoneDisplay)}.</p>
 
 <p style="margin:28px 0 0;font-size:12px;line-height:1.55;color:${COLORS.stone};"><a href="${escapeHtml(data.unsubscribeUrl)}" style="color:${COLORS.ivorySoft};">Ne plus recevoir ces messages</a></p>`;
 

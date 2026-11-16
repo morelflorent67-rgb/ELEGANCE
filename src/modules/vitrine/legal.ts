@@ -106,8 +106,8 @@ function conditions(rules: SalonRules): Raw[] {
       `Un rendez-vous non honoré sans prévenir est noté sur votre fiche. À partir de ${rules.noShowBlockThreshold} rendez-vous non honorés, le salon peut décider de suspendre votre réservation en ligne ; vous pouvez toujours prendre rendez-vous en appelant le salon. [Conditions à valider.]`,
     ],
     [
-      "Prestations sur appel",
-      `Certaines prestations, signalées « sur appel » sur la page Prestations et tarifs, demandent un échange avant le rendez-vous : elles se réservent uniquement par téléphone au ${SALON.phoneDisplay}.`,
+      "Prestations sur devis",
+      `Certaines prestations, signalées « sur devis » et affichées « à partir de » un prix, demandent un échange avant le rendez-vous : elles se réservent uniquement par téléphone au ${SALON.phoneDisplay}.`,
     ],
     [
       "Paiement",

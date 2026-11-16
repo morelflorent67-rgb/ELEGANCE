@@ -1,0 +1,2 @@
+ALTER TABLE "salon_settings" ADD COLUMN "review_count" integer DEFAULT 1000;--> statement-breakpoint
+ALTER TABLE "salon_settings" ADD CONSTRAINT "salon_settings_review_count" CHECK ("salon_settings"."review_count" is null or "salon_settings"."review_count" > 0);

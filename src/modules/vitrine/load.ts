@@ -35,6 +35,8 @@ export interface SalonRules {
 
 export interface VitrineData {
   rules: SalonRules;
+  /** D-112 : total d'avis cumulés pour le bandeau de l'accueil ; nul = bandeau masqué. */
+  reviewCount: number | null;
   services: CatalogService[];
   team: TeamMember[];
   week: WeekHours;
@@ -63,6 +65,7 @@ export async function readVitrine(db: Database, now: Date = new Date()): Promise
       waitlistHoldMinutes: settings.waitlistHoldMinutes,
       winbackAfterDays: settings.winbackAfterDays,
     },
+    reviewCount: settings.reviewCount ?? null,
     services,
     team,
     week,

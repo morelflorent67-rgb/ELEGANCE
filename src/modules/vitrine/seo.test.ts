@@ -27,6 +27,7 @@ const data: VitrineData = {
     waitlistHoldMinutes: 15,
     winbackAfterDays: 15,
   },
+  reviewCount: null,
   services: [
     service("Coupe homme", 1800),
     service("Lissage brésilien", 6000),

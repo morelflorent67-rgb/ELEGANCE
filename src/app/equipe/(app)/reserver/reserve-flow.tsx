@@ -450,7 +450,7 @@ export function ReserveFlow({
                           <span className="text-[15px]">{item.name}</span>
                           <span className="text-[13px] text-stone">
                             {formatDuration(item.durationMin)} · {formatPrice(item.priceCents)}
-                            {item.bookableOnline ? "" : " · sur appel"}
+                            {item.bookableOnline ? "" : " · sur devis"}
                           </span>
                         </div>
                         <button
