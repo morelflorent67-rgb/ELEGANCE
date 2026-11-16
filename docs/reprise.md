@@ -85,7 +85,7 @@ Nouvelles demandes du salon avant la mise en ligne : « Sur devis », « Contact
 **Lot 17 (fait le 16 novembre 2026) : textes de l'accueil et bandeau d'avis (D-112)**
 - **Réponses de Florent** : « Sur devis » affiché **« à partir de X € »** (le prix de la carte) ; bandeau « Plus de 1 000 avis » = total cumulé de plusieurs plateformes, **sans citer aucune source, sans note chiffrée ni lien** : 5 étoiles pleines, texte « Des clients qui nous font confiance ».
 - Fait : « Sur appel » → « Sur devis » (réservation, carte du gérant, réserver du salon, messages, conditions, email de relance) ; bouton d'accueil « Appeler » → « Contacter » (appel, `aria-label` « Contacter le salon » sur la barre fixe) ; `salon_settings.review_count` (défaut 1000, nul = masqué, > 0), lu par `getVitrine`, texte `reviewHeadline` (`src/modules/vitrine/reviews.ts`), composant `reviews-badge.tsx` entre l'arrivée et les horaires. Pas de `aggregateRating`.
-- **Migration 0014 écrite et testée en local, PAS appliquée à Supabase** : à appliquer avec l'accord de Florent (`pnpm db:migrate:remote`) avant de pousser le code, puis `pnpm smoke:db`. Le total se change en SQL (pas d'écran du gérant, comme `review_url`).
+- **Migration 0014 appliquée à Supabase le 16 novembre 2026** (accord de Florent, `pnpm smoke:db` vert), code poussé. Le total se change en SQL (pas d'écran du gérant, comme `review_url`).
 - Tests : 314 unitaires, 636 d'intégration, parcours accueil + réservation verts (mobile et tablette), lint, typecheck, build verts. Vérifié à 375 px (bandeau, lignes « Sur devis »). Les étoiles gardent un halo doré : il passera au bleu au lot 18.
 
 ## Demandes du salon (21 octobre 2026) : lots 9 à 14
