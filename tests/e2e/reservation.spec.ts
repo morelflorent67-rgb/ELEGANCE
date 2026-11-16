@@ -245,9 +245,10 @@ test.describe("la carte (R-10 à R-18)", () => {
     await chooseService(page, "Coupe homme");
     await expect(formation).toHaveAttribute("aria-disabled", "true");
     await expect(formation).toContainText("Dans un rendez-vous séparé");
+    // Plus de message en tête de liste après une prestation coiffeur (le libellé de la ligne grisée suffit).
     await expect(
       page.getByRole("note").filter({ hasText: "dans un rendez-vous à part" }),
-    ).toBeVisible();
+    ).toHaveCount(0);
     await formation.click({ force: true });
     await expect(formation).toHaveAttribute("aria-pressed", "false");
 

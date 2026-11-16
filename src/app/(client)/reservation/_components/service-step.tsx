@@ -48,10 +48,12 @@ export function ServiceStep({
   const ofBarbers = barbers
     ? `${/^[aeiouyhéèêàâîôû]/i.test(barbers) ? "d'" : "de "}${barbers}`
     : "d'un coiffeur";
+  // Après une prestation coiffeur, aucun message en tête de liste : les tarifs formation grisés disent déjà
+  // « Dans un rendez-vous séparé » (demande de Florent, 16 nov.). Après un tarif formation, on garde l'explication.
   const mixNote =
     category === "apprentice"
       ? `Les apprentis travaillent seuls : pour une prestation ${ofBarbers}, prenez un second rendez-vous.`
-      : "Le tarif formation est réalisé par nos apprentis, dans un rendez-vous à part.";
+      : null;
 
   let row = 0;
   return (
@@ -64,7 +66,7 @@ export function ServiceStep({
           Plusieurs choix possibles.
         </p>
       </div>
-      {category ? (
+      {mixNote ? (
         <div className="s-up">
           <Note>{mixNote}</Note>
         </div>
