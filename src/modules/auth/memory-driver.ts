@@ -1,14 +1,10 @@
 import { randomUUID } from "node:crypto";
-import type { AuthDriver, AuthRole, AuthUser } from "./types";
+import type { AuthDriver, AuthRole, AuthUser, SessionStore } from "./types";
 
-// Authentification en mémoire : réservée aux tests (voir getAuthDriver, qui la refuse sur Vercel).
+// Authentification en mémoire : réservée aux tests (voir getAuthDriver, qui la refuse sans ALLOW_TEST_DRIVERS).
 // Les mots de passe sont conservés en clair : aucune donnée réelle ne doit jamais y passer.
 
-export interface SessionStore {
-  get(): string | undefined | Promise<string | undefined>;
-  set(sessionId: string): void | Promise<void>;
-  clear(): void | Promise<void>;
-}
+export type { SessionStore };
 
 interface MemoryUser extends AuthUser {
   password: string;

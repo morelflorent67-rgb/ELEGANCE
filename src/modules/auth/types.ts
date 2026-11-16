@@ -1,7 +1,14 @@
-// Interface d'authentification : Supabase Auth en production, une version en mémoire pour les tests de bout en bout
-// (Docker étant impossible, Supabase ne tourne pas en local). Les autres modules ne connaissent que cette interface.
+// Interface d'authentification : comptes et sessions dans Postgres (D-116), une version en mémoire pour les tests
+// de bout en bout. Les autres modules ne connaissent que cette interface.
 
-/** Rôle posé dans `app_metadata` (le client ne peut pas le modifier) : « staff » ouvre la tablette du salon (R-72). */
+/** Où vit le jeton de session de la requête (cookie en production, mémoire dans les tests). */
+export interface SessionStore {
+  get(): string | undefined | Promise<string | undefined>;
+  set(sessionId: string): void | Promise<void>;
+  clear(): void | Promise<void>;
+}
+
+/** Rôle du compte, posé en base (le client ne peut pas le modifier) : « staff » ouvre la tablette du salon (R-72). */
 export type AuthRole = "customer" | "staff";
 
 export interface AuthUser {
