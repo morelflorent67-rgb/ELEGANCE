@@ -68,9 +68,9 @@ Règle du projet : une question ouverte se pose, elle ne se suppose pas. Recomma
 
 Rien à coder. Sonnet guide Florent pas à pas, avec les noms exacts des boutons. **Florent tape lui-même mots de passe et codes, jamais dans le chat.**
 
-- [ ] **Numéro D-U-N-S de FR Services** (gratuit) : vérifier s'il existe sur la page « D-U-N-S Number lookup » d'Apple Developer, sinon le demander (compter 1 à 2 semaines). Le nom et l'adresse doivent être **identiques** à ceux du Kbis.
-- [ ] **Identifiant Apple** professionnel avec double authentification (de préférence une adresse de FR Services, pas une adresse perso).
-- [ ] **Apple Developer Program en tant qu'organisation** (FR Services), 99 € par an. Apple peut appeler pour vérifier que Florent peut engager la société. Un site web au nom de FR Services peut être demandé.
+- [x] **Numéro D-U-N-S de FR Services** : déjà obtenu (Florent, 17 novembre 2026).
+- [x] **Identifiant Apple** et **inscription au programme Apple Developer en tant qu'organisation** (FR Services) : compte validé par Apple, contrat signé (17 novembre 2026).
+- [ ] **Régler l'abonnement** (99 $ par an) : Florent le fait lui-même, depuis l'app Apple Developer ou developer.apple.com. Le compte n'est actif qu'après ce paiement (activation : jusqu'à 48 h).
 - [ ] **Attestation du salon** (modèle à rédiger par Sonnet, en `docs/app-store/attestation-salon.md`) : le gérant du salon autorise FR Services à publier l'app « Elegance Strasbourg » avec son nom et son logo. Signée, scannée en PDF, gardée pour la joindre si Apple invoque la règle 5.2.1. **Le vendeur affiché sur l'App Store sera « FR Services ».** Si un jour le salon ouvre son propre compte, l'app peut lui être transférée sans perdre ses avis ni ses utilisateurs.
 - [ ] **App Store Connect** : accepter les contrats ; **statut de commerçant (DSA)** : déclarer FR Services commerçant (adresse, téléphone, email publiés) ; contrat « Apps payantes » **inutile** (app gratuite).
 - [ ] **Compte Expo** (gratuit) sur expo.dev, au nom de FR Services.
