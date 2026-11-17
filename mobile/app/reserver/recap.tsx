@@ -1,13 +1,15 @@
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useState } from "react";
+import { View } from "react-native";
 import { ApiError, messageOf } from "@/api/client";
+import type { DaysResponse } from "@/api/types";
 import { useBooking } from "@/booking";
 import { formatDuration, formatPrice } from "@/lib/money";
 import { StepHeader } from "@/step-header";
 import { useSession } from "@/session";
 import { colors } from "@/theme";
-import { Body, Button, Card, ErrorText, Field, Heading, Muted, Screen, Title } from "@/ui";
+import { Body, Button, Card, Chip, ErrorText, Field, Heading, LabelCaps, Muted, Screen, Title } from "@/ui";
 import { useVitrine } from "@/vitrine";
 
 // Étape 4 : récapitulatif et confirmation. Sans session (ou session expirée), on propose la connexion : la réservation
@@ -21,9 +23,36 @@ export default function RecapStep() {
   const [lost, setLost] = useState(false);
 
   const moving = !!draft.movingId;
+  // Créneau pris entre-temps : les trois horaires les plus proches ce jour-là (calculés par le serveur, triés ici).
+  const [nearby, setNearby] = useState<{ iso: string; time: string; label: string }[]>([]);
   const chosen = (vitrine.data?.services ?? []).filter((s) => draft.serviceIds.includes(s.id));
   const total = chosen.reduce((sum, s) => sum + s.priceCents, 0);
   const minutes = chosen.reduce((sum, s) => sum + s.durationMin, 0);
+
+  async function loadNearby() {
+    if (!draft.startsAt) return;
+    try {
+      const wanted = new Date(draft.startsAt);
+      const date = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Paris" }).format(wanted);
+      const response = await api.post<DaysResponse>("/days", {
+        serviceIds: draft.movingId ? [] : draft.serviceIds,
+        staffId: draft.staffId,
+        from: date,
+        days: 1,
+        ...(draft.movingId ? { appointmentId: draft.movingId } : {}),
+      });
+      const day = response.days[0];
+      if (!day) return;
+      const close = day.slots
+        .filter((s) => s.iso !== draft.startsAt)
+        .sort((a, b) => Math.abs(Date.parse(a.iso) - wanted.getTime()) - Math.abs(Date.parse(b.iso) - wanted.getTime()))
+        .slice(0, 3)
+        .sort((a, b) => Date.parse(a.iso) - Date.parse(b.iso));
+      setNearby(close.map((s) => ({ ...s, label: `${day.label} · ${s.time}` })));
+    } catch {
+      setNearby([]);
+    }
+  }
 
   async function confirm() {
     if (!draft.startsAt) return;
@@ -46,7 +75,10 @@ export default function RecapStep() {
     } catch (e) {
       setError(messageOf(e));
       // Créneau pris entre-temps ou devenu impossible : on propose d'en choisir un autre.
-      if (e instanceof ApiError && e.status !== 0 && e.code !== "not_signed_in" && e.code !== "rate_limited") setLost(true);
+      if (e instanceof ApiError && e.status !== 0 && e.code !== "not_signed_in" && e.code !== "rate_limited") {
+        setLost(true);
+        void loadNearby();
+      }
     } finally {
       setBusy(false);
     }
@@ -54,6 +86,7 @@ export default function RecapStep() {
 
   return (
     <Screen
+      sweep
       footer={
         customer ? (
           lost ? (
@@ -93,6 +126,25 @@ export default function RecapStep() {
       ) : null}
       {!customer ? <Body>Connectez-vous ou créez un compte pour terminer : votre choix est gardé.</Body> : null}
       <ErrorText>{error}</ErrorText>
+      {lost && nearby.length > 0 ? (
+        <View style={{ gap: 10 }}>
+          <LabelCaps>Horaires proches</LabelCaps>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+            {nearby.map((n) => (
+              <Chip
+                key={n.iso}
+                label={n.time}
+                onPress={() => {
+                  update({ startsAt: n.iso, slotLabel: n.label });
+                  setLost(false);
+                  setError(null);
+                  setNearby([]);
+                }}
+              />
+            ))}
+          </View>
+        </View>
+      ) : null}
     </Screen>
   );
 }

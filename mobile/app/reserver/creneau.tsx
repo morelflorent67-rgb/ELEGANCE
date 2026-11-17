@@ -1,7 +1,6 @@
 import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
-import { messageOf } from "@/api/client";
 import type { DaysResponse } from "@/api/types";
 import { useBooking } from "@/booking";
 import { routeAfterSlot } from "@/flow";
@@ -10,7 +9,8 @@ import { StepHeader } from "@/step-header";
 import { useSession } from "@/session";
 import { colors, fonts, spacing } from "@/theme";
 import { useLoad } from "@/use-load";
-import { Body, Button, Card, Chip, ErrorText, Heading, LoadState, Muted, Screen, Title } from "@/ui";
+import { WaitlistSheet } from "@/waitlist-sheet";
+import { Body, Button, Card, Chip, Heading, LoadState, Muted, Screen, Title } from "@/ui";
 
 type Window = "morning" | "afternoon" | "day";
 const WINDOWS: { id: Window; label: string }[] = [
@@ -25,6 +25,7 @@ export default function SlotStep() {
   const { api, customer, booking } = useSession();
   const { draft, update } = useBooking();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [waitlistOpen, setWaitlistOpen] = useState(false);
 
   const loaded = useLoad(
     () =>
@@ -43,6 +44,7 @@ export default function SlotStep() {
 
   return (
     <Screen
+      sweep
       footer={
         <Button
           label="Continuer"
@@ -113,56 +115,17 @@ export default function SlotStep() {
         ) : null}
 
         {day && day.state === "full" && !draft.movingId ? (
-          <Waitlist date={day.date} signedIn={!!customer} />
+          <>
+            <Card accent>
+              <Heading>Complet ce jour-là</Heading>
+              <Muted>Une place peut se libérer : annulation, déplacement.</Muted>
+              <Button label="Me prévenir si une place se libère" kind="secondary" onPress={() => setWaitlistOpen(true)} />
+            </Card>
+            <WaitlistSheet open={waitlistOpen} onClose={() => setWaitlistOpen(false)} date={day.date} dayLabel={day.label} />
+          </>
         ) : null}
         <Muted>Les horaires affichés sont ceux du salon, heure de Paris.</Muted>
       </LoadState>
     </Screen>
-  );
-}
-
-function Waitlist({ date, signedIn }: { date: string; signedIn: boolean }) {
-  const { api } = useSession();
-  const { draft } = useBooking();
-  const [window, setWindow] = useState<Window>("day");
-  const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function join() {
-    setBusy(true);
-    setError(null);
-    try {
-      await api.post("/waitlist", { serviceIds: draft.serviceIds, staffId: draft.staffId, days: [date], window });
-      setDone(true);
-    } catch (e) {
-      setError(messageOf(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <Card>
-      <Heading>Me prévenir si une place se libère</Heading>
-      {done ? (
-        <Body>C&apos;est noté. Vous serez prévenu(e) dès qu&apos;une place se libère ; elle sera gardée pour vous quelques minutes.</Body>
-      ) : !signedIn ? (
-        <>
-          <Muted>Connectez-vous pour vous inscrire sur la liste d&apos;attente.</Muted>
-          <Button label="Se connecter" kind="secondary" onPress={() => router.push("/connexion")} />
-        </>
-      ) : (
-        <>
-          <View style={{ gap: spacing.sm }}>
-            {WINDOWS.map((w) => (
-              <Chip key={w.id} label={w.label} selected={window === w.id} onPress={() => setWindow(w.id)} />
-            ))}
-          </View>
-          <ErrorText>{error}</ErrorText>
-          <Button label="M'inscrire" onPress={() => void join()} loading={busy} />
-        </>
-      )}
-    </Card>
   );
 }

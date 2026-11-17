@@ -11,7 +11,7 @@ import { Screen } from "@/ui";
 export default function AccountStep() {
   const { draft } = useBooking();
   return (
-    <Screen>
+    <Screen sweep>
       <StepHeader step={4} label="Compte" />
       <AuthForm
         initialMode="signup"

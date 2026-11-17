@@ -51,6 +51,8 @@ export interface Vitrine {
   week: Record<number, DayRange[]>;
   closures: { startsOn: string; endsOn: string; reason: string | null }[];
   salon: { name: string; tagline: string };
+  legal: LegalDocument[];
+  legalUpdated: string;
   access: {
     address: string;
     phoneDisplay: string;
@@ -63,6 +65,14 @@ export interface Vitrine {
     instagram: string;
     ways: { kind: string; title: string; detail: string }[];
   };
+}
+
+export interface LegalDocument {
+  slug: "mentions-legales" | "confidentialite" | "conditions";
+  tab: string;
+  title: string;
+  description: string;
+  sections: { num: string; id: string; title: string; body: string }[];
 }
 
 export interface StaffChoice {

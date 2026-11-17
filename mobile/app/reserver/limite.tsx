@@ -15,6 +15,7 @@ export default function LimitScreen() {
 
   return (
     <Screen
+      sweep
       footer={
         <>
           <Button label="Mes rendez-vous" arrow onPress={() => router.replace("/rendez-vous")} />

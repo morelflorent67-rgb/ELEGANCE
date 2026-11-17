@@ -28,6 +28,7 @@ export default function ServicesStep() {
 
   return (
     <Screen
+      sweep
       footer={
         <>
           <Muted style={{ fontSize: 14 }}>

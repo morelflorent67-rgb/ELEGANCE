@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
+import { Sweep } from "@/sweep";
 import { colors, fonts, spacing } from "@/theme";
 
 // Éléments communs de l'app, repris de ceux du site (src/components/client/ui.tsx) : formes carrées, filets de 1 px,
@@ -31,6 +32,7 @@ export function Screen({
   padTop = true,
   gap = spacing.lg,
   scrollY,
+  sweep,
 }: {
   children: ReactNode;
   /** Barre d'action fixée en bas (Continuer, Confirmer…). */
@@ -39,10 +41,13 @@ export function Screen({
   gap?: number;
   /** Position de défilement partagée (fondu du fond sur l'accueil). */
   scrollY?: Animated.Value;
+  /** Ligne de lumière qui balaie l'écran à l'arrivée (étapes de la réservation). */
+  sweep?: boolean;
 }) {
   const insets = useSafeAreaInsets();
   return (
     <View style={styles.screen}>
+      {sweep ? <Sweep /> : null}
       <Animated.ScrollView
         scrollEventThrottle={16}
         onScroll={

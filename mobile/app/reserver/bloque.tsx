@@ -9,6 +9,7 @@ export default function BlockedScreen() {
   const { data } = useVitrine();
   return (
     <Screen
+      sweep
       footer={
         <>
           <Button label="Appeler le salon" arrow disabled={!data} onPress={() => data && void Linking.openURL(data.access.phoneHref)} />

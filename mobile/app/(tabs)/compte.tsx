@@ -1,10 +1,10 @@
-import * as WebBrowser from "expo-web-browser";
+import { router } from "expo-router";
 import { useState } from "react";
 import { Alert, View } from "react-native";
 import { ApiError, messageOf } from "@/api/client";
 import type { Customer } from "@/api/types";
 import { NeedsLogin } from "@/needs-login";
-import { API_BASE_URL, useSession } from "@/session";
+import { useSession } from "@/session";
 import { spacing } from "@/theme";
 import { Body, Button, ErrorText, Field, Heading, Muted, Screen, Title } from "@/ui";
 
@@ -133,9 +133,9 @@ function Account({ customer }: { customer: Customer }) {
       <Button label="Changer le mot de passe" kind="secondary" onPress={() => void changePassword()} loading={busy === "password"} />
 
       <Heading>Informations légales</Heading>
-      <Button label="Mentions légales" kind="secondary" onPress={() => void WebBrowser.openBrowserAsync(`${API_BASE_URL}/mentions-legales`)} />
-      <Button label="Politique de confidentialité" kind="secondary" onPress={() => void WebBrowser.openBrowserAsync(`${API_BASE_URL}/confidentialite`)} />
-      <Button label="Conditions de réservation" kind="secondary" onPress={() => void WebBrowser.openBrowserAsync(`${API_BASE_URL}/conditions`)} />
+      <Button label="Mentions légales" kind="secondary" onPress={() => router.push("/legal/mentions-legales")} />
+      <Button label="Politique de confidentialité" kind="secondary" onPress={() => router.push("/legal/confidentialite")} />
+      <Button label="Conditions de réservation" kind="secondary" onPress={() => router.push("/legal/conditions")} />
 
       <Button label="Se déconnecter" kind="secondary" onPress={() => void signOut()} />
 

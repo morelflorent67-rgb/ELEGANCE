@@ -3,11 +3,12 @@ import { Animated, Easing, Linking, Text, View, useWindowDimensions } from "reac
 import Svg, { Defs, Ellipse, RadialGradient, Stop } from "react-native-svg";
 import type { Vitrine } from "@/api/types";
 import { useBooking } from "@/booking";
-import { groupWeekHours } from "@/lib/shared/hours";
+import { weekRows } from "@/lib/shared/hours";
 import { AccessMap } from "@/access-map";
 import { homeScroll } from "@/home-scroll";
 import { useOpening } from "@/opening";
-import { openStatus, zonedNow } from "@/lib/shared/status";
+import { openStatus, weekdayOf, zonedNow } from "@/lib/shared/status";
+import { Typed } from "@/typed";
 import { colors, fonts, spacing } from "@/theme";
 import { Body, Button, Eyebrow, Heading, LoadState, LabelCaps, Mark, Muted, Rule, Screen } from "@/ui";
 import { useVitrine } from "@/vitrine";
@@ -164,7 +165,9 @@ export default function HomeScreen() {
 
 function Details({ data }: { data: Vitrine }) {
   const status = openStatus(data.week, data.closures, zonedNow(new Date()));
-  const rows = groupWeekHours(data.week);
+  const parisNow = zonedNow(new Date());
+  const today = weekdayOf(parisNow.date);
+  const rows = weekRows(data.week);
   const { access } = data;
   return (
     <>
@@ -207,9 +210,7 @@ function Details({ data }: { data: Vitrine }) {
       <View style={{ paddingTop: 56, gap: 22 }}>
         <Eyebrow>Horaires</Eyebrow>
         <View style={{ gap: 14 }}>
-          <Text style={{ fontFamily: fonts.display, fontSize: 46, lineHeight: 48, color: colors.ivory }}>
-            {status.headline}
-          </Text>
+          <Typed text={status.headline} />
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
             <View
               style={{
@@ -224,9 +225,18 @@ function Details({ data }: { data: Vitrine }) {
         </View>
         <View>
           <Rule />
-          {rows.map((row) => (
+          {rows.map((row, index) => (
             <View key={row.label}>
-              <View style={{ minHeight: 64, flexDirection: "row", alignItems: "center" }}>
+              <View
+                style={{
+                  minHeight: 64,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  ...(index + 1 === today
+                    ? { borderWidth: 1, borderColor: "rgba(61,139,255,0.4)", marginHorizontal: -10, paddingHorizontal: 10 }
+                    : null),
+                }}
+              >
                 <Text
                   style={{
                     width: 150,
@@ -238,6 +248,7 @@ function Details({ data }: { data: Vitrine }) {
                   }}
                 >
                   {row.label}
+                  {index + 1 === today ? " (aujourd'hui)" : ""}
                 </Text>
                 <Body style={{ flex: 1, fontSize: 14, color: row.closed ? colors.stone : colors.ivory }}>
                   {row.closed ? "Fermé" : row.ranges.join("\n")}
