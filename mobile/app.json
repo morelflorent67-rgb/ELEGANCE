@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "Elegance Strasbourg",
+    "slug": "elegance-strasbourg",
+    "scheme": "elegance",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#000d1d",
+    "newArchEnabled": true,
+    "ios": {
+      "bundleIdentifier": "fr.elegancestrasbourg.app",
+      "supportsTablet": false,
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "infoPlist": {
+        "CFBundleDevelopmentRegion": "fr",
+        "CFBundleAllowMixedLocalizations": true
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font",
+      "expo-web-browser",
+      "expo-status-bar",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#000d1d"
+        }
+      ]
+    ],
+    "extra": {
+      "apiBaseUrl": "https://elegance-strasbourg.fr"
+    }
+  }
+}

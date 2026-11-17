@@ -91,13 +91,13 @@ But : tout ce que fait la page client, accessible en JSON, **sans dupliquer une 
 
 ## Lot 26 — L'app Expo : squelette et écrans
 
-- [ ] Dossier **`mobile/`** à la racine, **hors** du `pnpm-workspace.yaml` (son propre `package.json` et sa propre lockfile, comme `communication/lancement/`) : le site ne doit pas hériter des dépendances React Native. Justifier dans `docs/decisions.md` chaque dépendance (Expo SDK à jour, `expo-router`, `expo-secure-store` pour le jeton, `expo-font`, `expo-haptics`, `expo-web-browser`).
-- [ ] `app.json` : nom « Elegance Strasbourg », identifiant `fr.elegancestrasbourg.app` (définitif : ne plus jamais le changer), icône (le E du logo, 1024 × 1024, sans transparence), écran de lancement, `ios.supportsTablet: false`, `ios.config.usesNonExemptEncryption: false`, langue française.
-- [ ] Charte du lot 12 et 18 : fond encre, accent **bleu** (`--accent-rgb`), Manrope et Cormorant Garamond. Reprendre les valeurs de `src/app/(client)/client.css` (pas le doré de la tablette).
-- [ ] Écrans : Accueil (ouvert/fermé maintenant, horaires, accès avec bouton Appeler et Itinéraire), Réserver (prestation → coiffeur ou « Sans préférence » → jour → créneau → confirmation, une étape par écran comme `BookingFlow`), Mes RDV (déplacer, annuler, « reprendre le même RDV »), Fidélité, Compte (mes informations, déconnexion, **supprimer mon compte** avec confirmation, liens confidentialité, conditions, mentions légales via `expo-web-browser`), Connexion/Inscription.
-- [ ] Session expirée → retour propre à la connexion, sans perdre l'étape de réservation en cours. Pas de réseau → message clair, pas d'écran blanc.
-- [ ] Tests : fonctions pures de l'app (traduction des codes, formats d'heure Europe/Paris) avec Jest d'Expo ; parcours essayés à la main sur l'iPhone, liste cochée dans `docs/app-store/recette.md`.
-- [ ] **Première construction** : Florent tape `eas login` puis `eas build -p ios` (Expo crée les certificats Apple, Florent saisit lui-même son identifiant Apple), `eas submit` → **TestFlight** sur son iPhone.
+- [x] Dossier **`mobile/`** à la racine, **hors** du `pnpm-workspace.yaml` (son propre `package.json` et sa propre lockfile, comme `communication/lancement/`) : le site ne doit pas hériter des dépendances React Native. Justifier dans `docs/decisions.md` chaque dépendance (Expo SDK à jour, `expo-router`, `expo-secure-store` pour le jeton, `expo-font`, `expo-haptics`, `expo-web-browser`).
+- [x] `app.json` : nom « Elegance Strasbourg », identifiant `fr.elegancestrasbourg.app` (définitif : ne plus jamais le changer), icône (le E du logo, 1024 × 1024, sans transparence), écran de lancement, `ios.supportsTablet: false`, `ios.config.usesNonExemptEncryption: false`, langue française.
+- [x] Charte du lot 12 et 18 : fond encre, accent **bleu** (`--accent-rgb`), Manrope et Cormorant Garamond. Reprendre les valeurs de `src/app/(client)/client.css` (pas le doré de la tablette).
+- [x] Écrans : Accueil (ouvert/fermé maintenant, horaires, accès avec bouton Appeler et Itinéraire), Réserver (prestation → coiffeur ou « Sans préférence » → jour → créneau → confirmation, une étape par écran comme `BookingFlow`), Mes RDV (déplacer, annuler, « reprendre le même RDV »), Fidélité, Compte (mes informations, déconnexion, **supprimer mon compte** avec confirmation, liens confidentialité, conditions, mentions légales via `expo-web-browser`), Connexion/Inscription.
+- [x] Session expirée → retour propre à la connexion, sans perdre l'étape de réservation en cours. Pas de réseau → message clair, pas d'écran blanc.
+- [x] Tests : fonctions pures de l'app (traduction des codes, formats d'heure Europe/Paris) avec Jest d'Expo ; parcours essayés à la main sur l'iPhone, liste cochée dans `docs/app-store/recette.md`.
+- [ ] **Première construction** (nécessite le compte Expo et le compte Apple du lot 24 ; `mobile/eas.json` est prêt) : Florent tape `eas login` puis `eas build -p ios` (Expo crée les certificats Apple, Florent saisit lui-même son identifiant Apple), `eas submit` → **TestFlight** sur son iPhone.
 
 ## Lot 27 — Fonctions natives (ce qui fait accepter l'app)
 
