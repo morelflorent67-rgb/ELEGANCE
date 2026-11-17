@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { Linking, View } from "react-native";
+import { Image, Linking, View } from "react-native";
 import { useBooking } from "@/booking";
 import { groupWeekHours } from "@/lib/shared/hours";
 import { openStatus, zonedNow } from "@/lib/shared/status";
@@ -15,9 +15,14 @@ export default function HomeScreen() {
 
   return (
     <Screen>
-      <View style={{ gap: spacing.xs }}>
-        <Muted>{data?.salon.name ?? "Elegance Strasbourg"}</Muted>
-        <Title>Bien plus qu&apos;une coupe.</Title>
+      <View style={{ gap: spacing.lg, marginTop: spacing.lg }}>
+        <Image
+          source={require("../../assets/logo-ivoire.png")}
+          resizeMode="contain"
+          accessibilityLabel="Elegance Strasbourg"
+          style={{ width: "100%", height: 64 }}
+        />
+        <Title style={{ textAlign: "center" }}>Bien plus qu&apos;une coupe.</Title>
       </View>
 
       <Button

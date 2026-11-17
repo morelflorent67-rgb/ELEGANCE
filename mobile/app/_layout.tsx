@@ -13,6 +13,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
+import { Image, StyleSheet, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { BookingProvider } from "@/booking";
 import { SessionProvider, useSession } from "@/session";
@@ -36,13 +37,18 @@ function Gate() {
   }, [done]);
   if (!done) return null;
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.ink } }}>
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="reserver" />
-      <Stack.Screen name="connexion" options={{ presentation: "modal" }} />
-      <Stack.Screen name="mot-de-passe" options={{ presentation: "modal" }} />
-      <Stack.Screen name="attente/[id]" options={{ presentation: "modal" }} />
-    </Stack>
+    <View style={{ flex: 1, backgroundColor: colors.ink }}>
+      {/* Fond du côté client du site (lot 18) : image figée de l'éclipse, voilée pour la lisibilité. */}
+      <Image source={require("../assets/fond-eclipse.webp")} resizeMode="cover" style={StyleSheet.absoluteFill} accessibilityElementsHidden />
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,13,29,0.5)" }]} />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "transparent" } }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="reserver" />
+        <Stack.Screen name="connexion" options={{ presentation: "modal", contentStyle: { backgroundColor: colors.ink } }} />
+        <Stack.Screen name="mot-de-passe" options={{ presentation: "modal", contentStyle: { backgroundColor: colors.ink } }} />
+        <Stack.Screen name="attente/[id]" options={{ presentation: "modal", contentStyle: { backgroundColor: colors.ink } }} />
+      </Stack>
+    </View>
   );
 }
 

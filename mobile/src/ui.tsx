@@ -222,8 +222,11 @@ export function Chip({
   );
 }
 
+/** Chiffres alignés, comme sur le site (Cormorant Garamond a des chiffres anciens par défaut). */
+const LINING: TextStyle["fontVariant"] = ["lining-nums", "tabular-nums"];
+
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.ink },
+  screen: { flex: 1, backgroundColor: "transparent" },
   footer: {
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.md,
@@ -232,8 +235,8 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.line,
   },
-  title: { fontFamily: fonts.displaySemi, fontSize: 34, lineHeight: 38, color: colors.ivory },
-  heading: { fontFamily: fonts.displaySemi, fontSize: 24, color: colors.ivory },
+  title: { fontFamily: fonts.displaySemi, fontSize: 34, lineHeight: 38, color: colors.ivory, fontVariant: LINING },
+  heading: { fontFamily: fonts.displaySemi, fontSize: 24, color: colors.ivory, fontVariant: LINING },
   body: { fontFamily: fonts.sans, fontSize: 15, lineHeight: 22, color: colors.ivory },
   muted: { fontFamily: fonts.sans, fontSize: 13, lineHeight: 19, color: colors.stone },
   card: {

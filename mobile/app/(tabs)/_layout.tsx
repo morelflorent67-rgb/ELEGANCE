@@ -12,7 +12,7 @@ export default function TabsLayout() {
         tabBarLabelStyle: { fontFamily: fonts.sansSemi, fontSize: 13 },
         tabBarIconStyle: { display: "none" },
         tabBarLabelPosition: "beside-icon",
-        sceneStyle: { backgroundColor: colors.ink },
+        sceneStyle: { backgroundColor: "transparent" },
       }}
     >
       <Tabs.Screen name="index" options={{ title: "Accueil" }} />

@@ -77,7 +77,7 @@ export default function SlotStep() {
                 }}
               >
                 <Text style={{ fontFamily: fonts.sans, fontSize: 12, color: active ? colors.ink : colors.stone }}>{d.dow}</Text>
-                <Text style={{ fontFamily: fonts.displaySemi, fontSize: 24, color: active ? colors.ink : colors.ivory }}>{d.num}</Text>
+                <Text style={{ fontFamily: fonts.displaySemi, fontSize: 24, fontVariant: ["lining-nums", "tabular-nums"], color: active ? colors.ink : colors.ivory }}>{d.num}</Text>
                 <Text style={{ fontFamily: fonts.sans, fontSize: 10, color: active ? colors.ink : colors.stone }}>
                   {d.state === "full" ? "complet" : d.state === "closed" ? "fermé" : ""}
                 </Text>

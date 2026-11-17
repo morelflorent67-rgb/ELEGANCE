@@ -30,4 +30,6 @@ mkdirSync("mobile/assets", { recursive: true });
 await sharp(svg(1024, 0.42)).flatten({ background: INK }).removeAlpha().png().toFile("mobile/assets/icon.png");
 // Lancement : le E seul, plus petit, sur le même fond.
 await sharp(svg(1024, 0.3)).flatten({ background: INK }).removeAlpha().png().toFile("mobile/assets/splash-icon.png");
-console.log("Icônes écrites dans mobile/assets");
+// Logo ivoire de l'accueil (le SVG du site, en PNG transparent : l'app n'embarque pas de lecteur SVG).
+await sharp("public/logo/elegance-logo-ivoire.svg", { density: 600 }).resize({ width: 900 }).png().toFile("mobile/assets/logo-ivoire.png");
+console.log("Icônes et logo écrits dans mobile/assets");
