@@ -24,3 +24,6 @@ communication/lancement/qr.svg
 # dans le test lui-même.
 *.csv
 *.xlsx
+
+# Journal de l aperçu web de l app (outil de développement)
+.expo-web.log
