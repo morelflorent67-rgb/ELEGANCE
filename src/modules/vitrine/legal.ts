@@ -4,8 +4,8 @@ import type { SalonRules } from "./load";
 
 // Pages légales : un gabarit à onglets, trois documents. Les textes décrivent ce que le site fait vraiment ; les
 // règles chiffrées (rendez-vous à venir, délai de modification, rappel) sont lues dans les réglages du salon, jamais écrites en dur.
-// Ce qui n'est connu que du salon reste entre crochets : voir `placeholdersOf`. Le tout est à faire valider par
-// un professionnel avant l'ouverture (docs/design/README.md §8).
+// Plus aucun champ à compléter (17 novembre 2026). Un texte entre crochets reste détecté par `placeholdersOf`,
+// que le test vérifie vide. Le tout peut être relu par un professionnel (docs/design/README.md §8).
 
 export const LEGAL_SLUGS = ["mentions-legales", "confidentialite", "conditions"] as const;
 export type LegalSlug = (typeof LEGAL_SLUGS)[number];
@@ -29,7 +29,7 @@ export interface LegalDocument {
 }
 
 /** Date de la dernière rédaction des textes (à changer quand un texte change). */
-export const LEGAL_UPDATED = "16 novembre 2026";
+export const LEGAL_UPDATED = "17 novembre 2026";
 
 const hoursToWords = (hours: number) =>
   hours % 24 === 0 ? `${hours / 24} ${hours / 24 > 1 ? "jours" : "jour"}` : `${hours} h`;
@@ -40,7 +40,7 @@ function mentions(): Raw[] {
   return [
     [
       "Éditeur du site",
-      `${SALON.name}\nSARL au capital de 50 €\nSiège social : ${salonAddressLine}\nTéléphone : ${SALON.phoneDisplay}\nSIRET : 852 415 736 00010 · RCS Strasbourg 852 415 736\nTVA intracommunautaire : FR39852415736`,
+      `${SALON.name}\nSARL au capital de 50 €\nSiège social : ${salonAddressLine}\nTéléphone : ${SALON.phoneDisplay}\nEmail : ${SALON.email}\nSIRET : 852 415 736 00010 · RCS Strasbourg 852 415 736\nTVA intracommunautaire : FR39852415736`,
     ],
     ["Directeur de la publication", "Orhan Sevig, gérant."],
     [
@@ -49,11 +49,11 @@ function mentions(): Raw[] {
     ],
     [
       "Propriété intellectuelle",
-      "Le logo Elegance, les textes et les photos du salon sont la propriété d'Elegance Strasbourg. Toute reproduction sans accord écrit est interdite. [Texte à faire valider.]",
+      "Le logo Elegance, les textes et les photos du salon sont la propriété d'Elegance Strasbourg. Toute reproduction ou utilisation sans accord écrit du salon est interdite.",
     ],
     [
       "Contact",
-      `Par téléphone au ${SALON.phoneDisplay}, du mardi au samedi, ou sur place au ${SALON.street}, ${SALON.postalCode} ${SALON.city}. [Adresse email de contact]`,
+      `Par téléphone au ${SALON.phoneDisplay}, du mardi au samedi, ou sur place au ${SALON.street}, ${SALON.postalCode} ${SALON.city}, ou par email à ${SALON.email}.`,
     ],
   ];
 }
@@ -62,7 +62,7 @@ function privacy(rules: SalonRules): Raw[] {
   return [
     [
       "Responsable du traitement",
-      `${SALON.name}, ${salonAddressLine}. Contact : ${SALON.phoneDisplay}, [Adresse email de contact].`,
+      `${SALON.name}, ${salonAddressLine}. Contact : ${SALON.phoneDisplay}, ${SALON.email}.`,
     ],
     [
       "Données collectées",
@@ -70,7 +70,7 @@ function privacy(rules: SalonRules): Raw[] {
     ],
     [
       "Utilisation",
-      `Ces informations servent à gérer vos rendez-vous et à vous écrire à leur sujet : email de confirmation avec un lien d'ajout à l'agenda, rappel ${hoursToWords(rules.reminderHours)} avant le rendez-vous, email si le salon modifie ou annule un rendez-vous${rules.reviewInvitations ? ", et, le lendemain d'un rendez-vous, une invitation à donner votre avis (un lien dans cet email permet de ne plus en recevoir)" : ""}. Si vous vous inscrivez à la liste d'attente, un email vous prévient quand une place qui vous convient se libère ; elle est gardée pour vous ${rules.waitlistHoldMinutes} minutes, puis proposée à la personne suivante, et vous pouvez quitter la liste à tout moment depuis « Mes rendez-vous ». ${rules.winbackAfterDays} jours après votre dernier rendez-vous, si vous n'en avez pas d'autre de prévu, le salon peut vous écrire une fois pour vous inviter à revenir (un lien dans cet email permet de ne plus en recevoir). Aucun SMS n'est envoyé. Vos données ne sont ni vendues ni cédées à des tiers à des fins commerciales.`,
+      `Ces informations servent à gérer vos rendez-vous et à vous écrire à leur sujet : email de confirmation avec un lien d'ajout à l'agenda, rappel ${hoursToWords(rules.reminderHours)} avant le rendez-vous, email si le salon modifie ou annule un rendez-vous${rules.reviewInvitations ? ", et, le lendemain d'un rendez-vous, une invitation à donner votre avis (un lien dans cet email permet de ne plus en recevoir)" : ""}. Si vous vous inscrivez à la liste d'attente, un email vous prévient quand une place qui vous convient se libère ; elle est gardée pour vous ${rules.waitlistHoldMinutes} minutes, puis proposée à la personne suivante, et vous pouvez quitter la liste à tout moment depuis Mes rendez-vous. ${rules.winbackAfterDays} jours après votre dernier rendez-vous, si vous n'en avez pas d'autre de prévu, le salon peut vous écrire une fois pour vous inviter à revenir (un lien dans cet email permet de ne plus en recevoir). Aucun SMS n'est envoyé. Vos données ne sont ni vendues ni cédées à des tiers à des fins commerciales.`,
     ],
     [
       "Prestataires",
@@ -78,15 +78,15 @@ function privacy(rules: SalonRules): Raw[] {
     ],
     [
       "Durée de conservation",
-      "Vos données sont conservées tant que votre compte existe. Si vous supprimez votre compte, votre nom, votre téléphone et votre email sont effacés ; vos rendez-vous passés sont gardés sans aucune information qui permette de vous identifier, pour que les statistiques du salon restent justes. Une fiche sans compte peut être effacée sur simple demande au salon. [Durée de conservation d'un compte inactif : à définir.] [Durée de conservation d'une fiche sans compte : à définir.]",
+      "Vos données sont conservées tant que votre compte existe. Si vous supprimez votre compte, votre nom, votre téléphone et votre email sont effacés ; vos rendez-vous passés sont gardés sans aucune information qui permette de vous identifier, pour que les statistiques du salon restent justes. Un compte (ou une fiche créée par le salon) sans rendez-vous ni connexion depuis 3 ans est supprimé de la même façon. Sur simple demande au salon, votre compte ou votre fiche est effacé plus tôt.",
     ],
     [
       "Vos droits",
-      "Vous pouvez consulter, corriger ou supprimer vos informations à tout moment depuis « Mes informations », ou en contactant le salon. Vous pouvez aussi demander l'accès à vos données, leur portabilité ou vous opposer à un traitement. Si vous estimez que vos droits ne sont pas respectés, vous pouvez saisir la CNIL (cnil.fr). [Modalités de réponse à compléter.]",
+      `Vous pouvez consulter, corriger ou supprimer vos informations à tout moment depuis Mes informations, ou en contactant le salon. Vous pouvez aussi demander l'accès à vos données, leur portabilité, la limitation de leur traitement ou vous y opposer. Écrivez à ${SALON.email} ou appelez le salon : il répond dans un délai d'un mois au plus. Si vous estimez que vos droits ne sont pas respectés, vous pouvez saisir la CNIL (cnil.fr).`,
     ],
     [
       "Cookies",
-      "Le site n'utilise que des cookies nécessaires à son fonctionnement : celui qui garde votre connexion et ceux de la tablette du salon. Il n'y a ni publicité ni mesure d'audience, et aucun traceur tiers : aucun bandeau de consentement n'est donc nécessaire. [Texte à faire valider.]",
+      "Le site n'utilise que des cookies nécessaires à son fonctionnement : celui qui garde votre connexion et ceux de la tablette du salon. Il n'y a ni publicité ni mesure d'audience, et aucun traceur tiers : aucun bandeau de consentement n'est donc nécessaire.",
     ],
   ];
 }
@@ -95,7 +95,7 @@ function conditions(rules: SalonRules): Raw[] {
   return [
     [
       "Réservation",
-      `La réservation en ligne nécessite un compte. Un client peut avoir au maximum ${rules.maxUpcomingPerCustomer} rendez-vous à venir en même temps. Un rendez-vous est confirmé dès sa réservation ; un email de confirmation vous est envoyé. Il est toujours au nom du titulaire du compte ; « Pour qui ? » permet d'indiquer le prénom d'un proche.`,
+      `La réservation en ligne nécessite un compte. Un client peut avoir au maximum ${rules.maxUpcomingPerCustomer} rendez-vous à venir en même temps. Un rendez-vous est confirmé dès sa réservation ; un email de confirmation vous est envoyé. Il est toujours au nom du titulaire du compte ; Pour qui ? permet d'indiquer le prénom d'un proche.`,
     ],
     [
       "Modification et annulation",
@@ -103,7 +103,7 @@ function conditions(rules: SalonRules): Raw[] {
     ],
     [
       "Rendez-vous non honorés",
-      `Un rendez-vous non honoré sans prévenir est noté sur votre fiche. À partir de ${rules.noShowBlockThreshold} rendez-vous non honorés, le salon peut décider de suspendre votre réservation en ligne ; vous pouvez toujours prendre rendez-vous en appelant le salon. [Conditions à valider.]`,
+      `Un rendez-vous non honoré sans prévenir est noté sur votre fiche. À partir de ${rules.noShowBlockThreshold} rendez-vous non honorés, le salon peut décider de suspendre votre réservation en ligne ; vous pouvez toujours prendre rendez-vous en appelant le salon.`,
     ],
     ...(rules.loyaltyEnabled
       ? ([
@@ -115,7 +115,7 @@ function conditions(rules: SalonRules): Raw[] {
       : []),
     [
       "Prestations sur devis",
-      `Certaines prestations, signalées « sur devis » et affichées « à partir de » un prix, demandent un échange avant le rendez-vous : elles se réservent uniquement par téléphone au ${SALON.phoneDisplay}.`,
+      `Certaines prestations, signalées sur devis et affichées à partir d'un prix, demandent un échange avant le rendez-vous : elles se réservent uniquement par téléphone au ${SALON.phoneDisplay}.`,
     ],
     [
       "Paiement",
@@ -123,7 +123,11 @@ function conditions(rules: SalonRules): Raw[] {
     ],
     [
       "Responsabilité",
-      "Le salon s'efforce de maintenir le site accessible en permanence, sans pouvoir garantir l'absence d'interruption. En cas de difficulté pour réserver, appelez le salon. [Texte à compléter et à faire valider.]",
+      "Le salon s'efforce de maintenir le site accessible en permanence, sans pouvoir garantir l'absence d'interruption (maintenance, panne, cause extérieure). En cas de difficulté pour réserver, appelez le salon : un rendez-vous reste possible par téléphone. Chacun reste responsable de la confidentialité de son mot de passe.",
+    ],
+    [
+      "Droit applicable",
+      "Ces conditions sont régies par le droit français. En cas de litige, vous pouvez d'abord contacter le salon ; à défaut d'accord, les tribunaux français sont compétents.",
     ],
   ];
 }

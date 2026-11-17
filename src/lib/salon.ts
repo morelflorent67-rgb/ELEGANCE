@@ -8,6 +8,7 @@ export const SALON = {
   city: "Schiltigheim",
   phoneDisplay: "03 88 97 74 68",
   phoneHref: "tel:+33388977468",
+  email: "elegance-strasbourg@gmail.com",
   instagram: "https://www.instagram.com/elegance_strasbourg",
   snapchat: "https://www.snapchat.com/add/barb.hair",
 } as const;

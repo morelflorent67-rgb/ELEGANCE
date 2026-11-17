@@ -50,6 +50,8 @@
 - `src/modules/auth` : interface d'authentification (`postgres-driver.ts` en production : comptes et sessions en base, scrypt, D-116 ; mémoire pour les tests, interdite sans `ALLOW_TEST_DRIVERS`). Un fichier lu directement par Node (scripts) n'a aucun import `@/` : `password.ts`, `staff-account.ts`. `src/modules/customers` : comptes clients, limitation d'essais, état de réservation, « Mes informations » et suppression de compte (`profile.ts`, anonymisation R-75). `src/modules/audit` : journal d'audit, à écrire dans la transaction de l'action.
 - Next 16 garde la page précédente cachée dans le DOM : dans les tests Playwright, filtrer les textes avec `.filter({ visible: true })`.
 
+- Conservation (R-101, D-121) : `src/modules/customers/inactive.ts` supprime chaque jour (depuis `/api/cron/send-emails`) les fiches sans activité depuis 3 ans, via `anonymizeCustomer` (auteur `system`).
+
 ## Emails et bilan (lot 7)
 - Rappel (R-61, D-59) : `scheduleReminder` (`src/modules/mail/reminders.ts`) le met en file dans la transaction de la réservation et du déplacement ; le programme d'envoi (`worker.ts`) l'abandonne si le RDV est annulé ou déplacé et le repousse (`Defer`) tant qu'il est « à traiter ».
 - Invitation à un avis (R-64, D-58) : `scheduleReviewInvitations` (`mail/review-invitations.ts`), appelée par le cron avant l'envoi. Un seul bouton vers `salon_settings.review_url` (pas de lien, pas d'invitation) ; désabonnement par `/avis/desinscription` (lien signé, `customer.review_opt_out`).

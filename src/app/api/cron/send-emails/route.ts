@@ -1,6 +1,9 @@
 import { connection } from "next/server";
 import { db } from "@/db/client";
 import { appSecret, cronSecret, siteUrl } from "@/lib/env";
+import { getAuthDriver } from "@/modules/auth";
+import { purgeInactiveCustomers } from "@/modules/customers/inactive";
+import { hitRateLimit } from "@/modules/security/rate-limit";
 import { processOutbox } from "@/modules/mail";
 import { scheduleReviewInvitations } from "@/modules/mail/review-invitations";
 import { transportFromEnv } from "@/modules/mail/transport-from-env";
@@ -21,6 +24,9 @@ export async function GET(request: Request) {
   const waitlist = await processWaitlist(database);
   const reviewInvitations = await scheduleReviewInvitations(database);
   const winback = await scheduleWinbackEmails(database);
+  // Fiches inactives depuis 3 ans (R-101) : une fois par jour, le cron passe chaque minute.
+  const daily = await hitRateLimit(database, "purge-inactive-customers", { limit: 1, windowSeconds: 86_400 });
+  const inactive = daily.allowed ? await purgeInactiveCustomers(database, getAuthDriver()) : { purged: 0 };
   const result = await processOutbox(database, {
     transport: transportFromEnv(),
     baseUrl: siteUrl(),
@@ -31,6 +37,7 @@ export async function GET(request: Request) {
     ...result,
     reviewInvitations,
     winback,
+    inactivePurged: inactive.purged,
     waitlistOffers: waitlist.offers.length,
     waitlistExpired: waitlist.expired,
   });

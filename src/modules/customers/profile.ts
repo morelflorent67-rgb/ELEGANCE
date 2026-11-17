@@ -196,7 +196,9 @@ export async function changePassword(
 
 export interface AnonymizeInput {
   customerId: string;
-  actor: { type: "customer" | "manager"; id: string | null };
+  actor: { type: "customer" | "manager" | "system"; id: string | null };
+  /** Motif écrit au journal quand ce n'est pas la demande du client ou du gérant (R-101 : « inactive »). */
+  reason?: "inactive";
   /**
    * RDV à venir dans le délai de modification : « refuse » (le client appelle le salon, R-30) ou « cancel »
    * (le gérant, qui n'est pas soumis au délai : R-33).
@@ -302,7 +304,10 @@ export async function anonymizeCustomer(
         action: "customer.deleted",
         entity: "customer",
         entityId: row.id,
-        after: { cancelledAppointments: cancelledIds.length },
+        after: {
+          cancelledAppointments: cancelledIds.length,
+          ...(input.reason ? { reason: input.reason } : {}),
+        },
       },
       now,
     );

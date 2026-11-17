@@ -268,6 +268,7 @@ Ces 52 règles fixent le comportement du moteur de réservation : toutes sont d�
 | R-98 | **100 points** (`loyalty_reward_threshold`) = **une coupe offerte**, utilisée **au salon** sur la fiche RDV de la tablette (« Utiliser la coupe offerte », visible dès le seuil, RDV commencé, ni lapin ni annulé ni encaissé) : confirmation et prénom obligatoires (R-74), 100 points débités, montant à encaisser baissé du prix de la prestation éligible (`service.loyalty_reward_eligible` : coupe homme et coupe & barbe, **offertes en entier** ; pas les tarifs formation ; une seule remise, la plus chère). Journal d'audit | Décidé (D-114) |
 | R-99 | Une seule coupe offerte par RDV. « Annuler la coupe offerte » (erreur, avant encaissement) rend les points et rétablit le montant d'avant | Décidé (D-114) |
 | R-100 | Le solde de points ne descend **jamais sous 0** : refusé par le module et par la base (déclencheur). Les points n'expirent jamais. Le gérant corrige un solde à la main (ajout ou retrait, motif obligatoire, journal) depuis la fiche client, et active ou arrête le programme depuis « Carte et tarifs » ; aucune récompense n'est liée à un avis Google | Décidé (D-114) |
+| R-101 | Chaque jour, le cron supprime (comme R-75 : identité effacée, RDV passés gardés sans identité, journal « system » / motif « inactive ») les fiches dont la dernière activité date de plus de 3 ans : création de la fiche, dernier RDV (même annulé, ou à venir), dernière connexion, dernière visite du fichier repris. Les comptes de l'équipe sont exclus. 50 fiches au plus par passage | Décidé (D-121) |
 
 ## Journal des décisions
 
@@ -394,6 +395,7 @@ Le 20 octobre 2026, 57 décisions ont fixé le cadre du projet ; le 21 octobre 2
 | D-117 | Emails de réinitialisation du mot de passe envoyés par l'app via Brevo, **hors de la file** `email_outbox` (le lien est un secret : il ne doit pas dormir dans la base) ; en cas d'échec, le client redemande un lien | Lot 21 |
 | D-118 | Sauvegarde chaque nuit (3 h, heure de Paris) : `pg_dump` chiffré par restic vers Backblaze B2 (EU Central, Amsterdam) ; on garde 7 nuits et 4 semaines. Restauration essayée avant l'ouverture. Alertes à morel.florent67@gmail.com. Vercel et Supabase coupés après une semaine sans incident sur le VPS | Lot 23 |
 | D-119 | Le site tourne **dans Docker, comme lafineequipe** (écart à « pas de Docker » : le serveur a déjà Docker et un Caddy en conteneur) : conteneurs `elegance` (Next.js) et `elegance-db` (PostgreSQL 17, réseau privé, aucun port ouvert, volume à lui) ; la base de n8n n'est pas touchée. Le Caddy de n8n reçoit un bloc pour `elegance-strasbourg.fr`. Centre de données Contabo : Lauterbourg | Lot 22 |
+| D-121 | Conservation : un compte ou une fiche créée par le salon **sans rendez-vous ni connexion depuis 3 ans** est supprimé automatiquement (17 novembre 2026, réponse de Florent : « pas trop compliqué ») | Durée recommandée par la CNIL pour les clients ; la page de confidentialité l'annonce (R-101) |
 
 ## Documents liés
 

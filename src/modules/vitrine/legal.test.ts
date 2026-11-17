@@ -136,16 +136,22 @@ describe("la politique de confidentialité décrit ce que le site fait vraiment"
   });
 });
 
-describe("placeholdersOf : ce que le salon doit encore fournir", () => {
-  it("liste les champs entre crochets, sans doublon, pour tous les documents", () => {
-    const missing = placeholdersOf(rules);
-    expect(missing).toContain("[Adresse email de contact]");
-    // Centre de données de Contabo : Lauterbourg (réponse de Florent, 16 novembre 2026).
-    expect(missing).not.toContain("[Ville du centre de données]");
-    // Identité du salon (societe.com, 22 octobre 2026) : ces champs sont remplis.
-    for (const filled of ["[Forme juridique]", "[Numéro de SIRET]", "[Montant du capital]", "[Fonction]"]) {
-      expect(missing).not.toContain(filled);
-    }
-    expect(new Set(missing).size).toBe(missing.length);
+describe("pages légales : plus aucun champ à compléter", () => {
+  it("aucun texte entre crochets dans les trois documents (17 novembre 2026)", () => {
+    expect(placeholdersOf(rules)).toEqual([]);
+  });
+
+  it("l'email du salon figure dans les mentions, la confidentialité et les droits", () => {
+    expect(text("mentions-legales")).toContain("elegance-strasbourg@gmail.com");
+    expect(text("confidentialite")).toContain("Contact : 03 88 97 74 68, elegance-strasbourg@gmail.com");
+    expect(text("confidentialite")).toContain("dans un délai d'un mois");
+  });
+
+  it("durée de conservation : 3 ans sans rendez-vous ni connexion", () => {
+    expect(text("confidentialite")).toContain("depuis 3 ans");
+  });
+
+  it("aucun guillemet français dans les pages légales", () => {
+    for (const slug of LEGAL_SLUGS) expect(text(slug)).not.toMatch(/[«»]/);
   });
 });
