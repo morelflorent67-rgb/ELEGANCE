@@ -5,6 +5,8 @@ Ce document permet de reprendre le travail dans une **nouvelle conversation**, s
 
 **16 novembre 2026 : migration vers le VPS de Florent en cours** (tout : site, base, comptes, cron, sauvegardes ; plus de Vercel ni de Supabase ; l'app n'a jamais servi, aucune donnée à reprendre). Plan : `docs/plan-migration-vps.md` (lots 21 à 23). **Lot 21 fait et validé par Florent en local** (le code ne dépend plus de Vercel ni de Supabase). **Lot 22 en cours** : le site tourne sur le VPS en Docker, il reste DNS, Caddy et recette (section « Lot 22 »). Elle passe **avant** la reprise du lot 8, qui se fera sur le VPS. Décisions D-115 à D-118 (`dossier-projet.md`).
 
+**17 novembre 2026 : application iPhone (App Store) décidée (D-122)**, côté clients, publiée par FR Services, construite avec Expo sans Mac. **Plan complet, questions et message de démarrage : `docs/plan-app-store.md` (lots 24 à 29).** Rien n'est codé. Le lot 24 (comptes Apple, D-U-N-S, attestation du salon) est pour Florent et peut commencer tout de suite ; le lot 25 (API mobile) ouvre le code.
+
 **Lot 22 (16 novembre 2026, en cours) : le site sur le VPS, en Docker**
 - **Accès** : `ssh n8n-velto` (utilisateur `n8nadmin`, clé `~/.ssh/n8n_velto`, **depuis PowerShell** ; le ssh de Git Bash est refusé). Dépôt cloné dans `~/elegance`, secrets dans `~/elegance/deploy/.env` (droits 600, générés sur le serveur, jamais dans le chat). Mise à jour : `bash ~/elegance/deploy/update.sh`. Commandes d'exploitation : `bash ~/elegance/deploy/run.sh <script pnpm>` (`staff:account` et `manager:set-code` demandent un terminal : `ssh -t`). Logs : `docker logs -f elegance`.
 - **Fait et vérifié** : conteneurs `elegance` et `elegance-db` en marche ; `/api/health` 200 (dans le conteneur) ; accueil 200 ; cron d'emails chaque minute (crontab de `n8nadmin`, ligne `deploy/cron.sh`, appel à `/api/cron/send-emails` = 200) ; seed appliqué (4 membres, 10 prestations) ; ville du centre de données (Lauterbourg) dans les mentions légales ; 339 tests unitaires verts.
@@ -172,7 +174,7 @@ Florent a transmis en vrac les demandes du salon ; l'analyse et ses réponses on
 - **Gérant** : `/equipe/gerant/terminal` (relier avec code marchand et code d'appairage, délier).
 - Pas affiché dans le planning (pastille « encaissé » sur les cartes) : à proposer à Florent si besoin. Aucune nouvelle dépendance.
 
-**Écarté** : App Store (D-69). L'application installable couvre le besoin.
+**App Store** : écarté le 21 octobre (D-69), **repris le 17 novembre 2026 (D-122)** : voir `docs/plan-app-store.md`.
 
 ## Lot 8 : recette et bascule
 
