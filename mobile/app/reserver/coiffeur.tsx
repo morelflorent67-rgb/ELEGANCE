@@ -27,7 +27,7 @@ export default function StaffStep() {
     <Screen
       footer={<Button label="Continuer" onPress={() => router.push("/reserver/creneau")} />}
     >
-      <StepHeader step={2} />
+      <StepHeader step={2} label="Coiffeur" />
       <Title>Avec qui ?</Title>
       <LoadState loading={loaded.loading} error={loaded.error} hasData={!!loaded.data} reload={loaded.reload}>
         <View style={{ gap: spacing.md }}>

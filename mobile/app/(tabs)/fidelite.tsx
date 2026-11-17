@@ -38,7 +38,7 @@ function Card_({ data }: { data: LoyaltyResponse }) {
   if (!card.enabled) return <Body>Le programme de fidélité n&apos;est pas actif pour le moment.</Body>;
   return (
     <>
-      <Card>
+      <Card accent>
         <Heading>{card.balance} points</Heading>
         <View style={{ flexDirection: "row", gap: 6, marginVertical: spacing.sm }} accessibilityLabel={`${card.balance} points sur ${card.threshold}`}>
           {card.cells.map((cell, i) => (
@@ -46,10 +46,9 @@ function Card_({ data }: { data: LoyaltyResponse }) {
               key={i}
               style={{
                 flex: 1,
-                height: 34,
-                borderRadius: 6,
+                height: 26,
                 borderWidth: 1,
-                borderColor: colors.lineStrong,
+                borderColor: "rgba(239,233,221,0.2)",
                 overflow: "hidden",
               }}
             >

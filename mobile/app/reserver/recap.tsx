@@ -65,7 +65,7 @@ export default function RecapStep() {
         )
       }
     >
-      <StepHeader step={4} />
+      <StepHeader step={4} label="Récapitulatif" />
       <Title>{moving ? "Nouveau créneau" : "Récapitulatif"}</Title>
       <Card>
         <Heading>{draft.slotLabel ?? "Aucun créneau choisi"}</Heading>

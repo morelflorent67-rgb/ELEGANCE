@@ -1,11 +1,11 @@
 import { router } from "expo-router";
-import { Linking, Pressable, View } from "react-native";
+import { Linking, Pressable, Text, View } from "react-native";
 import type { Service } from "@/api/types";
 import { useBooking } from "@/booking";
 import { formatDuration, formatPrice } from "@/lib/money";
 import { StepHeader } from "@/step-header";
-import { colors, spacing } from "@/theme";
-import { Body, Button, Card, Heading, LoadState, Muted, Row, Screen, Title } from "@/ui";
+import { colors, fonts, spacing } from "@/theme";
+import { Body, Button, Check, Eyebrow, LabelCaps, LoadState, Muted, Rule, Screen, Title } from "@/ui";
 import { useVitrine } from "@/vitrine";
 
 // Étape 1 : les prestations (R-13 à R-18). La carte vient du serveur ; les règles de combinaison aussi (refus à l'étape suivante).
@@ -30,45 +30,68 @@ export default function ServicesStep() {
     <Screen
       footer={
         <>
-          {chosen.length > 0 ? (
-            <Muted style={{ textAlign: "center" }}>
-              {formatPrice(total)} · {formatDuration(minutes)}
-            </Muted>
-          ) : null}
-          <Button label="Continuer" disabled={chosen.length === 0} onPress={() => router.push("/reserver/coiffeur")} />
+          <Muted style={{ fontSize: 14 }}>
+            {chosen.length === 0
+              ? "Aucune prestation choisie"
+              : `${chosen.length} ${chosen.length > 1 ? "prestations" : "prestation"} · ${formatPrice(total)} · ${formatDuration(minutes)}`}
+          </Muted>
+          <Button label="Continuer" arrow disabled={chosen.length === 0} onPress={() => router.push("/reserver/coiffeur")} />
         </>
       }
     >
-      <StepHeader step={1} />
-      <Title>Quelle prestation ?</Title>
+      <StepHeader step={1} label="Prestations" />
+      <View style={{ gap: 14, marginTop: 24 }}>
+        <Title>Que souhaitez-vous ?</Title>
+        <Body style={{ color: colors.ivorySoft }}>Plusieurs choix possibles.</Body>
+      </View>
       <LoadState loading={vitrine.loading} error={vitrine.error} hasData={!!data} reload={vitrine.reload}>
         {[...groups.entries()].map(([category, services]) => (
-          <View key={category} style={{ gap: spacing.sm }}>
-            <Heading>{category}</Heading>
-            {services.map((s) => {
-              const selected = draft.serviceIds.includes(s.id);
-              return (
-                <Pressable
-                  key={s.id}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected, disabled: !s.bookableOnline && false }}
-                  onPress={() =>
-                    s.bookableOnline ? toggle(s.id) : data && void Linking.openURL(data.access.phoneHref)
-                  }
-                >
-                  <Card style={selected ? { borderColor: colors.accent, borderWidth: 1.5 } : undefined}>
-                    <Row style={{ justifyContent: "space-between" }}>
-                      <Body style={{ flex: 1 }}>{s.name}</Body>
-                      <Body>{s.bookableOnline ? formatPrice(s.priceCents) : `à partir de ${formatPrice(s.priceCents)}`}</Body>
-                    </Row>
-                    <Muted>
-                      {s.bookableOnline ? formatDuration(s.durationMin) : "Sur devis · touchez pour appeler le salon"}
-                      {s.performedBy === "apprentice" ? " · tarif formation" : ""}
-                    </Muted>
-                  </Card>
-                </Pressable>
-              );
-            })}
+          <View key={category} style={{ gap: spacing.sm, marginTop: spacing.lg }}>
+            <Eyebrow>{category}</Eyebrow>
+            <View>
+              {services.map((s) => {
+                const selected = draft.serviceIds.includes(s.id);
+                return (
+                  <View key={s.id}>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`${s.name}, ${formatPrice(s.priceCents)}`}
+                      accessibilityState={{ selected }}
+                      onPress={() => (s.bookableOnline ? toggle(s.id) : data && void Linking.openURL(data.access.phoneHref))}
+                      style={{ minHeight: 70, flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 14 }}
+                    >
+                      <View style={{ flex: 1, gap: 4 }}>
+                        <Text style={{ fontFamily: fonts.sans, fontSize: 17, lineHeight: 22, color: colors.ivory }}>
+                          {s.name}
+                        </Text>
+                        <Muted style={{ fontSize: 14 }}>
+                          {s.bookableOnline ? formatDuration(s.durationMin) : "Appeler le salon"}
+                          {s.performedBy === "apprentice" ? " · tarif formation" : ""}
+                        </Muted>
+                      </View>
+                      {s.bookableOnline ? (
+                        <>
+                          <Text
+                            style={{
+                              fontFamily: fonts.display,
+                              fontSize: 26,
+                              color: colors.ivory,
+                              fontVariant: ["lining-nums", "tabular-nums"],
+                            }}
+                          >
+                            {formatPrice(s.priceCents)}
+                          </Text>
+                          <Check checked={selected} />
+                        </>
+                      ) : (
+                        <LabelCaps style={{ color: colors.ivory }}>Sur devis</LabelCaps>
+                      )}
+                    </Pressable>
+                    <Rule />
+                  </View>
+                );
+              })}
+            </View>
           </View>
         ))}
       </LoadState>

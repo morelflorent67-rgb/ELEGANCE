@@ -1,8 +1,8 @@
 import Constants from "expo-constants";
-import * as SecureStore from "expo-secure-store";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createApiClient, type ApiClient } from "@/api/client";
 import type { BookingState, Customer, SessionResponse } from "@/api/types";
+import { deleteSecret, getSecret, setSecret } from "@/storage";
 
 // Session du client : le jeton vit dans le trousseau de l'iPhone (expo-secure-store), jamais ailleurs. Le serveur fait
 // foi : un jeton expiré ou refusé efface la session, l'écran qui en dépend propose alors la connexion.
@@ -37,7 +37,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     tokenRef.current = null;
     setCustomer(null);
     setBooking(null);
-    await SecureStore.deleteItemAsync(TOKEN_KEY).catch(() => {});
+    await deleteSecret(TOKEN_KEY).catch(() => {});
   }, []);
 
   const forgetRef = useRef(forget);
@@ -58,7 +58,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const stored = await SecureStore.getItemAsync(TOKEN_KEY).catch(() => null);
+      const stored = await getSecret(TOKEN_KEY).catch(() => null);
       if (stored) {
         tokenRef.current = stored;
         try {
@@ -81,7 +81,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const signIn = useCallback(async (response: SessionResponse) => {
     tokenRef.current = response.token;
-    await SecureStore.setItemAsync(TOKEN_KEY, response.token);
+    await setSecret(TOKEN_KEY, response.token);
     setCustomer(response.customer);
     setBooking(response.booking);
   }, []);

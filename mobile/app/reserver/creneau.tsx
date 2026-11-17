@@ -46,7 +46,7 @@ export default function SlotStep() {
         <Button label="Continuer" disabled={!draft.startsAt} onPress={() => router.push("/reserver/recap")} />
       }
     >
-      <StepHeader step={3} />
+      <StepHeader step={3} label="Créneau" />
       <Title>Quand ?</Title>
       <LoadState loading={loaded.loading} error={loaded.error} hasData={!!loaded.data} reload={loaded.reload}>
         {days.length === 0 ? <Body>Aucun jour n&apos;est ouvert à la réservation pour le moment.</Body> : null}
@@ -68,7 +68,7 @@ export default function SlotStep() {
                 style={{
                   width: 60,
                   paddingVertical: spacing.md,
-                  borderRadius: 14,
+                  borderRadius: 0,
                   alignItems: "center",
                   borderWidth: 1,
                   borderColor: active ? colors.ivory : colors.line,

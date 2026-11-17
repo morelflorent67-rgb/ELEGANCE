@@ -9,7 +9,7 @@ export default function TabsLayout() {
         tabBarStyle: { backgroundColor: colors.ink, borderTopColor: colors.line },
         tabBarActiveTintColor: colors.ivory,
         tabBarInactiveTintColor: colors.stone,
-        tabBarLabelStyle: { fontFamily: fonts.sansSemi, fontSize: 13 },
+        tabBarLabelStyle: { fontFamily: fonts.sansSemi, fontSize: 10, letterSpacing: 2, textTransform: "uppercase" },
         tabBarIconStyle: { display: "none" },
         tabBarLabelPosition: "beside-icon",
         sceneStyle: { backgroundColor: "transparent" },
