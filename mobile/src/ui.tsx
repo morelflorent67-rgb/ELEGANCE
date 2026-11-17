@@ -14,6 +14,7 @@ import {
   type ViewStyle,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Svg, { Path } from "react-native-svg";
 import { colors, fonts, spacing } from "@/theme";
 
 // Éléments communs de l'app, repris de ceux du site (src/components/client/ui.tsx) : formes carrées, filets de 1 px,
@@ -119,6 +120,16 @@ export function Eyebrow({ children, aside }: { children: ReactNode; aside?: stri
       </Text>
       {aside ? <Text style={[styles.muted, { marginLeft: "auto" }]}>{aside}</Text> : null}
     </View>
+  );
+}
+
+/** L'hexagone du compteur de rendez-vous (Hexagon du site) : plein quand le rendez-vous compte. */
+export function Hexagon({ filled }: { filled: boolean }) {
+  return (
+    <Svg width={16} height={14} viewBox="0 0 16 14" fill="none">
+      <Path d="M4.25 0.5H11.75L15.5 7L11.75 13.5H4.25L0.5 7Z" fill={colors.accent} fillOpacity={filled ? 1 : 0} />
+      <Path d="M4.25 0.5H11.75L15.5 7L11.75 13.5H4.25L0.5 7Z" stroke={colors.accent} />
+    </Svg>
   );
 }
 

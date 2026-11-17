@@ -1,10 +1,12 @@
 import { router } from "expo-router";
-import { Image, Linking, Text, View, useWindowDimensions } from "react-native";
+import { Animated, Easing, Linking, Text, View, useWindowDimensions } from "react-native";
+import Svg, { Defs, Ellipse, RadialGradient, Stop } from "react-native-svg";
 import type { Vitrine } from "@/api/types";
 import { useBooking } from "@/booking";
 import { groupWeekHours } from "@/lib/shared/hours";
 import { AccessMap } from "@/access-map";
 import { homeScroll } from "@/home-scroll";
+import { useOpening } from "@/opening";
 import { openStatus, zonedNow } from "@/lib/shared/status";
 import { colors, fonts, spacing } from "@/theme";
 import { Body, Button, Eyebrow, Heading, LoadState, LabelCaps, Mark, Muted, Rule, Screen } from "@/ui";
@@ -16,12 +18,13 @@ export default function HomeScreen() {
   const vitrine = useVitrine();
   const booking = useBooking();
   const { height } = useWindowDimensions();
+  const o = useOpening();
   const data = vitrine.data;
 
   return (
     <Screen padTop={false} gap={0} scrollY={homeScroll}>
       <View style={{ minHeight: Math.max(560, height - 110), paddingTop: 70, gap: 28 }}>
-        <View
+        <Animated.View
           style={{
             position: "absolute",
             top: 18,
@@ -29,6 +32,7 @@ export default function HomeScreen() {
             right: 0,
             flexDirection: "row",
             alignItems: "center",
+            opacity: o.at(0.6, 0.5, Easing.linear),
           }}
         >
           <Mark />
@@ -44,51 +48,110 @@ export default function HomeScreen() {
           >
             Elegance
           </Text>
-        </View>
+        </Animated.View>
 
-        <View style={{ alignItems: "center", marginTop: 40 }}>
-          <Image
-            source={require("../../assets/logo-ivoire.png")}
-            resizeMode="contain"
-            accessibilityLabel="Elegance Strasbourg"
-            style={{ width: 252, height: 76 }}
-          />
+        {/* Le logo : deux faisceaux s'ouvrent, la zone se déplie, le néon s'allume. */}
+        <View style={{ alignItems: "center", marginTop: 40, height: 76, justifyContent: "center" }}>
+          <Animated.View
+            pointerEvents="none"
+            style={{ position: "absolute", width: 320, height: 120, opacity: o.neon.interpolate({ inputRange: [0, 1], outputRange: [0, 0.55] }) }}
+          >
+            <Svg width={320} height={120}>
+              <Defs>
+                <RadialGradient id="logo-glow" cx="50%" cy="50%" rx="50%" ry="50%">
+                  <Stop offset="0" stopColor="#efe9dd" stopOpacity={0.16} />
+                  <Stop offset="1" stopColor="#efe9dd" stopOpacity={0} />
+                </RadialGradient>
+              </Defs>
+              <Ellipse cx={160} cy={60} rx={160} ry={60} fill="url(#logo-glow)" />
+            </Svg>
+          </Animated.View>
+          <Animated.View style={{ transform: [{ scaleY: o.at(0.25, 0.4, o.draw) }] }}>
+            <Animated.Image
+              source={require("../../assets/logo-ivoire.png")}
+              resizeMode="contain"
+              accessibilityLabel="Elegance Strasbourg"
+              style={{ width: 252, height: 76, opacity: o.neon }}
+            />
+          </Animated.View>
+          {[{ top: 4, from: 34 }, { top: 72, from: -34 }].map(({ top, from }) => (
+            <Animated.View
+              key={top}
+              pointerEvents="none"
+              style={{ position: "absolute", top, width: 300, transform: [{ translateY: o.between(0.25, 0.4, from, 0, o.draw) }] }}
+            >
+              <Animated.View
+                style={{
+                  height: 1,
+                  backgroundColor: "#fff",
+                  opacity: o.beamOpacity,
+                  transform: [{ scaleX: o.beamScale }],
+                  shadowColor: "#fff",
+                  shadowOpacity: 0.65,
+                  shadowRadius: 5,
+                  shadowOffset: { width: 0, height: 0 },
+                }}
+              />
+            </Animated.View>
+          ))}
         </View>
 
         <View style={{ alignItems: "center", gap: 14, marginTop: 24 }}>
-          <Text
-            accessibilityRole="header"
+          {[
+            { text: "Bien plus", start: 0.62 },
+            { text: "qu’une coupe.", start: 0.7 },
+          ].map((line, i) => (
+            <View key={line.text} style={{ overflow: "hidden", height: 50, marginTop: i === 0 ? 0 : -12 }}>
+              <Animated.Text
+                accessibilityRole="header"
+                accessibilityLabel={i === 0 ? "Bien plus qu’une coupe." : undefined}
+                accessibilityElementsHidden={i === 1}
+                style={{
+                  fontFamily: fonts.display,
+                  fontSize: 46,
+                  lineHeight: 50,
+                  letterSpacing: -0.5,
+                  color: colors.ivory,
+                  textAlign: "center",
+                  transform: [{ translateY: o.between(line.start, 0.7, 54, 0) }],
+                }}
+              >
+                {line.text}
+              </Animated.Text>
+            </View>
+          ))}
+          <Animated.Text
             style={{
-              fontFamily: fonts.display,
-              fontSize: 46,
-              lineHeight: 48,
-              letterSpacing: -0.5,
-              color: colors.ivory,
-              textAlign: "center",
+              fontFamily: fonts.sans,
+              fontSize: 13,
+              color: colors.ivorySoft,
+              opacity: o.at(0.78, 0.5),
+              transform: [{ translateY: o.between(0.78, 0.5, 10, 0) }],
             }}
           >
-            {"Bien plus\nqu’une coupe."}
-          </Text>
-          <Text style={{ fontFamily: fonts.sans, fontSize: 13, color: colors.ivorySoft }}>
             Coiffure homme et barbe · Schiltigheim
-          </Text>
+          </Animated.Text>
         </View>
 
         <View style={{ gap: 12, marginTop: 20 }}>
-          <Button
-            label="Réserver"
-            arrow
-            onPress={() => {
-              booking.reset();
-              router.push("/reserver");
-            }}
-          />
-          <Button
-            label="Contacter"
-            kind="secondary"
-            onPress={() => data && void Linking.openURL(data.access.phoneHref)}
-            disabled={!data}
-          />
+          <Animated.View style={{ opacity: o.at(0.82, 0.5), transform: [{ translateY: o.between(0.82, 0.5, 10, 0) }] }}>
+            <Button
+              label="Réserver"
+              arrow
+              onPress={() => {
+                booking.reset();
+                router.push("/reserver");
+              }}
+            />
+          </Animated.View>
+          <Animated.View style={{ opacity: o.at(0.88, 0.5), transform: [{ translateY: o.between(0.88, 0.5, 10, 0) }] }}>
+            <Button
+              label="Contacter"
+              kind="secondary"
+              onPress={() => data && void Linking.openURL(data.access.phoneHref)}
+              disabled={!data}
+            />
+          </Animated.View>
         </View>
       </View>
 

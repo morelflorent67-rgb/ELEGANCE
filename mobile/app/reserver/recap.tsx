@@ -6,6 +6,7 @@ import { useBooking } from "@/booking";
 import { formatDuration, formatPrice } from "@/lib/money";
 import { StepHeader } from "@/step-header";
 import { useSession } from "@/session";
+import { colors } from "@/theme";
 import { Body, Button, Card, ErrorText, Field, Heading, Muted, Screen, Title } from "@/ui";
 import { useVitrine } from "@/vitrine";
 
@@ -68,7 +69,9 @@ export default function RecapStep() {
       <StepHeader step={5} label="Récapitulatif" />
       <Title>{moving ? "Nouveau créneau" : "Récapitulatif"}</Title>
       <Card>
-        <Heading>{draft.slotLabel ?? "Aucun créneau choisi"}</Heading>
+        <Heading style={lost ? { textDecorationLine: "line-through", color: colors.stone } : undefined}>
+          {draft.slotLabel ?? "Aucun créneau choisi"}
+        </Heading>
         {chosen.map((s) => (
           <Body key={s.id}>
             {s.name} · {formatPrice(s.priceCents)}

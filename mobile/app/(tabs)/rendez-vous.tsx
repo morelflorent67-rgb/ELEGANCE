@@ -8,7 +8,7 @@ import { NeedsLogin } from "@/needs-login";
 import { useSession } from "@/session";
 import { spacing } from "@/theme";
 import { useLoad } from "@/use-load";
-import { Body, Button, Card, ErrorText, Heading, LoadState, Muted, Screen, Title } from "@/ui";
+import { Body, Button, Card, ErrorText, Heading, Hexagon, LoadState, Muted, Row, Screen, Title } from "@/ui";
 
 export default function AppointmentsScreen() {
   const { customer } = useSession();
@@ -76,9 +76,14 @@ function Appointments() {
       <LoadState loading={list.loading} error={list.error} hasData={!!data} reload={list.reload}>
         {data ? (
           <>
-            <Muted>
-              {data.booking.upcoming} rendez-vous à venir sur {data.booking.maxUpcoming}
-            </Muted>
+            <Row style={{ gap: 6 }}>
+              {Array.from({ length: data.booking.maxUpcoming }, (_, i) => (
+                <Hexagon key={i} filled={i < data.booking.upcoming} />
+              ))}
+              <Muted style={{ marginLeft: 6 }}>
+                {data.booking.upcoming} rendez-vous à venir sur {data.booking.maxUpcoming}
+              </Muted>
+            </Row>
             {data.booking.blocked ? (
               <Card>
                 <Body>La réservation en ligne est indisponible pour votre compte. Appelez le salon.</Body>
