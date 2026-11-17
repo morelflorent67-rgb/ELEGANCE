@@ -1,6 +1,6 @@
 # Plan : l'application iPhone sur l'App Store (lots 24 à 29)
 
-> **État au 17 novembre 2026 : plan écrit, rien de codé.** Décision D-122 (remplace le « pas d'App Store » de D-69). Réponses de Florent du 17 novembre : publication par **sa société FR Services** (pas la société du salon), **côté clients seulement** (la tablette reste le site), **Florent a un iPhone** pour les essais.
+> **État au 17 novembre 2026 : plan écrit ; lot 25 (API mobile) codé et testé, à déployer.** Décision D-122 (remplace le « pas d'App Store » de D-69). Réponses de Florent du 17 novembre : publication par **sa société FR Services** (pas la société du salon), **côté clients seulement** (la tablette reste le site), **Florent a un iPhone** pour les essais.
 
 > **Pour l'assistant qui exécute ce plan :** utiliser `superpowers:executing-plans` (une tâche après l'autre, TDD côté serveur). Cocher les cases `- [ ]` de ce fichier au fil de l'eau. Lire d'abord `CLAUDE.md`, puis `docs/reprise.md`, puis ce plan en entier. **Un lot par conversation** ; à la fin de chaque lot : tests verts, `docs/reprise.md` à jour, commit, push.
 
@@ -80,13 +80,13 @@ Rien à coder. Sonnet guide Florent pas à pas, avec les noms exacts des boutons
 
 But : tout ce que fait la page client, accessible en JSON, **sans dupliquer une règle**.
 
-- [ ] Lire `node_modules/next/dist/docs/` (route handlers, Next 16) et `src/modules/auth` (le cookie `elegance-session`).
-- [ ] **Authentification par jeton** : le même jeton de session que le cookie, envoyé en `Authorization: Bearer` (sessions de 90 jours, D-116). Connexion, inscription, déconnexion, mot de passe oublié (le lien de l'email ouvre le site : acceptable). Mêmes limitations d'essais que le site. Décision dans `docs/decisions.md`.
-- [ ] Routes sous **`/api/mobile/v1/*`** (version dans l'adresse : une app installée ne se met pas à jour toute seule), chacune vérifie elle-même la session, comme `src/app/equipe` :
+- [x] Lire `node_modules/next/dist/docs/` (route handlers, Next 16) et `src/modules/auth` (le cookie `elegance-session`).
+- [x] **Authentification par jeton** : le même jeton de session que le cookie, envoyé en `Authorization: Bearer` (sessions de 90 jours, D-116). Connexion, inscription, déconnexion, mot de passe oublié (le lien de l'email ouvre le site : acceptable). Mêmes limitations d'essais que le site. Décision dans `docs/decisions.md`.
+- [x] Routes sous **`/api/mobile/v1/*`** (version dans l'adresse : une app installée ne se met pas à jour toute seule), chacune vérifie elle-même la session, comme `src/app/equipe` :
   vitrine (carte, équipe, horaires, accès, textes légaux), jours et créneaux (`getDaySlots`), réserver (`createAppointment`), mes RDV, déplacer, annuler (`rescheduleAppointment`, `cancelAppointment`), liste d'attente (rejoindre, accepter, refuser, quitter), fidélité (`getLoyaltyCard`), mes informations, **suppression du compte**.
-- [ ] Erreurs : `{ code }` stable (`DomainError`) ; l'app a la table de traduction.
-- [ ] `after(wakeWaitlist)` et emails exactement comme dans les actions du site (à recopier depuis les actions existantes, idéalement en partageant une fonction).
-- [ ] Tests d'intégration pour chaque route (accès refusé sans jeton, jeton d'un autre client, refus métier traduit). **Aucune nouvelle dépendance.**
+- [x] Erreurs : `{ code }` stable (`DomainError`) ; l'app a la table de traduction.
+- [x] `after(wakeWaitlist)` et emails exactement comme dans les actions du site (à recopier depuis les actions existantes, idéalement en partageant une fonction).
+- [x] Tests d'intégration pour chaque route (accès refusé sans jeton, jeton d'un autre client, refus métier traduit). **Aucune nouvelle dépendance.**
 - [ ] Déployer sur le VPS (annoncer avant), vérifier `/api/mobile/v1/vitrine` en ligne.
 
 ## Lot 26 — L'app Expo : squelette et écrans

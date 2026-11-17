@@ -34,6 +34,12 @@ function cookieStore(name: string, options: { secure: boolean; maxAge?: number }
   };
 }
 
+/** Envoie le lien de réinitialisation du mot de passe (hors de la file d'emails : le lien est un secret, D-117). */
+export async function sendPasswordResetEmail(to: string, link: string): Promise<void> {
+  const email = renderPasswordResetEmail({ link, logoUrl: `${siteUrl()}/email/logo.png` });
+  await transportFromEnv().send({ to: { email: to }, subject: email.subject, html: email.html, text: email.text });
+}
+
 /**
  * Pilote d'authentification de la requête en cours : comptes et sessions dans Postgres (D-116).
  * `AUTH_DRIVER=memory` sert aux tests de bout en bout : il est refusé sans `ALLOW_TEST_DRIVERS=true` (src/lib/test-drivers.ts),
@@ -48,10 +54,7 @@ export function getAuthDriver(): AuthDriver {
     db: db(),
     store: cookieStore(SESSION_COOKIE, { secure: base.startsWith("https://"), maxAge: COOKIE_MAX_AGE }),
     now: () => new Date(),
-    async sendResetEmail(to, link) {
-      const email = renderPasswordResetEmail({ link, logoUrl: `${base}/email/logo.png` });
-      await transportFromEnv().send({ to: { email: to }, subject: email.subject, html: email.html, text: email.text });
-    },
+    sendResetEmail: sendPasswordResetEmail,
   });
 }
 

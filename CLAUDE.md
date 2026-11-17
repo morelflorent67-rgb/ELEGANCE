@@ -52,6 +52,9 @@
 
 - Conservation (R-101, D-121) : `src/modules/customers/inactive.ts` supprime chaque jour (depuis `/api/cron/send-emails`) les fiches sans activité depuis 3 ans, via `anonymizeCustomer` (auteur `system`).
 
+## API mobile (lot 25, D-123)
+- `src/modules/mobile/api.ts` : `createMobileApi(env)` porte toute l'API de l'app iPhone (aucune règle : elle appelle `booking`, `waitlist`, `customers`, `loyalty`) ; `bearer.ts` : le jeton `Authorization: Bearer` tient lieu de cookie, même pilote `createPostgresDriver`. Routes fines dans `src/app/api/mobile/v1/**` (une route = `handle(request, (call) => call.api.xxx(...))`, `_lib.ts`). Ajouter une route : une méthode dans `api.ts` + son test dans `tests/integration/mobile-api.test.ts` + un fichier `route.ts`. Refus = `{ code }` (jamais de texte), l'app a la table de traduction. Même limites d'essais que le site : si on change un compteur dans une action du site, le changer aussi dans `api.ts`.
+
 ## Emails et bilan (lot 7)
 - Rappel (R-61, D-59) : `scheduleReminder` (`src/modules/mail/reminders.ts`) le met en file dans la transaction de la réservation et du déplacement ; le programme d'envoi (`worker.ts`) l'abandonne si le RDV est annulé ou déplacé et le repousse (`Defer`) tant qu'il est « à traiter ».
 - Invitation à un avis (R-64, D-58) : `scheduleReviewInvitations` (`mail/review-invitations.ts`), appelée par le cron avant l'envoi. Un seul bouton vers `salon_settings.review_url` (pas de lien, pas d'invitation) ; désabonnement par `/avis/desinscription` (lien signé, `customer.review_opt_out`).
