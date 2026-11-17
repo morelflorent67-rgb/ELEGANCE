@@ -72,6 +72,8 @@ describe("accès : jeton Bearer", () => {
       a.updateMe({}),
       a.changePassword({}),
       a.deleteMe({}),
+      a.registerPushDevice({}),
+      a.unregisterPushDevice({}),
       a.book({}),
       a.appointments(),
       a.reschedule("00000000-0000-4000-8000-000000000001", {}),
@@ -482,5 +484,22 @@ describe("vitrine", () => {
     expect(body.access.address).toContain("Schiltigheim");
     expect(body.legal.map((l) => l.slug)).toEqual(["mentions-legales", "confidentialite", "conditions"]);
     expect(body.rules.changeCutoffHours).toBeGreaterThan(0);
+  });
+});
+
+describe("notifications : appareil de l'iPhone (R-102)", () => {
+  const TOKEN = "c".repeat(64);
+
+  it("enregistre le jeton du client connecté, refuse un jeton invalide, et ne l'oublie qu'à la demande du même client", async () => {
+    const jean = await signedUp("jean@mail.fr");
+    const awa = await signedUp("awa@mail.fr", "Awa");
+    expect((await api(jean.header).registerPushDevice({ token: "pas-un-jeton" })).status).toBe(400);
+    expect((await api(jean.header).registerPushDevice({ token: TOKEN })).status).toBe(200);
+    expect(await t.sql`select customer_id from push_device`).toEqual([{ customer_id: jean.id }]);
+    // Un autre client ne peut pas retirer l'appareil de Jean.
+    await api(awa.header).unregisterPushDevice({ token: TOKEN });
+    expect(await t.sql`select 1 from push_device`).toHaveLength(1);
+    expect((await api(jean.header).unregisterPushDevice({ token: TOKEN })).status).toBe(200);
+    expect(await t.sql`select 1 from push_device`).toHaveLength(0);
   });
 });

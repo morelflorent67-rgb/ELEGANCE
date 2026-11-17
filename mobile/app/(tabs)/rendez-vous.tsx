@@ -5,6 +5,7 @@ import { ApiError, messageOf } from "@/api/client";
 import type { AppointmentsResponse, PastAppointment, UpcomingAppointment, WaitlistLine } from "@/api/types";
 import { useBooking } from "@/booking";
 import { NeedsLogin } from "@/needs-login";
+import { CalendarButton } from "@/calendar-button";
 import { useSession } from "@/session";
 import { spacing } from "@/theme";
 import { useLoad } from "@/use-load";
@@ -104,6 +105,7 @@ function Appointments() {
                   {a.staffLabel} · {a.price}
                   {a.repeated ? " · rendez-vous répété" : ""}
                 </Muted>
+                <CalendarButton startsAt={a.startsAt} endsAt={a.endsAt} what={a.what} staffFirstName={a.staffFirstName} />
                 {a.changeable ? (
                   <>
                     <Muted>Modifiable ou annulable jusqu&apos;au {a.deadlineLabel}</Muted>

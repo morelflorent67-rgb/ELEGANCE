@@ -101,12 +101,12 @@ But : tout ce que fait la page client, accessible en JSON, **sans dupliquer une 
 
 ## Lot 27 — Fonctions natives (ce qui fait accepter l'app)
 
-- [ ] **Notifications** (`expo-notifications`) : demander l'autorisation **après** la première réservation, pas au démarrage. Table `push_device` (client, jeton, date), effacée à la déconnexion et par la suppression du compte (R-75) et la purge des 3 ans (R-101). Nouvelles règles R-xx avec tests.
-- [ ] Envoi : **directement à Apple (APNs)** depuis le serveur avec une clé `.p8` (HTTP/2 et `node:crypto`, sans dépendance, sans passer par les serveurs d'Expo aux États-Unis) — ou service Expo Push si trop lourd (alors le citer dans la politique de confidentialité). Trancher et noter dans `docs/decisions.md`. Clé `.p8` dans `deploy/.env`, jamais dans le dépôt ni le chat.
-- [ ] Brancher sur la file existante (`email_outbox`, `worker.ts`) : mêmes règles d'abandon et de report que l'email (RDV annulé, déplacé, « à traiter », email retenu pour le gérant).
-- [ ] Toucher la notification « place libérée » ouvre directement l'offre dans l'app.
-- [ ] **Ajouter au calendrier** (`expo-calendar`) depuis la confirmation et Mes RDV.
-- [ ] Retour haptique à la confirmation ; Appeler et Itinéraire (Plans) natifs.
+- [x] **Notifications** (`expo-notifications`) : demander l'autorisation **après** la première réservation, pas au démarrage. Table `push_device` (client, jeton, date), effacée à la déconnexion et par la suppression du compte (R-75) et la purge des 3 ans (R-101). Nouvelles règles R-xx avec tests.
+- [x] Envoi : **directement à Apple (APNs)** depuis le serveur avec une clé `.p8` (HTTP/2 et `node:crypto`, sans dépendance, sans passer par les serveurs d'Expo aux États-Unis) — ou service Expo Push si trop lourd (alors le citer dans la politique de confidentialité). Trancher et noter dans `docs/decisions.md`. Clé `.p8` dans `deploy/.env`, jamais dans le dépôt ni le chat.
+- [x] Brancher sur la file existante (`email_outbox`, `worker.ts`) : mêmes règles d'abandon et de report que l'email (RDV annulé, déplacé, « à traiter », email retenu pour le gérant).
+- [x] Toucher la notification « place libérée » ouvre directement l'offre dans l'app.
+- [x] **Ajouter au calendrier** (`expo-calendar`) depuis la confirmation et Mes RDV.
+- [x] Retour haptique à la confirmation ; Appeler et Itinéraire (Plans) natifs.
 - [ ] Nouvelle construction, essai complet sur l'iPhone (notification reçue téléphone verrouillé).
 
 ## Lot 28 — Conformité et fiche App Store

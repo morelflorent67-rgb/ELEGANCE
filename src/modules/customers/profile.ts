@@ -1,6 +1,6 @@
 import { and, eq, gt, inArray, isNull, lt, ne, or, sql } from "drizzle-orm";
 import type { Database } from "@/db/types";
-import { appointment, customer, emailOutbox } from "@/db/schema";
+import { appointment, customer, emailOutbox, pushDevice } from "@/db/schema";
 import { DomainError } from "@/lib/domain-error";
 import type { AuthDriver } from "@/modules/auth/types";
 import { recordAudit } from "@/modules/audit/record";
@@ -280,6 +280,8 @@ export async function anonymizeCustomer(
       : ownIds.length > 0
         ? inArray(emailOutbox.appointmentId, ownIds)
         : sql`false`;
+    // R-102 : plus d'appareil rattaché à cette personne.
+    await tx.delete(pushDevice).where(eq(pushDevice.customerId, row.id));
     await tx.delete(emailOutbox).where(and(concerned, ne(emailOutbox.status, "sent")));
     await tx.update(emailOutbox).set({ toEmail: "" }).where(concerned);
 

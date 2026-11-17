@@ -106,6 +106,7 @@ export interface DaysResponse {
 export interface UpcomingAppointment {
   id: string;
   startsAt: string;
+  endsAt: string;
   dayLabel: string;
   time: string;
   relative: string | null;

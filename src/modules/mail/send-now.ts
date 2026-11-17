@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import type { Database } from "@/db/types";
 import { emailOutbox } from "@/db/schema";
 import { appSecret, siteUrl } from "@/lib/env";
+import { pushFromEnv } from "@/modules/push/from-env";
 import { processOutbox } from "./worker";
 import { transportFromEnv } from "./transport-from-env";
 
@@ -21,6 +22,7 @@ export async function sendEmailsForAppointment(db: Database, appointmentId: stri
       transport: transportFromEnv(),
       baseUrl: siteUrl(),
       secret: appSecret(),
+      push: pushFromEnv(),
       ids: rows.map((r) => r.id),
     });
   } catch (error) {

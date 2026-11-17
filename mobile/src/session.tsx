@@ -2,6 +2,7 @@ import Constants from "expo-constants";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createApiClient, type ApiClient } from "@/api/client";
 import type { BookingState, Customer, SessionResponse } from "@/api/types";
+import { registerDeviceIfAllowed, unregisterDevice } from "@/notifications";
 import { deleteSecret, getSecret, setSecret } from "@/storage";
 
 // Session du client : le jeton vit dans le trousseau de l'iPhone (expo-secure-store), jamais ailleurs. Le serveur fait
@@ -84,9 +85,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     await setSecret(TOKEN_KEY, response.token);
     setCustomer(response.customer);
     setBooking(response.booking);
-  }, []);
+    // R-102 : si les notifications sont déjà autorisées, cet iPhone est rattaché au compte qui vient de se connecter.
+    void registerDeviceIfAllowed(api);
+  }, [api]);
 
   const signOut = useCallback(async () => {
+    await unregisterDevice(api); // avant de fermer la session : la route demande le jeton du client
     try {
       await api.post("/auth/logout");
     } catch {

@@ -9,19 +9,22 @@ import {
   Manrope_700Bold,
 } from "@expo-google-fonts/manrope";
 import { useFonts } from "expo-font";
+import * as Notifications from "expo-notifications";
 import { DarkTheme, Stack, ThemeProvider, usePathname } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { BookingProvider } from "@/booking";
 import { EclipseBackground } from "@/eclipse-background";
 import { homeFade } from "@/home-scroll";
+import { configureNotifications, openFromNotification } from "@/notifications";
 import { SessionProvider, useSession } from "@/session";
 import { colors } from "@/theme";
 
 void SplashScreen.preventAutoHideAsync();
+configureNotifications();
 
 // Thème de navigation : sans lui, les écrans prennent le fond gris clair par défaut et cachent le fond d'éclipse.
 const navigationTheme = {
@@ -52,6 +55,13 @@ function Gate() {
   const veil = home ? 0 : 0.5;
   useEffect(() => {
     if (done) void SplashScreen.hideAsync();
+  }, [done]);
+  // Toucher une notification ouvre l'offre ou les rendez-vous : à chaud (app ouverte) et à froid (app fermée).
+  useEffect(() => {
+    if (!done || Platform.OS !== "ios") return;
+    void Notifications.getLastNotificationResponseAsync().then(openFromNotification).catch(() => {});
+    const subscription = Notifications.addNotificationResponseReceivedListener(openFromNotification);
+    return () => subscription.remove();
   }, [done]);
   if (!done) return null;
   return (

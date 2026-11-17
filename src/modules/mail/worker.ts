@@ -21,6 +21,8 @@ import {
   signToken,
   winbackOptOutSubject,
 } from "@/modules/security/token";
+import { pushForEmail } from "@/modules/push/for-email";
+import type { PushTransport } from "@/modules/push/transport";
 import { loadOffer } from "@/modules/waitlist/offer";
 import { z } from "zod";
 import { renderCancellationEmail } from "./templates/cancellation";
@@ -50,6 +52,8 @@ export interface ProcessOptions {
   limit?: number;
   /** Traiter seulement ces emails (envoi immédiat après une réservation). */
   ids?: string[];
+  /** Notifications de l'app (R-102) : absent tant que la clé APNs n'est pas posée sur le serveur. */
+  push?: PushTransport;
 }
 
 export interface ProcessResult {
@@ -666,6 +670,8 @@ export async function processOutbox(db: Database, options: ProcessOptions): Prom
         .set({ status: "sent", sentAt: new Date(), lastError: null })
         .where(eq(emailOutbox.id, row.id));
       await markOriginNotified(db, row, now);
+      // R-102 : la notification suit l'email, donc ses règles d'abandon et de report ; elle ne le fait jamais échouer.
+      if (options.push) await pushForEmail(db, row, options.push, now);
       result.sent++;
     } catch (error) {
       if (error instanceof Defer) {

@@ -8,6 +8,7 @@ import { processOutbox } from "@/modules/mail";
 import { scheduleReviewInvitations } from "@/modules/mail/review-invitations";
 import { transportFromEnv } from "@/modules/mail/transport-from-env";
 import { scheduleWinbackEmails } from "@/modules/mail/winback";
+import { pushFromEnv } from "@/modules/push/from-env";
 import { processWaitlist } from "@/modules/waitlist";
 
 // Passage du cron : fait avancer la liste d'attente (offres expirées, places à proposer, D-100), programme les
@@ -31,6 +32,7 @@ export async function GET(request: Request) {
     transport: transportFromEnv(),
     baseUrl: siteUrl(),
     secret: appSecret(),
+    push: pushFromEnv(),
     limit: 200,
   });
   return Response.json({

@@ -38,6 +38,7 @@ import {
 import { changePassword, deleteAccount, updateProfile, type ProfileResult } from "@/modules/customers/profile";
 import { getLoyaltyCard } from "@/modules/loyalty";
 import { loyaltyEntryLabel, typicalVisitPoints } from "@/modules/loyalty/labels";
+import { registerDevice, unregisterDevice } from "@/modules/push/devices";
 import { hitRateLimit } from "@/modules/security/rate-limit";
 import { calendarSubject, signToken } from "@/modules/security/token";
 import { LEGAL_SLUGS, LEGAL_UPDATED, legalDocument } from "@/modules/vitrine/legal";
@@ -217,6 +218,23 @@ export function createMobileApi(env: MobileEnv) {
         return fromError(error);
       }
     },
+
+    /** R-102 : le client a accepté les notifications ; le jeton APNs de l'iPhone est rattaché à son compte. */
+    registerPushDevice: (input: unknown) =>
+      asCustomer(async (customer) => {
+        const parsed = z.object({ token: z.string() }).safeParse(input);
+        if (!parsed.success || !(await registerDevice(db, customer.id, parsed.data.token))) return INVALID;
+        return ok();
+      }),
+
+    /** R-102 : à la déconnexion (avant de fermer la session), l'iPhone n'est plus rattaché au compte. */
+    unregisterPushDevice: (input: unknown) =>
+      asCustomer(async (customer) => {
+        const parsed = z.object({ token: z.string() }).safeParse(input);
+        if (!parsed.success) return INVALID;
+        await unregisterDevice(db, customer.id, parsed.data.token);
+        return ok();
+      }),
 
     /** Le lien de l'email ouvre le site (acceptable, plan lot 25) : même fonction que le formulaire du site. */
     async forgotPassword(input: unknown): Promise<ApiResult> {

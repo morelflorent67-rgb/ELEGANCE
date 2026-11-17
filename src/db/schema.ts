@@ -549,3 +549,19 @@ export const authRecovery = pgTable("auth_recovery", {
   expiresAt: instant("expires_at").notNull(),
   usedAt: instant("used_at"),
 });
+
+/**
+ * Appareils de l'app iPhone qui reçoivent des notifications (R-102, D-124) : le jeton APNs de l'appareil, lié au client
+ * qui s'y est connecté. Une ligne par jeton : si un autre client se connecte sur le même iPhone, le jeton change de client.
+ */
+export const pushDevice = pgTable(
+  "push_device",
+  {
+    token: text("token").primaryKey(),
+    customerId: uuid("customer_id")
+      .notNull()
+      .references(() => customer.id, { onDelete: "cascade" }),
+    createdAt: instant("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("push_device_customer_idx").on(t.customerId)],
+);

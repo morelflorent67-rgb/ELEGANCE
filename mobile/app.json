@@ -25,6 +25,13 @@
       "expo-secure-store",
       "expo-font",
       "expo-status-bar",
+      "expo-notifications",
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Elegance Strasbourg ajoute vos rendez-vous à votre calendrier, seulement quand vous le demandez."
+        }
+      ],
       [
         "expo-splash-screen",
         {
