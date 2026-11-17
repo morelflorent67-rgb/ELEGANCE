@@ -4,6 +4,7 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { messageOf } from "@/api/client";
 import type { DaysResponse } from "@/api/types";
 import { useBooking } from "@/booking";
+import { routeAfterSlot } from "@/flow";
 import { zonedNow } from "@/lib/shared/status";
 import { StepHeader } from "@/step-header";
 import { useSession } from "@/session";
@@ -21,7 +22,7 @@ const WINDOWS: { id: Window; label: string }[] = [
 // Étape 3 : le jour et l'heure. Les créneaux sont calculés par le serveur (module de disponibilité) : l'app ne fait
 // qu'afficher la bande de jours, jours fermés et complets compris.
 export default function SlotStep() {
-  const { api, customer } = useSession();
+  const { api, customer, booking } = useSession();
   const { draft, update } = useBooking();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
@@ -43,7 +44,12 @@ export default function SlotStep() {
   return (
     <Screen
       footer={
-        <Button label="Continuer" disabled={!draft.startsAt} onPress={() => router.push("/reserver/recap")} />
+        <Button
+          label="Continuer"
+          arrow
+          disabled={!draft.startsAt}
+          onPress={() => router.push(routeAfterSlot({ moving: !!draft.movingId, signedIn: !!customer, booking }))}
+        />
       }
     >
       <StepHeader step={3} label="Créneau" />

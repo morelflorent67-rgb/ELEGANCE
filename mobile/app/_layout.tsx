@@ -13,9 +13,11 @@ import { DarkTheme, Stack, ThemeProvider, usePathname } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { Image, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { BookingProvider } from "@/booking";
+import { EclipseBackground } from "@/eclipse-background";
+import { homeFade } from "@/home-scroll";
 import { SessionProvider, useSession } from "@/session";
 import { colors } from "@/theme";
 
@@ -46,7 +48,8 @@ function Gate() {
   });
   const done = ready && fontsLoaded;
   // L'accueil montre l'éclipse en pleine lumière (comme le site) ; les autres écrans la voilent pour la lisibilité.
-  const veil = usePathname() === "/" ? 0 : 0.5;
+  const home = usePathname() === "/";
+  const veil = home ? 0 : 0.5;
   useEffect(() => {
     if (done) void SplashScreen.hideAsync();
   }, [done]);
@@ -54,8 +57,8 @@ function Gate() {
   return (
     <ThemeProvider value={navigationTheme}>
     <View style={{ flex: 1, backgroundColor: colors.ink }}>
-      {/* Fond du côté client du site (lot 18) : image figée de l'éclipse, voilée pour la lisibilité. */}
-      <Image source={require("../assets/fond-eclipse.webp")} resizeMode="cover" style={StyleSheet.absoluteFill} accessibilityElementsHidden />
+      {/* Fond du côté client du site (lot 18) : l'éclipse animée sur l'accueil, une image sans mouvement ailleurs, voilée pour la lisibilité. */}
+      <EclipseBackground still={!home} opacity={home ? homeFade.opacity : 1} lift={home ? homeFade.lift : undefined} zoom={home ? homeFade.zoom : undefined} />
       <View style={[StyleSheet.absoluteFill, { backgroundColor: `rgba(0,13,29,${veil})` }]} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "transparent" } }}>
         <Stack.Screen name="(tabs)" />

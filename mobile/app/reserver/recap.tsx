@@ -61,11 +61,11 @@ export default function RecapStep() {
             <Button label={moving ? "Confirmer le nouveau créneau" : "Confirmer la réservation"} onPress={() => void confirm()} loading={busy} disabled={!draft.startsAt} />
           )
         ) : (
-          <Button label="Se connecter pour réserver" onPress={() => router.push("/connexion")} />
+          <Button label="Se connecter pour réserver" arrow onPress={() => router.replace("/reserver/compte")} />
         )
       }
     >
-      <StepHeader step={4} label="Récapitulatif" />
+      <StepHeader step={5} label="Récapitulatif" />
       <Title>{moving ? "Nouveau créneau" : "Récapitulatif"}</Title>
       <Card>
         <Heading>{draft.slotLabel ?? "Aucun créneau choisi"}</Heading>

@@ -2,8 +2,8 @@ import * as Haptics from "expo-haptics";
 import { type ReactNode } from "react";
 import {
   ActivityIndicator,
+  Animated,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -29,17 +29,24 @@ export function Screen({
   footer,
   padTop = true,
   gap = spacing.lg,
+  scrollY,
 }: {
   children: ReactNode;
   /** Barre d'action fixée en bas (Continuer, Confirmer…). */
   footer?: ReactNode;
   padTop?: boolean;
   gap?: number;
+  /** Position de défilement partagée (fondu du fond sur l'accueil). */
+  scrollY?: Animated.Value;
 }) {
   const insets = useSafeAreaInsets();
   return (
     <View style={styles.screen}>
-      <ScrollView
+      <Animated.ScrollView
+        scrollEventThrottle={16}
+        onScroll={
+          scrollY ? Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true }) : undefined
+        }
         contentContainerStyle={{
           paddingTop: padTop ? insets.top + spacing.lg : spacing.lg,
           paddingHorizontal: spacing.xl,
@@ -50,7 +57,7 @@ export function Screen({
         contentInsetAdjustmentBehavior="automatic"
       >
         {children}
-      </ScrollView>
+      </Animated.ScrollView>
       {footer ? (
         <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>{footer}</View>
       ) : null}

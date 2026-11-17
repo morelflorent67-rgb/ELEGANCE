@@ -6,11 +6,34 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(path, "utf8").replace(/\r\n/g, "\n");
 
 describe("copies de fichiers du site dans l'app", () => {
-  it.each(["hours", "status"])("mobile/src/lib/shared/%s.ts est identique à l'original du site", (name) => {
-    const original = read(`src/modules/vitrine/${name}.ts`);
-    const copy = read(`mobile/src/lib/shared/${name}.ts`);
+  it.each([
+    ["src/modules/vitrine/hours.ts", "mobile/src/lib/shared/hours.ts"],
+    ["src/modules/vitrine/status.ts", "mobile/src/lib/shared/status.ts"],
+    ["src/lib/eclipse-math.ts", "mobile/src/lib/shared/eclipse-math.ts"],
+    ["src/components/client/access-map-data.ts", "mobile/src/lib/shared/access-map-data.ts"],
+  ])("%s est copié à l'identique dans %s", (source, copyPath) => {
     // Les deux premières lignes de la copie sont son en-tête.
-    expect(copy.split("\n").slice(2).join("\n")).toBe(original);
+    expect(read(copyPath).split("\n").slice(2).join("\n")).toBe(read(source));
+  });
+
+  it("chaque tracé du plan d'accès a sa longueur dans l'app (animation « le trait se dessine »)", () => {
+    const data = read("src/components/client/access-map-data.ts");
+    const paths = [...data.matchAll(/d: "([^"]+)"/g)].map((m) => m[1]);
+    paths.push(data.match(/MAIN_ROAD =\s*"([^"]+)"/)![1]);
+    expect(paths.length).toBeGreaterThan(30);
+    const lengths = read("mobile/src/lib/access-map-lengths.ts");
+    const missing = paths.filter((d) => !lengths.includes(JSON.stringify(d)));
+    expect(missing).toEqual([]);
+  });
+
+  it("les programmes graphiques de l'éclipse (VS et FS) sont identiques à ceux du site", () => {
+    const grab = (text: string, name: "VS" | "FS") => text.match(new RegExp(`${name} = (\`[^\`]*\`)`))?.[1];
+    const site = read("src/lib/eclipse.ts");
+    const app = read("mobile/src/lib/shared/eclipse-shader.ts");
+    for (const name of ["VS", "FS"] as const) {
+      expect(grab(site, name)).toBeTruthy();
+      expect(grab(app, name)).toBe(grab(site, name));
+    }
   });
 });
 

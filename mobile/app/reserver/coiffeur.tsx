@@ -25,7 +25,7 @@ export default function StaffStep() {
 
   return (
     <Screen
-      footer={<Button label="Continuer" onPress={() => router.push("/reserver/creneau")} />}
+      footer={<Button label="Continuer" arrow onPress={() => router.push("/reserver/creneau")} />}
     >
       <StepHeader step={2} label="Coiffeur" />
       <Title>Avec qui ?</Title>

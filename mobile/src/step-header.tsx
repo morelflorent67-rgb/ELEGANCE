@@ -1,10 +1,16 @@
 import { router } from "expo-router";
 import { Pressable, Text, View } from "react-native";
+import { useBooking } from "@/booking";
+import { stepsFor } from "@/flow";
 import { colors, fonts } from "@/theme";
 import { Mark, Muted } from "@/ui";
 
 /** En-tête d'une étape de réservation, comme celui du site : retour, repère + nom de l'étape, abandon, et une ligne de segments. */
-export function StepHeader({ step, total = 4, label }: { step: number; total?: number; label: string }) {
+export function StepHeader({ step, label }: { step: 1 | 2 | 3 | 4 | 5; label: string }) {
+  const { draft } = useBooking();
+  const steps = stepsFor(!!draft.movingId);
+  const total = steps.length;
+  const position = Math.max(1, steps.indexOf(step) + 1);
   return (
     <View style={{ gap: 14 }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
@@ -33,7 +39,7 @@ export function StepHeader({ step, total = 4, label }: { step: number; total?: n
             </Text>
           </View>
           <Muted>
-            Étape {step} sur {total}
+            Étape {position} sur {total}
           </Muted>
         </View>
         <Pressable
@@ -53,7 +59,7 @@ export function StepHeader({ step, total = 4, label }: { step: number; total?: n
             style={{
               flex: 1,
               height: 2,
-              backgroundColor: i < step ? colors.accent : "rgba(239,233,221,0.16)",
+              backgroundColor: i < position ? colors.accent : "rgba(239,233,221,0.16)",
             }}
           />
         ))}

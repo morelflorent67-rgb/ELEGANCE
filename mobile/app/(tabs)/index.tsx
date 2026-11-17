@@ -3,6 +3,8 @@ import { Image, Linking, Text, View, useWindowDimensions } from "react-native";
 import type { Vitrine } from "@/api/types";
 import { useBooking } from "@/booking";
 import { groupWeekHours } from "@/lib/shared/hours";
+import { AccessMap } from "@/access-map";
+import { homeScroll } from "@/home-scroll";
 import { openStatus, zonedNow } from "@/lib/shared/status";
 import { colors, fonts, spacing } from "@/theme";
 import { Body, Button, Eyebrow, Heading, LoadState, LabelCaps, Mark, Muted, Rule, Screen } from "@/ui";
@@ -17,7 +19,7 @@ export default function HomeScreen() {
   const data = vitrine.data;
 
   return (
-    <Screen padTop={false} gap={0}>
+    <Screen padTop={false} gap={0} scrollY={homeScroll}>
       <View style={{ minHeight: Math.max(560, height - 110), paddingTop: 70, gap: 28 }}>
         <View
           style={{
@@ -186,6 +188,9 @@ function Details({ data }: { data: Vitrine }) {
 
       <View style={{ paddingTop: 56, gap: 20 }}>
         <Eyebrow>Accès</Eyebrow>
+        <View style={{ marginHorizontal: -spacing.xl }}>
+          <AccessMap city="Schiltigheim" road="Route de Bischwiller" />
+        </View>
         <Heading>Nous trouver</Heading>
         <Body style={{ color: colors.ivorySoft, fontSize: 14 }}>{access.address}</Body>
         <View style={{ gap: 4 }}>
