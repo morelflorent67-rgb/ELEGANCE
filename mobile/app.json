@@ -43,7 +43,16 @@
       ]
     ],
     "extra": {
-      "apiBaseUrl": "https://elegance-strasbourg.fr"
-    }
+      "apiBaseUrl": "https://elegance-strasbourg.fr",
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "ce3c61cb-c966-49e0-a8b3-3eead73748d6"
+      }
+    },
+    "owner": "fr-services"
   }
 }
