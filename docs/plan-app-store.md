@@ -70,10 +70,10 @@ Rien à coder. Sonnet guide Florent pas à pas, avec les noms exacts des boutons
 
 - [x] **Numéro D-U-N-S de FR Services** : déjà obtenu (Florent, 17 novembre 2026).
 - [x] **Identifiant Apple** et **inscription au programme Apple Developer en tant qu'organisation** (FR Services) : compte validé par Apple, contrat signé (17 novembre 2026).
-- [ ] **Régler l'abonnement** (99 $ par an) : Florent le fait lui-même, depuis l'app Apple Developer ou developer.apple.com. Le compte n'est actif qu'après ce paiement (activation : jusqu'à 48 h).
+- [x] **Régler l'abonnement** (99 $ par an) : payé par Florent, compte officiellement validé par Apple (18 novembre 2026).
 - [ ] **Attestation du salon** (modèle à rédiger par Sonnet, en `docs/app-store/attestation-salon.md`) : le gérant du salon autorise FR Services à publier l'app « Elegance Strasbourg » avec son nom et son logo. Signée, scannée en PDF, gardée pour la joindre si Apple invoque la règle 5.2.1. **Le vendeur affiché sur l'App Store sera « FR Services ».** Si un jour le salon ouvre son propre compte, l'app peut lui être transférée sans perdre ses avis ni ses utilisateurs.
 - [ ] **App Store Connect** : accepter les contrats ; **statut de commerçant (DSA)** : déclarer FR Services commerçant (adresse, téléphone, email publiés) ; contrat « Apps payantes » **inutile** (app gratuite).
-- [ ] **Compte Expo** (gratuit) sur expo.dev, au nom de FR Services.
+- [x] **Compte Expo** (gratuit) sur expo.dev, au nom de FR Services.
 - [ ] **TestFlight** installé sur l'iPhone de Florent.
 
 ## Lot 25 — L'API mobile (serveur Next.js)
