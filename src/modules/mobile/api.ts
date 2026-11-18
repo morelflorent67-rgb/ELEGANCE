@@ -35,6 +35,7 @@ import {
   type AccountResult,
   type CustomerProfile,
 } from "@/modules/customers/accounts";
+import { changeCutoffFor } from "@/modules/customers/apple-review";
 import { changePassword, deleteAccount, updateProfile, type ProfileResult } from "@/modules/customers/profile";
 import { getLoyaltyCard } from "@/modules/loyalty";
 import { loyaltyEntryLabel, typicalVisitPoints } from "@/modules/loyalty/labels";
@@ -410,9 +411,10 @@ export function createMobileApi(env: MobileEnv) {
           listCustomerWaitlist(db, customer.id, current),
         ]);
         const { upcoming, past } = splitAppointments(list, current);
+        const cutoffHours = await changeCutoffFor(db, customer.id, settings.changeCutoffHours); // R-103
         return ok({
           upcoming: upcoming.map((a) => {
-            const view = upcomingView(a, current, settings.changeCutoffHours);
+            const view = upcomingView(a, current, cutoffHours);
             const minutes = Math.max(0, Math.round((a.startsAt.getTime() - current.getTime()) / 60_000));
             return {
               id: a.id,
@@ -443,7 +445,7 @@ export function createMobileApi(env: MobileEnv) {
             return { ...view, startsAt: a.startsAt.toISOString(), canRepeat: !view.cancelled };
           }),
           booking,
-          changeCutoffHours: settings.changeCutoffHours,
+          changeCutoffHours: cutoffHours,
           waitlist: waitlist.map((w) => ({
             id: w.id,
             days: w.days,

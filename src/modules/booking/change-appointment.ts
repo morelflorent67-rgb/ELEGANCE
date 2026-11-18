@@ -14,6 +14,7 @@ import {
   type Audience,
   type ServiceRow,
 } from "@/modules/availability";
+import { changeCutoffFor } from "@/modules/customers/apple-review";
 import { enqueueEmail } from "@/modules/mail/outbox";
 import { scheduleReminder } from "@/modules/mail/reminders";
 
@@ -109,7 +110,7 @@ export async function loadChangeableAppointment(
 ): Promise<ChangeableAppointment> {
   const row = await loadOwn(db, customerId, appointmentId, false);
   const { changeCutoffHours } = await loadSettings(db);
-  assertChangeable(row, changeCutoffHours, now);
+  assertChangeable(row, await changeCutoffFor(db, customerId, changeCutoffHours), now);
   const [member] = await db
     .select({ firstName: staff.firstName })
     .from(staff)
@@ -135,7 +136,7 @@ export async function cancelAppointment(
     const row = await loadOwn(tx, input.customerId, input.appointmentId, true);
     if (row.status === "cancelled_by_customer") return { alreadyCancelled: true };
     const { changeCutoffHours } = await loadSettings(tx);
-    assertChangeable(row, changeCutoffHours, now);
+    assertChangeable(row, await changeCutoffFor(tx, input.customerId, changeCutoffHours), now);
 
     await tx
       .update(appointment)
@@ -351,7 +352,7 @@ export async function rescheduleAppointment(
     return await db.transaction(async (tx) => {
       const row = await loadOwn(tx, input.customerId, input.appointmentId, true);
       const settings = await loadSettings(tx);
-      assertChangeable(row, settings.changeCutoffHours, now);
+      assertChangeable(row, await changeCutoffFor(tx, input.customerId, settings.changeCutoffHours), now);
       return applyReschedule(
         tx,
         row,

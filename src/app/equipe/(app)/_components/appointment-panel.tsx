@@ -374,6 +374,11 @@ export function AppointmentPanel({
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 flex-col gap-1">
             <span className="text-label uppercase tracking-[0.26em] text-gold">{when}</span>
+            {a.appleReview ? (
+              <span data-apple-review className="text-[13px] text-ivory-soft">
+                Test Apple, ne pas tenir compte
+              </span>
+            ) : null}
             {a.forName ? (
               <span className="text-[20px] font-light leading-tight">Pour {a.forName}</span>
             ) : null}

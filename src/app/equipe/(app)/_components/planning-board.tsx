@@ -440,7 +440,7 @@ export function PlanningBoard({
                             })
                           : {})}
                         aria-pressed={on}
-                        aria-label={`${formatTime(appt.startsAt)}, ${appt.forName ? `${appt.forName}, au nom de ` : ""}${appt.customerName}, ${appt.summary}, avec ${col.staff.firstName}, ${SOURCE_WORD[appt.source].toLowerCase()}${appt.seriesId ? ", RDV répété" : ""}${tag ? `, ${tag.word}` : ""}`}
+                        aria-label={`${formatTime(appt.startsAt)}, ${appt.forName ? `${appt.forName}, au nom de ` : ""}${appt.customerName}, ${appt.summary}, avec ${col.staff.firstName}, ${SOURCE_WORD[appt.source].toLowerCase()}${appt.seriesId ? ", RDV répété" : ""}${appt.appleReview ? ", test Apple, ne pas tenir compte" : ""}${tag ? `, ${tag.word}` : ""}`}
                         data-source={appt.source}
                         className={`absolute inset-x-1 flex flex-col justify-center gap-0.5 overflow-hidden border px-2.5 text-left [-webkit-touch-callout:none] ${tone.block} ${
                           on ? "outline outline-2 outline-offset-2 outline-ivory" : ""
@@ -475,6 +475,15 @@ export function PlanningBoard({
                               </span>
                             ) : null}
                           </span>
+                          {/* R-103 : le compte de démonstration d'Apple, à ne pas tenir compte. */}
+                          {appt.appleReview ? (
+                            <span
+                              data-apple-review
+                              className={`border px-1.5 py-px text-[10px] uppercase tracking-[0.14em] ${tone.muted}`}
+                            >
+                              Test Apple
+                            </span>
+                          ) : null}
                           {tag ? (
                             <span
                               className={`border px-1.5 py-px text-[10px] uppercase tracking-[0.14em] ${tag.className}`}

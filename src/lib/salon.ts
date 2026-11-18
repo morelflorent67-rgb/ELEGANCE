@@ -13,6 +13,9 @@ export const SALON = {
   snapchat: "https://www.snapchat.com/add/barb.hair",
 } as const;
 
+/** Adresse d'assistance de l'application (fiche App Store, page /aide) : celle du domaine du salon (D-125). */
+export const SUPPORT_EMAIL = "contact@elegance-strasbourg.fr";
+
 export const salonAddressLine = `${SALON.street}, ${SALON.postalCode} ${SALON.city}`;
 
 export const salonMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(

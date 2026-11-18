@@ -1,5 +1,6 @@
 import type { Database } from "@/db/types";
 import { emailOutbox } from "@/db/schema";
+import { isAppleReviewEmail } from "@/modules/customers/apple-review";
 
 export type EmailType = (typeof emailOutbox.$inferInsert)["type"];
 
@@ -25,6 +26,8 @@ export async function enqueueEmail(
     held?: boolean;
   },
 ): Promise<boolean> {
+  // R-103 : le compte de démonstration Apple ne reçoit aucun email, donc aucune notification qui les suit.
+  if (await isAppleReviewEmail(db, input.toEmail)) return false;
   const inserted = await db
     .insert(emailOutbox)
     .values({

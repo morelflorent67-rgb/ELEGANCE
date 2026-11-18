@@ -65,7 +65,14 @@ export async function loadDashboard(
       adjustedAmountCents: appointment.adjustedAmountCents,
     })
     .from(appointment)
-    .where(and(gte(appointment.startsAt, period.start), lt(appointment.startsAt, period.end)));
+    .where(
+      and(
+        gte(appointment.startsAt, period.start),
+        lt(appointment.startsAt, period.end),
+        // R-103 : les RDV du compte de démonstration Apple ne comptent pas au Bilan.
+        sql`not exists (select 1 from customer c where c.id = ${appointment.customerId} and c.apple_review)`,
+      ),
+    );
 
   const prices = rows.length
     ? await db

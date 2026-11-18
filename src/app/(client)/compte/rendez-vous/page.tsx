@@ -16,6 +16,7 @@ import { calendarSubject, signToken } from "@/modules/security/token";
 import { listCustomerWaitlist, WINDOW_LABELS } from "@/modules/waitlist";
 import { formatTime } from "@/lib/format";
 import { LoyaltyCardView } from "@/components/client/loyalty-card";
+import { changeCutoffFor } from "@/modules/customers/apple-review";
 import { getLoyaltyCard } from "@/modules/loyalty";
 import { loyaltyEntryLabel, typicalVisitPoints } from "@/modules/loyalty/labels";
 import { AppointmentsView } from "./appointments-view";
@@ -59,12 +60,13 @@ async function Appointments() {
     typicalVisitPoints(database),
   ]);
   const { upcoming, past } = splitAppointments(list, now);
+  const cutoffHours = await changeCutoffFor(database, customer.id, settings.changeCutoffHours); // R-103
 
   return (
     <AppointmentsView
       firstName={customer.firstName}
       upcoming={upcoming.map((a) => {
-        const view = upcomingView(a, now, settings.changeCutoffHours);
+        const view = upcomingView(a, now, cutoffHours);
         const names = dayNames(parisDate(a.startsAt));
         const minutes = Math.max(0, Math.round((a.startsAt.getTime() - now.getTime()) / 60_000));
         return {
@@ -92,7 +94,7 @@ async function Appointments() {
         const view = pastView(a);
         return { ...view, canRepeat: !view.cancelled };
       })}
-      cutoffHours={settings.changeCutoffHours}
+      cutoffHours={cutoffHours}
       maxUpcoming={settings.maxUpcomingPerCustomer}
       blocked={booking.blocked}
       loyalty={

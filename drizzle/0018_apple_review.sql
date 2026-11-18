@@ -1,0 +1,1 @@
+ALTER TABLE "customer" ADD COLUMN "apple_review" boolean DEFAULT false NOT NULL;

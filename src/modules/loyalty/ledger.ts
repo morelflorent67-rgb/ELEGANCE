@@ -12,6 +12,7 @@ import {
 import { DomainError } from "@/lib/domain-error";
 import { recordAudit } from "@/modules/audit/record";
 import { isHonored } from "@/modules/appointments/status";
+import { isAppleReview } from "@/modules/customers/apple-review";
 import { assertActiveAuthor } from "@/modules/staff/team";
 import { loyaltyProgress, pointsForItems, type LoyaltyProgress } from "./points";
 
@@ -61,6 +62,8 @@ async function settleInTransaction(
 ): Promise<void> {
   const settings = await loadSettings(tx);
   if (!settings.enabled) return;
+  // R-103 : le compte de démonstration Apple ne cumule aucun point.
+  if (await isAppleReview(tx, customerId)) return;
 
   const appointments = (await tx
     .select({

@@ -29,7 +29,7 @@ export interface LegalDocument {
 }
 
 /** Date de la dernière rédaction des textes (à changer quand un texte change). */
-export const LEGAL_UPDATED = "17 novembre 2026";
+export const LEGAL_UPDATED = "18 novembre 2026";
 
 const hoursToWords = (hours: number) =>
   hours % 24 === 0 ? `${hours / 24} ${hours / 24 > 1 ? "jours" : "jour"}` : `${hours} h`;
@@ -74,7 +74,11 @@ function privacy(rules: SalonRules): Raw[] {
     ],
     [
       "Prestataires",
-      "Contabo (hébergement du site et de la base de données, dans l'Union européenne), Backblaze (copies de sauvegarde chiffrées, aux Pays-Bas) et Brevo (envoi des emails) traitent vos données pour le compte du salon, uniquement pour faire fonctionner le service.",
+      "Contabo (hébergement du site et de la base de données, dans l'Union européenne), Backblaze (copies de sauvegarde chiffrées, aux Pays-Bas), Brevo (envoi des emails) et Apple (service de notifications de l'application iPhone, pour les seuls utilisateurs qui les acceptent) traitent vos données pour le compte du salon, uniquement pour faire fonctionner le service.",
+    ],
+    [
+      "Application iPhone",
+      "L'application Elegance Strasbourg, publiée par la société FR Services avec l'autorisation du salon, affiche les mêmes informations que le site et collecte les mêmes données : elle ne contient ni publicité, ni outil de mesure d'audience, ni suivi entre applications, et ne demande donc pas l'autorisation de vous suivre. Elle garde votre connexion dans le trousseau sécurisé de l'iPhone.\nSi vous acceptez les notifications (l'autorisation est demandée après votre première réservation, jamais au démarrage), l'application envoie au serveur le jeton de notification de votre iPhone, un identifiant fourni par Apple. Il sert uniquement à vous envoyer, par le service de notifications d'Apple, le rappel de votre rendez-vous, une place qui se libère et la modification ou l'annulation d'un rendez-vous par le salon, en plus de l'email correspondant. Il est effacé quand vous vous déconnectez ou supprimez votre compte, et oublié quand Apple ne le reconnaît plus. Vous pouvez retirer l'autorisation à tout moment dans les réglages de l'iPhone.\nLa suppression du compte est possible dans l'application : Compte, Mon compte, Supprimer mon compte. Une page d'aide est disponible sur /aide.",
     ],
     [
       "Durée de conservation",

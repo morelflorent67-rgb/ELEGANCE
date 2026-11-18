@@ -210,6 +210,8 @@ export const customer = pgTable(
     onlineBookingBlocked: boolean("online_booking_blocked").notNull().default(false), // R-52
     reviewOptOut: boolean("review_opt_out").notNull().default(false), // R-64 : ne veut plus des invitations à un avis
     winbackOptOut: boolean("winback_opt_out").notNull().default(false), // R-84 : ne veut plus des relances (D-74)
+    /** Compte de démonstration de l'examinateur d'Apple (R-103, D-125) : RDV réels, sans email, hors Bilan et fidélité. */
+    appleReview: boolean("apple_review").notNull().default(false),
     /** Sans compte de connexion tant que `authUserId` est vide ; l'origine reste après le rattachement (D-70). */
     origin: customerOrigin("origin").notNull().default("account"),
     /** Historique repris du fichier du salon, affiché à titre indicatif sur la fiche (D-77). */

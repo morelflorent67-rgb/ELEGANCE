@@ -27,6 +27,8 @@ export interface PlanningAppointment {
   customerName: string;
   /** « Pour qui ? » : le prénom du proche, ou null (D-80). */
   forName: string | null;
+  /** Vrai pour le compte de démonstration de l'examinateur d'Apple : « Test Apple, ne pas tenir compte » (R-103). */
+  appleReview: boolean;
   /** Faux pour une fiche sans compte (D-70). */
   hasAccount: boolean;
   /** Faux pour une fiche sans email : aucun email ne part (D-81). */
@@ -105,6 +107,7 @@ const columns = {
   lastName: customer.lastName,
   phone: customer.phone,
   blocked: customer.onlineBookingBlocked,
+  appleReview: customer.appleReview,
   bookedBy: bookedByStaff.firstName,
   seriesId: appointment.seriesId,
 };
@@ -175,6 +178,7 @@ async function hydrate(
       customerId: row.customerId,
       customerName: `${row.firstName ?? ""} ${row.lastName ?? ""}`.trim(),
       forName: row.forName,
+      appleReview: row.appleReview,
       hasAccount: !!row.authUserId,
       hasEmail: !!row.email,
       phone: row.phone ? formatPhone(row.phone) : "",
