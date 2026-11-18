@@ -71,10 +71,10 @@ Rien à coder. Sonnet guide Florent pas à pas, avec les noms exacts des boutons
 - [x] **Numéro D-U-N-S de FR Services** : déjà obtenu (Florent, 17 novembre 2026).
 - [x] **Identifiant Apple** et **inscription au programme Apple Developer en tant qu'organisation** (FR Services) : compte validé par Apple, contrat signé (17 novembre 2026).
 - [x] **Régler l'abonnement** (99 $ par an) : payé par Florent, compte officiellement validé par Apple (18 novembre 2026).
-- [ ] **Attestation du salon** (modèle à rédiger par Sonnet, en `docs/app-store/attestation-salon.md`) : le gérant du salon autorise FR Services à publier l'app « Elegance Strasbourg » avec son nom et son logo. Signée, scannée en PDF, gardée pour la joindre si Apple invoque la règle 5.2.1. **Le vendeur affiché sur l'App Store sera « FR Services ».** Si un jour le salon ouvre son propre compte, l'app peut lui être transférée sans perdre ses avis ni ses utilisateurs.
-- [ ] **App Store Connect** : accepter les contrats ; **statut de commerçant (DSA)** : déclarer FR Services commerçant (adresse, téléphone, email publiés) ; contrat « Apps payantes » **inutile** (app gratuite).
+- [x] **Attestation du salon** (modèle rédigé : `docs/app-store/attestation-salon.docx`, **à faire signer par le gérant**, puis scanner en PDF ; texte dans `attestation-salon.md`) : le gérant du salon autorise FR Services à publier l'app « Elegance Strasbourg » avec son nom et son logo. Signée, scannée en PDF, gardée pour la joindre si Apple invoque la règle 5.2.1. **Le vendeur affiché sur l'App Store sera « FR Services ».** Si un jour le salon ouvre son propre compte, l'app peut lui être transférée sans perdre ses avis ni ses utilisateurs.
+- [x] **App Store Connect** (18 novembre 2026 : entité vérifiée, statut de commerçant DSA actif, contrat des apps gratuites en validation chez Apple, fiche de l'app créée à la main, ID 6836380412) : accepter les contrats ; **statut de commerçant (DSA)** : déclarer FR Services commerçant (adresse, téléphone, email publiés) ; contrat « Apps payantes » **inutile** (app gratuite).
 - [x] **Compte Expo** (gratuit) sur expo.dev, au nom de FR Services.
-- [ ] **TestFlight** installé sur l'iPhone de Florent.
+- [x] **TestFlight** installé sur l'iPhone de Florent.
 
 ## Lot 25 — L'API mobile (serveur Next.js)
 
@@ -97,7 +97,7 @@ But : tout ce que fait la page client, accessible en JSON, **sans dupliquer une 
 - [x] Écrans : Accueil (ouvert/fermé maintenant, horaires, accès avec bouton Appeler et Itinéraire), Réserver (prestation → coiffeur ou « Sans préférence » → jour → créneau → confirmation, une étape par écran comme `BookingFlow`), Mes RDV (déplacer, annuler, « reprendre le même RDV »), Fidélité, Compte (mes informations, déconnexion, **supprimer mon compte** avec confirmation, liens confidentialité, conditions, mentions légales via `expo-web-browser`), Connexion/Inscription.
 - [x] Session expirée → retour propre à la connexion, sans perdre l'étape de réservation en cours. Pas de réseau → message clair, pas d'écran blanc.
 - [x] Tests : fonctions pures de l'app (traduction des codes, formats d'heure Europe/Paris) avec Jest d'Expo ; parcours essayés à la main sur l'iPhone, liste cochée dans `docs/app-store/recette.md`.
-- [ ] **Première construction** (nécessite le compte Expo et le compte Apple du lot 24 ; `mobile/eas.json` est prêt) : Florent tape `eas login` puis `eas build -p ios` (Expo crée les certificats Apple, Florent saisit lui-même son identifiant Apple), `eas submit` → **TestFlight** sur son iPhone.
+- [x] **Première construction** (fait le 18 novembre 2026, build 1, `eas build -p ios --profile production` puis `eas submit -p ios --latest`) (nécessite le compte Expo et le compte Apple du lot 24 ; `mobile/eas.json` est prêt) : Florent tape `eas login` puis `eas build -p ios` (Expo crée les certificats Apple, Florent saisit lui-même son identifiant Apple), `eas submit` → **TestFlight** sur son iPhone.
 
 ## Lot 27 — Fonctions natives (ce qui fait accepter l'app)
 
@@ -107,7 +107,7 @@ But : tout ce que fait la page client, accessible en JSON, **sans dupliquer une 
 - [x] Toucher la notification « place libérée » ouvre directement l'offre dans l'app.
 - [x] **Ajouter au calendrier** (`expo-calendar`) depuis la confirmation et Mes RDV.
 - [x] Retour haptique à la confirmation ; Appeler et Itinéraire (Plans) natifs.
-- [ ] Nouvelle construction, essai complet sur l'iPhone (notification reçue téléphone verrouillé).
+- [x] Essai complet sur l'iPhone (18 novembre 2026) : notification d'annulation par le salon reçue téléphone verrouillé.
 
 ## Lot 28 — Conformité et fiche App Store
 
