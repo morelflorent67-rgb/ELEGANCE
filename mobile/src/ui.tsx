@@ -220,8 +220,9 @@ export function Field({
   label,
   error,
   aside,
+  hint,
   ...input
-}: { label: string; error?: string; aside?: string } & TextInputProps) {
+}: { label: string; error?: string; aside?: string; hint?: string } & TextInputProps) {
   return (
     <View style={{ gap: 2 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
@@ -235,7 +236,11 @@ export function Field({
         {...input}
         style={[styles.input, error ? { borderBottomColor: colors.brick } : null, input.style]}
       />
-      {error ? <Text style={[styles.error, { paddingTop: 6 }]}>{error}</Text> : null}
+      {error ? (
+        <Text style={[styles.error, { paddingTop: 6 }]}>{error}</Text>
+      ) : hint ? (
+        <Text style={[styles.muted, { paddingTop: 6, fontSize: 12, lineHeight: 18 }]}>{hint}</Text>
+      ) : null}
     </View>
   );
 }

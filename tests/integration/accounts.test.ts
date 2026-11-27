@@ -66,7 +66,23 @@ describe("R-70, R-71 : création du compte client", () => {
     expect(current?.email).toBe("thomas.durand@exemple.fr");
   });
 
-  it("exige les cinq champs et l'acceptation des conditions, un message par champ", async () => {
+  it("D-126 : le téléphone est facultatif : vide ou absent, la fiche est créée sans numéro (null)", async () => {
+    const empty = await registerCustomer(t.db, newBrowser(), { ...valid, phone: "  " }, ctx);
+    expect(empty).toMatchObject({ ok: true, customer: { phone: "" } });
+    const withoutPhone: Record<string, unknown> = { ...valid };
+    delete withoutPhone.phone;
+    const absent = await registerCustomer(
+      t.db,
+      newBrowser(),
+      { ...withoutPhone, email: "autre@exemple.fr" },
+      ctx,
+    );
+    expect(absent).toMatchObject({ ok: true, customer: { phone: "" } });
+    const rows = await t.sql`select phone from customer`;
+    expect(rows.map((r) => r.phone)).toEqual([null, null]);
+  });
+
+  it("exige les quatre champs obligatoires et l'acceptation des conditions, un message par champ", async () => {
     const result = await registerCustomer(t.db, newBrowser(), {}, ctx);
     expect(result).toMatchObject({ ok: false, error: "invalid" });
     const errors = (result as { fieldErrors: Record<string, string> }).fieldErrors;
@@ -76,7 +92,6 @@ describe("R-70, R-71 : création du compte client", () => {
       "firstName",
       "lastName",
       "password",
-      "phone",
     ]);
     expect(errors.acceptTerms).toContain("conditions");
   });

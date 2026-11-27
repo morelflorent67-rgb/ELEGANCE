@@ -6,6 +6,7 @@ import type { Customer } from "@/api/types";
 import { NeedsLogin } from "@/needs-login";
 import { useSession } from "@/session";
 import { spacing } from "@/theme";
+import { PHONE_FIELD } from "@/lib/phone-field";
 import { Body, Button, ErrorText, Field, Heading, Muted, Screen, Title } from "@/ui";
 
 export default function AccountScreen() {
@@ -118,7 +119,7 @@ function Account({ customer }: { customer: Customer }) {
       <Heading>Mes informations</Heading>
       <Field label="Prénom" value={form.firstName} onChangeText={set("firstName")} error={fields.firstName} />
       <Field label="Nom" value={form.lastName} onChangeText={set("lastName")} error={fields.lastName} />
-      <Field label="Téléphone" value={form.phone} onChangeText={set("phone")} error={fields.phone} keyboardType="phone-pad" />
+      <Field {...PHONE_FIELD} value={form.phone} onChangeText={set("phone")} error={fields.phone} keyboardType="phone-pad" />
       <Field label="Email" value={form.email} onChangeText={set("email")} error={fields.email} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
       {emailChanged ? (
         <Field label="Mot de passe actuel (pour changer d'email)" value={form.currentPassword} onChangeText={set("currentPassword")} error={fields.currentPassword} secureTextEntry />

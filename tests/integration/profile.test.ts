@@ -90,6 +90,17 @@ describe("R-76 : Mes informations — coordonnées", () => {
     expect(row).toMatchObject({ first_name: "Tom", last_name: "Dupont", phone: "+33711223344" });
   });
 
+  it("D-126 : le téléphone peut être effacé (null en base) ; absent, il est aussi accepté", async () => {
+    const cleared = await updateProfile(t.db, browser, me.id, profile({ phone: "" }), ctx);
+    expect(cleared).toMatchObject({ ok: true, customer: { phone: "" } });
+    expect((await t.sql`select phone from customer`)[0].phone).toBeNull();
+
+    const withoutPhone: Record<string, unknown> = { ...profile() };
+    delete withoutPhone.phone;
+    expect(await updateProfile(t.db, browser, me.id, withoutPhone, ctx)).toMatchObject({ ok: true });
+    expect((await t.sql`select phone from customer`)[0].phone).toBeNull();
+  });
+
   it("R-70 : exige prénom, nom, téléphone valide et email valide, un message par champ", async () => {
     const result = await updateProfile(
       t.db,

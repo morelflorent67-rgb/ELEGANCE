@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { normalizePhone } from "@/lib/phone";
 
-// Validation des formulaires de compte (R-70). Les messages sont affichés tels quels au client.
+// Validation des formulaires de compte (R-70, D-126). Les messages sont affichés tels quels au client.
 
 const name = (label: string) =>
   z
@@ -16,16 +16,20 @@ const email = z
   .toLowerCase()
   .pipe(z.email("Cette adresse email ne semble pas valide."));
 
+// Téléphone facultatif (D-126, demandé par Apple) : vide ou absent → null ; un numéro saisi doit être valide.
 const phone = z
   .string()
-  .trim()
-  .min(1, "Indiquez votre téléphone.")
-  .refine((value) => normalizePhone(value) !== null, "Ce numéro de téléphone ne semble pas valide.")
-  .transform((value) => normalizePhone(value)!);
+  .nullish()
+  .transform((value) => (value ?? "").trim())
+  .refine(
+    (value) => value === "" || normalizePhone(value) !== null,
+    "Ce numéro de téléphone ne semble pas valide.",
+  )
+  .transform((value) => (value === "" ? null : normalizePhone(value)));
 
 const newPassword = z.string().min(8, "8 caractères minimum.").max(72, "72 caractères au maximum.");
 
-/** Création de compte : prénom, nom, téléphone, email, mot de passe et conditions acceptées (R-70, R-71). */
+/** Création de compte : prénom, nom, email, mot de passe, conditions acceptées et téléphone facultatif (R-70, R-71, D-126). */
 export const signUpSchema = z.object({
   firstName: name("prénom"),
   lastName: name("nom"),

@@ -47,11 +47,12 @@ export function ProfileForm({ customer }: { customer: CustomerProfile }) {
     setValues((current) => ({ ...current, [name]: event.target.value }));
 
   const emailChanged = values.email.trim().toLowerCase() !== saved.email.toLowerCase();
-  // Le téléphone enregistré est normalisé (+33…) : on compare à la saisie normalisée.
+  // Le téléphone enregistré est normalisé (+33…) : on compare à la saisie normalisée. Vide = aucun numéro (D-126).
+  const typedPhone = values.phone.trim() === "" ? "" : (normalizePhone(values.phone) ?? values.phone);
   const dirty =
     values.firstName !== saved.firstName ||
     values.lastName !== saved.lastName ||
-    normalizePhone(values.phone) !== saved.phone ||
+    typedPhone !== saved.phone ||
     emailChanged;
 
   return (
@@ -102,7 +103,13 @@ export function ProfileForm({ customer }: { customer: CustomerProfile }) {
             />
           </Field>
         </div>
-        <Field id="info-phone" label="Téléphone" error={state.fieldErrors?.phone}>
+        <Field
+          id="info-phone"
+          label="Téléphone"
+          aside="facultatif"
+          hint="Pour que le salon puisse vous prévenir en cas d'imprévu."
+          error={state.fieldErrors?.phone}
+        >
           <input
             id="info-phone"
             name="phone"

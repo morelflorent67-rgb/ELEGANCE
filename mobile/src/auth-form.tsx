@@ -5,6 +5,7 @@ import { ApiError, messageOf } from "@/api/client";
 import type { SessionResponse } from "@/api/types";
 import { useSession } from "@/session";
 import { colors, fonts, spacing } from "@/theme";
+import { PHONE_FIELD } from "@/lib/phone-field";
 import { Body, Button, ErrorText, Field, Muted, Row, Title } from "@/ui";
 
 /**
@@ -66,7 +67,7 @@ export function AuthForm({
         <>
           <Field label="Prénom" value={form.firstName} onChangeText={set("firstName")} error={fields.firstName} autoComplete="given-name" textContentType="givenName" />
           <Field label="Nom" value={form.lastName} onChangeText={set("lastName")} error={fields.lastName} autoComplete="family-name" textContentType="familyName" />
-          <Field label="Téléphone" value={form.phone} onChangeText={set("phone")} error={fields.phone} keyboardType="phone-pad" autoComplete="tel" textContentType="telephoneNumber" />
+          <Field {...PHONE_FIELD} value={form.phone} onChangeText={set("phone")} error={fields.phone} keyboardType="phone-pad" autoComplete="tel" textContentType="telephoneNumber" />
         </>
       ) : null}
       <Field label="Email" value={form.email} onChangeText={set("email")} error={fields.email} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} autoComplete="email" textContentType="emailAddress" />

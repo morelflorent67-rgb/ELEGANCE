@@ -237,7 +237,7 @@ Ces 52 règles fixent le comportement du moteur de réservation : toutes sont d�
 
 | N° | Règle | Statut |
 | --- | --- | --- |
-| R-70 | Le compte client demande prénom, nom, téléphone, email et mot de passe. | Décidé |
+| R-70 | Le compte client demande prénom, nom, email et mot de passe ; le téléphone est **facultatif** (D-126) : un numéro saisi doit être valide, un champ vide n'enregistre aucun numéro. | Décidé |
 | R-71 | Le compte se crée à l'étape d'identification de la première réservation (avant le récapitulatif), avec acceptation des conditions (D-44). | Décidé |
 | R-72 | La tablette reste connectée en mode équipe : planning, RDV et fiches clients. | Décidé |
 | R-73 | Les fonctions gérant demandent un code : tarifs, équipe, horaires, chiffre d'affaires, suppressions. | Décidé |
@@ -402,6 +402,7 @@ Le 20 octobre 2026, 57 décisions ont fixé le cadre du projet ; le 21 octobre 2
 | D-123 | **API mobile (lot 25)** : l'app iPhone parle au serveur par `/api/mobile/v1/*` (JSON), avec le même jeton de session que le site envoyé en `Authorization: Bearer` ; aucune règle n'est dans l'API ni dans l'app : tout refus est un `DomainError` rendu en `{ code }` | Plan `docs/plan-app-store.md` : les règles restent dans `src/modules/*`, l'app affiche et envoie ; la version dans l'adresse parce qu'une app installée ne se met pas à jour toute seule | | Florent (plan lots 24-29), 17 novembre 2026 | 
 | D-124 | **Notifications (lot 27)** : envoi **direct à Apple (APNs)** depuis le serveur (HTTP/2 et jeton ES256 avec la clé `.p8`, `node:crypto` et `node:http2`, aucune dépendance), sans passer par Expo ni un autre tiers ; clé dans `deploy/.env` (`APNS_KEY`, `APNS_KEY_ID`, `APNS_TEAM_ID`), rien ne part tant qu'elle n'y est pas. Rappel, place libérée, RDV modifié ou annulé par le salon ; les emails continuent en plus (réponse de Florent, 17 novembre 2026) | Évite un sous-traitant de plus dans la politique de confidentialité (seul Apple intervient) ; l'email reste la preuve écrite |
 | D-125 | **Lot 28** : compte de démonstration marqué plutôt que compte normal (réponse de Florent, 18 novembre 2026), adresse d'assistance `contact@elegance-strasbourg.fr` (`SUPPORT_EMAIL`, boîte à pouvoir recevoir des messages), sous-titre « Coiffure & barbier, réservez », page d'aide `/aide`, section « Application iPhone » de la confidentialité (jeton de notification, Apple) | L'examinateur d'Apple réserve pour de vrai : sans marque, le salon recevrait de faux RDV comptés au Bilan, avec emails, et devrait les annuler à la main ; la page d'aide et le contact sont exigés sur la fiche App Store |
+| D-126 | **Téléphone facultatif pour le client** (R-70), sur le site comme dans l'app iPhone, à l'inscription et dans « Mes informations » : libellé « Téléphone (facultatif) », aide « Pour que le salon puisse vous prévenir en cas d'imprévu. » Un numéro saisi reste vérifié et normalisé ; un champ vide enregistre « aucun numéro ». Les fiches créées par le salon (tablette) gardent le téléphone obligatoire. Décision de Florent, 27 novembre 2026 | Demandé par Apple (second refus, règle 5.1.1(v) : ne pas exiger de données personnelles inutiles au service) ; le salon prévient par email, le téléphone n'est qu'un plus |
 
 ## Documents liés
 

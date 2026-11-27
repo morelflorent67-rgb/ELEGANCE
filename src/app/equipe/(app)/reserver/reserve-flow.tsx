@@ -258,7 +258,9 @@ export function ReserveFlow({
                 </button>
               ) : null}
             </div>
-            <span className="text-[14px] tabular-nums text-ivory-soft">{client.phone}</span>
+            <span className="text-[14px] tabular-nums text-ivory-soft">
+              {client.phone || "Pas de téléphone"}
+            </span>
             <span className="text-[13px] text-stone">
               {client.lastVisitLabel ? `Dernier RDV : ${client.lastVisitLabel}` : "Aucun RDV passé"}{" "}
               · {client.upcoming === 0 ? "Aucun RDV à venir" : `${client.upcoming} RDV à venir`}

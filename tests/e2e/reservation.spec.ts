@@ -480,17 +480,42 @@ test.describe("cas particuliers des maquettes", () => {
 });
 
 test.describe("comptes", () => {
-  test("R-70, R-71 : l'inscription demande les cinq champs et les conditions, un message par champ", async ({
+  test("R-70, R-71 : l'inscription demande les quatre champs obligatoires et les conditions, un message par champ", async ({
     page,
   }) => {
     await page.goto("/inscription");
     await page.getByRole("button", { name: "Créer mon compte" }).click();
     await expect(page.getByText("Indiquez votre prénom.")).toBeVisible();
     await expect(page.getByText("Indiquez votre nom.")).toBeVisible();
-    await expect(page.getByText("Indiquez votre téléphone.")).toBeVisible();
+    // D-126 : le téléphone est facultatif, aucun message pour un champ vide.
+    await expect(page.getByText(/Indiquez votre téléphone|numéro de téléphone/)).toHaveCount(0);
     await expect(page.getByText("Cette adresse email ne semble pas valide.")).toBeVisible();
     await expect(page.getByText("8 caractères minimum.").first()).toBeVisible();
     await expect(page.getByText("Acceptez les conditions pour créer votre compte.")).toBeVisible();
+  });
+
+  test("D-126 : on réserve sans téléphone ; le champ dit « facultatif » ; la tablette affiche « Pas de téléphone »", async ({
+    page,
+  }) => {
+    await reachIdentityStep(page);
+    const phone = page.locator("#step-signup-phone");
+    await expect(page.getByText("facultatif").filter({ visible: true }).first()).toBeVisible();
+    await expect(
+      page.getByText("Pour que le salon puisse vous prévenir en cas d'imprévu.").filter({ visible: true }),
+    ).toBeVisible();
+    await fillSignUp(page, { ...newClient(), phone: "" }, "step-signup");
+    await expect(phone).toHaveValue("");
+    await page.getByRole("button", { name: "Créer mon compte" }).click();
+    await expect(page.getByRole("heading", { name: /^Tout est prêt/ })).toBeVisible();
+    await barButton(page, /^Confirmer/).click();
+    await expect(page.getByRole("heading", { name: "C'est réservé." })).toBeVisible();
+    const [row] = await sql`select id, phone from customer`;
+    expect(row.phone).toBeNull();
+
+    await loginTablet(page);
+    await page.goto(`/equipe/clients/${row.id}`);
+    await expect(page.getByText("Pas de téléphone").filter({ visible: true })).toBeVisible();
+    await expect(page.locator('a[href="tel:"]')).toHaveCount(0);
   });
 
   test("à l'étape 4, « Déjà client ? Se connecter » ouvre la connexion (D-95 : email seul)", async ({

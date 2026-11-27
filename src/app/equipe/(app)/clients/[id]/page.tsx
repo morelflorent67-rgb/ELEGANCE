@@ -101,12 +101,19 @@ async function ClientFile({ params }: { params: PageProps<"/equipe/clients/[id]"
             <h1 className="text-[30px] font-light leading-tight">
               {file.firstName} {file.lastName}
             </h1>
-            <a
-              href={`tel:${file.phone.replace(/\s/g, "")}`}
-              className="flex min-h-10 items-center text-[16px] tabular-nums"
-            >
-              {file.phone}
-            </a>
+            {file.phone ? (
+              <a
+                href={`tel:${file.phone.replace(/\s/g, "")}`}
+                className="flex min-h-10 items-center text-[16px] tabular-nums"
+              >
+                {file.phone}
+              </a>
+            ) : (
+              // Téléphone facultatif pour le client (D-126).
+              <span className="flex min-h-10 items-center text-[16px] text-stone">
+                Pas de téléphone
+              </span>
+            )}
             <span className="text-[14px] text-stone">{file.email}</span>
           </div>
           <div className="flex flex-col gap-2.5">

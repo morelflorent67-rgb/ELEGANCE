@@ -64,7 +64,9 @@ async function ManagerClient({
           <h1 className="text-[30px] font-light leading-tight">
             {file.firstName} {file.lastName}
           </h1>
-          <span className="text-[16px] tabular-nums text-ivory-soft">{file.phone}</span>
+          <span className="text-[16px] tabular-nums text-ivory-soft">
+            {file.phone || "Pas de téléphone"}
+          </span>
           <span className="text-[14px] text-stone">{file.email}</span>
         </div>
 

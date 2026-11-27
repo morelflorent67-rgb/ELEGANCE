@@ -105,3 +105,21 @@ describe("refus du serveur traduits dans l'app", () => {
     expect(translated.filter((code) => !known.has(code))).toEqual([]);
   });
 });
+
+describe("champ Téléphone facultatif (R-70, D-126)", () => {
+  const field = read("mobile/src/lib/phone-field.ts");
+  const text = (key: string) => field.match(new RegExp(`${key}: "([^"]+)"`))?.[1];
+
+  it.each([
+    "src/components/account-forms.tsx",
+    "src/app/(client)/compte/informations/informations-forms.tsx",
+  ])("l'app reprend « facultatif » et l'aide du site (%s)", (path) => {
+    const source = read(path);
+    expect(source).toContain(`aside="${text("aside")}"`);
+    expect(source).toContain(`hint="${text("hint")}"`);
+  });
+
+  it.each(["mobile/src/auth-form.tsx", "mobile/app/(tabs)/compte.tsx"])("%s utilise ce champ", (path) => {
+    expect(read(path)).toContain("<Field {...PHONE_FIELD}");
+  });
+});

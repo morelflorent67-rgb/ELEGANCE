@@ -5,6 +5,7 @@ export interface Customer {
   id: string;
   firstName: string;
   lastName: string;
+  /** Facultatif (D-126) : chaîne vide quand le client n'a pas donné de numéro. */
   phone: string;
   email: string;
 }

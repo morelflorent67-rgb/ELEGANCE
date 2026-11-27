@@ -125,7 +125,8 @@ export function SignUpForm({
       <Field
         id={`${idPrefix}-phone`}
         label="Téléphone"
-        hint="Pour que le salon puisse vous joindre au sujet d'un rendez-vous."
+        aside="facultatif"
+        hint="Pour que le salon puisse vous prévenir en cas d'imprévu."
         error={state.fieldErrors?.phone}
       >
         <input

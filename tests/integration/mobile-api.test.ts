@@ -159,6 +159,29 @@ describe("accès : jeton Bearer", () => {
 });
 
 describe("compte : informations, mot de passe, suppression", () => {
+  it("D-126 : inscription et informations sans téléphone ; un numéro invalide reste refusé", async () => {
+    const withoutPhone: Record<string, unknown> = { ...signUpInput("sans@mail.fr") };
+    delete withoutPhone.phone;
+    const res = await api().register(withoutPhone);
+    expect(res.status).toBe(201);
+    expect((res.body as { customer: { phone: string } }).customer.phone).toBe("");
+    expect((await t.sql`select phone from customer`)[0].phone).toBeNull();
+
+    const header = bearer((res.body as { token: string }).token);
+    const set = await api(header).updateMe({ firstName: "Jean", lastName: "Dupont", phone: "0698765432", email: "sans@mail.fr" });
+    expect((set.body as { customer: { phone: string } }).customer.phone).toBe("+33698765432");
+    const cleared = await api(header).updateMe({ firstName: "Jean", lastName: "Dupont", phone: "", email: "sans@mail.fr" });
+    expect(cleared.status).toBe(200);
+    expect((await t.sql`select phone from customer`)[0].phone).toBeNull();
+
+    const bad = await api(header).updateMe({ firstName: "Jean", lastName: "Dupont", phone: "123", email: "sans@mail.fr" });
+    expect(bad.status).toBe(400);
+    expect(bad.body).toMatchObject({ code: "invalid", fieldErrors: { phone: expect.any(String) } });
+    const badSignUp = await api().register({ ...signUpInput("autre@mail.fr"), phone: "abc" });
+    expect(badSignUp.status).toBe(400);
+    expect(badSignUp.body).toMatchObject({ fieldErrors: { phone: expect.any(String) } });
+  });
+
   it("modifie le nom et le téléphone ; changer d'email exige le mot de passe", async () => {
     const { header } = await signedUp();
     const ok = await api(header).updateMe({ firstName: "Jeanne", lastName: "Dupont", phone: "0698765432", email: "jean@mail.fr" });

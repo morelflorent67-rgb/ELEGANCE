@@ -325,6 +325,23 @@ test.describe("Mes informations (R-70, R-76)", () => {
     await expect(page.getByRole("button", { name: "Enregistrer" })).toBeDisabled();
   });
 
+  test("D-126 : le téléphone peut être effacé, la fiche n'a plus de numéro", async ({ page }) => {
+    await signUpClient(page, newClient());
+    await page.goto("/compte/informations");
+    await expect(async () => {
+      await page.getByLabel("Téléphone").fill("");
+      await expect(page.getByRole("button", { name: "Enregistrer" })).toBeEnabled({
+        timeout: 1_000,
+      });
+    }).toPass();
+    await page.getByRole("button", { name: "Enregistrer" }).click();
+    await expect(page.getByText("Vos informations sont à jour.")).toBeVisible();
+    const [row] = await sql`select phone from customer`;
+    expect(row.phone).toBeNull();
+    await expect(page.getByLabel("Téléphone")).toHaveValue("");
+    await expect(page.getByRole("button", { name: "Enregistrer" })).toBeDisabled();
+  });
+
   test("R-70 : un téléphone invalide est refusé avec un message", async ({ page }) => {
     await signUpClient(page, newClient());
     await page.goto("/compte/informations");

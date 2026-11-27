@@ -432,12 +432,17 @@ export function AppointmentPanel({
           <span className="text-stone">
             {formatDuration(a.durationMinutes)} · avec {a.staffFirstName}
           </span>
-          <a
-            href={phoneHref}
-            className="flex min-h-10 items-center self-start tabular-nums text-ivory"
-          >
-            {a.phone}
-          </a>
+          {a.phone ? (
+            <a
+              href={phoneHref}
+              className="flex min-h-10 items-center self-start tabular-nums text-ivory"
+            >
+              {a.phone}
+            </a>
+          ) : (
+            // Téléphone facultatif pour le client (D-126).
+            <span className="flex min-h-10 items-center text-stone">Pas de téléphone</span>
+          )}
         </div>
 
         <div className="mt-3 flex flex-wrap gap-2">
