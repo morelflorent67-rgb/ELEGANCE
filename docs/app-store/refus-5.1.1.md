@@ -25,6 +25,8 @@ Note à joindre à la nouvelle soumission (App Review, « Notes ») :
 Phone number is now optional at sign-up and in the account settings.
 ```
 
+**Resoumis le 27 novembre 2026** : site déployé sur le VPS (téléphone facultatif en ligne), build 3 (1.0.0 (3)) construit par EAS et envoyé à App Store Connect, rattaché à la version 1.0 à la place du build 2, note ajoutée en tête des « Remarques », soumission renvoyée à l'équipe de vérification : état « En attente de vérification ». Publication toujours réglée sur « manuellement ». À surveiller : le bandeau « Mettez à jour vos réponses pour la catégorie d'âge : partage de position et rencontres » (réponses « Non » aux deux si Apple les exige).
+
 ---
 
 ## Premier refus (23 novembre 2026)
